@@ -33,6 +33,7 @@ func main() {
 		Flags: []cli.Flag{
 			&cli.StringFlag{Name: "input", Aliases: []string{"i"}, Usage: "path to input file or dir", Required: false},
 			&cli.StringFlag{Name: "output", Aliases: []string{"o"}, Usage: "path to output dir", Required: false},
+			&cli.BoolFlag{Name: "remove-source", Aliases: []string{"rs"}, Usage: "remove source file", Required: false, Value: false},
 			&cli.BoolFlag{Name: "skip-noop", Aliases: []string{"n"}, Usage: "skip noop decoder", Required: false, Value: true},
 			&cli.BoolFlag{Name: "supported-ext", Usage: "Show supported file extensions and exit", Required: false, Value: false},
 		},
@@ -90,6 +91,7 @@ func appMain(c *cli.Context) (err error) {
 	}
 
 	skipNoop := c.Bool("skip-noop")
+	removeSource := c.Bool("remove-source")
 
 	inputStat, err := os.Stat(input)
 	if err != nil {
@@ -109,17 +111,17 @@ func appMain(c *cli.Context) (err error) {
 	}
 
 	if inputStat.IsDir() {
-		return dealDirectory(input, output, skipNoop)
+		return dealDirectory(input, output, skipNoop, removeSource)
 	} else {
 		allDec := common.GetDecoder(inputStat.Name(), skipNoop)
 		if len(allDec) == 0 {
 			logging.Log().Fatal("skipping while no suitable decoder")
 		}
-		return tryDecFile(input, output, allDec)
+		return tryDecFile(input, output, allDec, removeSource)
 	}
 
 }
-func dealDirectory(inputDir string, outputDir string, skipNoop bool) error {
+func dealDirectory(inputDir string, outputDir string, skipNoop bool, removeSource bool) error {
 	items, err := os.ReadDir(inputDir)
 	if err != nil {
 		return err
@@ -134,7 +136,7 @@ func dealDirectory(inputDir string, outputDir string, skipNoop bool) error {
 			continue
 		}
 
-		err := tryDecFile(filepath.Join(inputDir, item.Name()), outputDir, allDec)
+		err := tryDecFile(filepath.Join(inputDir, item.Name()), outputDir, allDec, removeSource)
 		if err != nil {
 			logging.Log().Error("conversion failed", zap.String("source", item.Name()))
 		}
@@ -142,7 +144,7 @@ func dealDirectory(inputDir string, outputDir string, skipNoop bool) error {
 	return nil
 }
 
-func tryDecFile(inputFile string, outputDir string, allDec []common.NewDecoderFunc) error {
+func tryDecFile(inputFile string, outputDir string, allDec []common.NewDecoderFunc, removeSource bool) error {
 	file, err := os.ReadFile(inputFile)
 	if err != nil {
 		return err
@@ -180,7 +182,17 @@ func tryDecFile(inputFile string, outputDir string, allDec []common.NewDecoderFu
 	if err != nil {
 		return err
 	}
-	logging.Log().Info("successfully converted",
-		zap.String("source", inputFile), zap.String("destination", outPath))
+
+	// if source file need to be removed
+	if removeSource {
+		err := os.RemoveAll(inputFile)
+		if err != nil {
+			return err
+		}
+		logging.Log().Info("successfully converted, and source file is removed", zap.String("source", inputFile), zap.String("destination", outPath))
+	} else {
+		logging.Log().Info("successfully converted", zap.String("source", inputFile), zap.String("destination", outPath))
+	}
+
 	return nil
 }
