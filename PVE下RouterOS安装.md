@@ -135,3 +135,48 @@ qemu-img convert -f raw -O qcow2 chr-7.3.1.img routeros.qcow2
 ```
 
 得到了大家最为熟悉的 **qcow2** 格式的镜像。
+
+### 镜像导入虚拟机
+
+在创建 RouterOS 虚拟机时，曾指定了 VM ID，演示中为 **“233”** ；该编号后续会用到，大家在参考本文章时，需要注意替换。
+
+![镜像导入为磁盘](img/ros_img_import.png)
+
+```bash
+# 将 qcow2 镜像导入虚拟机中
+qm importdisk 233 routeros.qcow2 local-lvm
+
+# 输出结果为以下类似内容表示成功
+Successfully imported disk as 'unused0:local-lvm:vm-233-disk-0'  
+
+```
+
+ **再次重申，命令中的“233”要替换成您自己的 RouterOS 虚拟机编号。** 
+
+### 调整 RouterOS 虚拟机磁盘设置
+
+![启用磁盘](img/ros_hd_use.png)
+
+在磁盘导入成功后，会发现虚拟机的硬件列表中多出了一块未使用的磁盘设备，鼠标双击该设备进行一些配置调整。
+
+![调整磁盘参数](img/ros_hd_iothread.png)
+
+在弹出的对话框中，勾选 “IO thread” 选项，点击“添加”按钮。
+
+![磁盘扩容-1](img/ros_hd_enlarge.png)
+
+此时，磁盘大小为128M，为了方便后续使用，需要对该磁盘空间进行扩容。  
+此处扩容后，在 RouterOS 虚拟机 **初次启动** 时，会根据磁盘空间自动扩容安装，所以无需担心。
+
+![磁盘扩容-2](img/ros_hd_resize.png)
+
+选中该磁盘，然后点击 “Disk Action” 的 “Resize”：
+
+![磁盘扩容-3](img/ros_hd_add1G.png)
+
+根据需要，扩容一定量的磁盘空间；我作为演示，仅增加1G的磁盘空间，并点击“调整磁盘大小”。
+
+![磁盘扩容-4](img/ros_hd_finish.png)
+
+调整完成后，磁盘容量已被扩容。
+
