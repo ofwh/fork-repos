@@ -72,3 +72,66 @@ CPU类别选择“host”，核心根据您物理CPU核心数进行酌情设置�
 按需添加需要的网络设备，并去掉防火墙，增加网卡多队列选项。示例如下：
 
 ![虚拟机添加网卡完成](img/ros_add_eths_done.png)
+
+
+## 创建RouterOS硬盘
+
+### 上传 RouterOS 镜像到 PVE
+
+鉴于大家使用的操作系统有Windows、macOS、Linux，因此大家使用的ssh工具可能不同。  
+因此此处不演示如何使用sftp工具。  
+
+![上传ROS的img文件](img/ros_img_upload.png)
+
+使用 SSH 工具登录到 PVE 服务器，并进入 tmp 目录，创建一个文件夹：
+
+```bash
+# 进入 tmp 目录
+cd /tmp
+
+# 创建文件夹
+mkdir RouterOS
+
+# 进入文件夹
+cd RouterOS
+
+```
+
+将 RouterOS 固件上传到该文件夹中，并检查 hash ：
+
+![ROS的img文件校验](img/ros_img_hash.png)
+
+```bash
+# 检查文件是否存在
+ls -la
+
+# 计算文件 hash
+sha256sum chr-7.3.1.img.zip 
+
+```
+
+确认无误后，开始对镜像进行转换，并导入刚才创建的 RouterOS 虚拟机中。
+
+### 镜像转换
+
+由于上传的镜像为 Zip 压缩格式，因此需要首先对其解压缩。
+
+![img文件解压缩](img/ros_img_unzip.png)
+
+```bash
+# 将固件解压缩
+unzip -q chr-7.3.1.img.zip  
+
+```
+
+解压出 RouterOS 的 img 格式的镜像，然后使用 PVE 自带命令行工具，对其进行格式转换：
+
+![img文件转换](img/ros_img_convert.png)
+
+```bash
+# 将 img 格式的镜像转换成 qcow2 格式
+qemu-img convert -f raw -O qcow2 chr-7.3.1.img routeros.qcow2
+
+```
+
+得到了大家最为熟悉的 **qcow2** 格式的镜像。
