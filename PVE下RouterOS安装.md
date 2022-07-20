@@ -153,7 +153,7 @@ Successfully imported disk as 'unused0:local-lvm:vm-233-disk-0'
 
  **再次重申，命令中的“233”要替换成您自己的 RouterOS 虚拟机编号。** 
 
-### 调整 RouterOS 虚拟机磁盘设置
+### 3.4.调整 RouterOS 虚拟机磁盘设置
 
 ![启用磁盘](img/ros_hd_use.png)
 
