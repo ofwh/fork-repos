@@ -1,49 +1,49 @@
-## 前期准备工作
+## 0.前期准备工作
 访问RouterOS的官网 [Mikrotik](https://mikrotik.com/download) 下载 Winbox 和 CHR 版本的固件，并一同下载固件的校验文件。
 
 ![ROS系统下载](img/ros_download.png)
 
-## 创建 RouterOS 的虚拟机
+## 1.创建 RouterOS 的虚拟机
 
-### 常规
+### 1.1.常规
 
 登录到PVE后台后，进入新建虚拟机流程，并打开高级选项。  
 节点即本机，VM ID 和名称可以自由定义。  
 
 ![虚拟机-常规](img/ros_pve_init.png)
 
-### 操作系统
+### 1.2.操作系统
 
 操作系统类别选择“Linux”、内核版本“5.x - 2.6 Kernel”即可，且无需使用引导介质。
 
 ![虚拟机-操作系统](img/ros_pve_guestos.png)
 
-### 系统
+### 1.3.系统
 
 系统部分需要修改一项内容，SCSI控制器选择“VirtIO SCSI single”。
 
 ![虚拟机-系统](img/ros_pve_os.png)
 
-### 磁盘
+### 1.4.磁盘
 
 磁盘部分，为了避免后续有多块磁盘，此处选择删掉所有的磁盘。
 
 ![虚拟机-磁盘](img/ros_pve_hd.png)
 
-### CPU
+### 1.5.CPU
 
 根据设备的CPU资源来定义RouterOS的CPU虚拟资源。  
 CPU类别选择“host”，核心根据您物理CPU核心数进行酌情设置，推荐启用 **NUMA** 。  
 
 ![虚拟机-CPU](img/ros_pve_cpu.png)
 
-### 内存
+### 1.6.内存
 
 内存一般2G足够使用，关闭 Ballooning 设备选项。
 
 ![虚拟机-内存](img/ros_pve_mem.png)
 
-### 网络
+### 1.7.网络
 
 网络处需要注意，此页设置只能添加一个网络设备，而网络设备的添加顺序将和 RouterOS 内部显示的网卡顺序一致。  
 因此我们此处先仅添加 WAN 对应的网口（此处为 vmbr0 ），模型选择“VirtIO”，并取消勾选防火墙选项。  
@@ -53,14 +53,14 @@ CPU类别选择“host”，核心根据您物理CPU核心数进行酌情设置�
 
 ![虚拟机-网络](img/ros_pve_eths.png)
 
-### 确认
+### 1.8.确认
 
 接下来查看设置总览，确认无误，即可点击“完成”。
 
 ![虚拟机-确认](img/ros_pve_confirm.png)
 
 
-## 调整虚拟机硬件参数
+## 2.调整虚拟机硬件参数
 
 ![虚拟机参数](img/ros_hw_review.png)
 
@@ -74,9 +74,9 @@ CPU类别选择“host”，核心根据您物理CPU核心数进行酌情设置�
 ![虚拟机添加网卡完成](img/ros_add_eths_done.png)
 
 
-## 创建RouterOS硬盘
+## 3.创建RouterOS硬盘
 
-### 上传 RouterOS 镜像到 PVE
+### 3.1.上传 RouterOS 镜像到 PVE
 
 鉴于大家使用的操作系统有Windows、macOS、Linux，因此大家使用的ssh工具可能不同。  
 因此此处不演示如何使用sftp工具。  
@@ -112,7 +112,7 @@ sha256sum chr-7.3.1.img.zip
 
 确认无误后，开始对镜像进行转换，并导入刚才创建的 RouterOS 虚拟机中。
 
-### 镜像转换
+### 3.2.镜像转换
 
 由于上传的镜像为 Zip 压缩格式，因此需要首先对其解压缩。
 
@@ -136,7 +136,7 @@ qemu-img convert -f raw -O qcow2 chr-7.3.1.img routeros.qcow2
 
 得到了大家最为熟悉的 **qcow2** 格式的镜像。
 
-### 镜像导入虚拟机
+### 3.3.镜像导入虚拟机
 
 在创建 RouterOS 虚拟机时，曾指定了 VM ID，演示中为 **“233”** ；该编号后续会用到，大家在参考本文章时，需要注意替换。
 
@@ -181,7 +181,7 @@ Successfully imported disk as 'unused0:local-lvm:vm-233-disk-0'
 调整完成后，磁盘容量已被扩容。
 
 
-## 调整虚拟机配置参数
+## 4.调整虚拟机配置参数
 
 初创的 RouterOS 的配置参数如下：
 
@@ -193,7 +193,7 @@ Successfully imported disk as 'unused0:local-lvm:vm-233-disk-0'
 3.  引导顺序
 4.  使用平板指针
 
-### 设置开机自启动
+### 4.1.设置开机自启动
 
 开机自启动设置为“是”。
 启动顺序推荐如下：
@@ -203,14 +203,14 @@ Successfully imported disk as 'unused0:local-lvm:vm-233-disk-0'
 启动/关机顺序为“1”，表示该虚拟机第一个启动，最后一个关机。  
 启动延时为“5”，表示该虚拟机在PVE启动完成后，延迟5秒自行启动。  
 
-### 修改引导顺序
+### 4.2.修改引导顺序
 
 在“scsi0”设备处，勾选前面的“已启用”复选框，并使用行首的排序功能，将该设备拖拽到第一个。  
 然后点击“OK”。  
 
 ![ROS引导项](img/ros_vm_boot.png)
 
-### 修改平板指针设置
+### 4.3.修改平板指针设置
 
 关闭“使用平板指针”的选项，可以一定程度上降低虚拟机的CPU使用率。
 
@@ -221,7 +221,7 @@ Successfully imported disk as 'unused0:local-lvm:vm-233-disk-0'
 ![ROS虚拟机参数调整完成](img/ros_vm_finish.png)
 
 
-## 虚拟机开机
+## 5.虚拟机开机
 
 此时开始检验 RouterOS 虚拟机是否可以正常启动。  
 切换到虚拟机的“控制台”选项卡，让虚拟机开机。  
