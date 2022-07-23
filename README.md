@@ -18,7 +18,7 @@ RouterOS路由器的安装以及折腾手记。
 
 ### 教程章节
 
-1.  [PVE下RouterOS安装](https://gitee.com/callmer/routeros_toss_notes/blob/master/PVE下RouterOS安装.md)
+1.  [0.PVE下RouterOS安装](https://gitee.com/callmer/routeros_toss_notes/blob/master/0.PVE下RouterOS安装.md)
 2.  定义网络接口和基础配置
 3.  配置RouterOS防火墙
 4.  配置RouterOS流量整形
