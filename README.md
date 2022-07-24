@@ -18,13 +18,13 @@ RouterOS路由器的安装以及折腾手记。
 
 ### 教程章节
 
-[0.PVE下RouterOS安装](https://gitee.com/callmer/routeros_toss_notes/blob/master/0.PVE下RouterOS安装.md)  
-[1.定义网络接口和基础配置](https://gitee.com/callmer/routeros_toss_notes/blob/master/1.定义网络接口和基础配置.md)  
-2.配置RouterOS防火墙  
-3.配置RouterOS流量整形  
-4.配置RouterOS自动更新  
-5.调整RouterOS系统参数  
-6.配置RouterOS事件邮件通知  
+0.  [PVE下RouterOS安装](https://gitee.com/callmer/routeros_toss_notes/blob/master/0.PVE下RouterOS安装.md)  
+1.  [定义网络接口和基础配置](https://gitee.com/callmer/routeros_toss_notes/blob/master/1.定义网络接口和基础配置.md)  
+2.  配置RouterOS防火墙  
+3.  配置RouterOS流量整形  
+4.  配置RouterOS自动更新  
+5.  调整RouterOS系统参数  
+6.  配置RouterOS事件邮件通知  
 
 
 ### 教程说明
