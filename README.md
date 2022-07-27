@@ -3,7 +3,7 @@
 ## 介绍
 RouterOS路由器的安装以及折腾手记。
 
-- RouterOS 版本：7.3.1 Stable
+- RouterOS 版本：7.4 Stable
 - 演示机：
     - PVE虚拟机
     - CPU：host
