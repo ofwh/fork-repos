@@ -21,9 +21,10 @@ RouterOS路由器的安装以及折腾手记。
 0.  [PVE下RouterOS安装](./0.PVE下RouterOS安装.md)  
 1.  [定义网络接口和基础配置](./1.定义网络接口和基础配置.md)  
 2.  [配置防火墙和流量整形](./2.配置防火墙和流量整形.md)    
-3.  调整RouterOS系统参数  
-4.  配置RouterOS自动更新  
-5.  配置RouterOS事件邮件通知  
+3.  [RouterOS正版系统激活](./3.RouterOS正版系统激活.md)
+4.  调整RouterOS系统参数  
+5.  配置RouterOS自动更新  
+6.  配置RouterOS事件邮件通知  
 
 
 ### 教程说明
