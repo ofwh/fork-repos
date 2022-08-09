@@ -27,6 +27,8 @@ RouterOS 路由器的安装以及折腾手记。
 3.  [RouterOS正版系统激活](./3.RouterOS正版系统激活.md)
 4.  [系统参数调整](./4.系统参数调整.md)  
 5.  [系统自动化及邮件脚本](./5.系统自动化及邮件脚本.md)  
+6.  [RouterOS使用内网DNS服务器](./6.RouterOS使用内网DNS服务器.md)  
+7.  [DHCP静态地址和Options配置](./7.DHCP静态地址和Options配置.md)
 
 
 ### 教程说明
