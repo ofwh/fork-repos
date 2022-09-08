@@ -39,6 +39,7 @@ RouterOS 路由器的安装以及折腾手记。
 6.  [RouterOS使用内网DNS服务器](./6.RouterOS使用内网DNS服务器.md)  
 7.  [DHCP静态地址和Options配置](./7.DHCP静态地址和Options配置.md)
 8.  [使用附加硬盘记录系统日志](./8.使用附加硬盘记录系统日志.md)
+9.  [RouterOS配置IPv6](./9.RouterOS配置IPv6.md)
 
 
 ### 文章说明
