@@ -2,21 +2,32 @@ package common
 
 import (
 	"errors"
+	"fmt"
+	"io"
 	"strings"
 )
 
 type RawDecoder struct {
-	file     []byte
+	rd io.ReadSeeker
+
 	audioExt string
 }
 
-func NewRawDecoder(file []byte) Decoder {
-	return &RawDecoder{file: file}
+func NewRawDecoder(rd io.ReadSeeker) Decoder {
+	return &RawDecoder{rd: rd}
 }
 
 func (d *RawDecoder) Validate() error {
+	header := make([]byte, 16)
+	if _, err := io.ReadFull(d.rd, header); err != nil {
+		return fmt.Errorf("read file header failed: %v", err)
+	}
+	if _, err := d.rd.Seek(0, io.SeekStart); err != nil {
+		return fmt.Errorf("seek file failed: %v", err)
+	}
+
 	for ext, sniffer := range snifferRegistry {
-		if sniffer(d.file) {
+		if sniffer(header) {
 			d.audioExt = strings.ToLower(ext)
 			return nil
 		}
@@ -24,20 +35,8 @@ func (d *RawDecoder) Validate() error {
 	return errors.New("audio doesn't recognized")
 }
 
-func (d RawDecoder) Decode() error {
-	return nil
-}
-
-func (d RawDecoder) GetAudioData() []byte {
-	return d.file
-}
-
-func (d RawDecoder) GetAudioExt() string {
-	return d.audioExt
-}
-
-func (d RawDecoder) GetMeta() Meta {
-	return nil
+func (d *RawDecoder) Read(p []byte) (n int, err error) {
+	return d.rd.Read(p)
 }
 
 func init() {

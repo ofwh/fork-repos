@@ -21,8 +21,8 @@ var (
 	ErrKgmMagicHeader = errors.New("kgm magic header not matched")
 )
 
-// Header is the header of a KGM file.
-type Header struct {
+// header is the header of a KGM file.
+type header struct {
 	MagicHeader    []byte // 0x00-0x0f: magic header
 	AudioOffset    uint32 // 0x10-0x13: offset of audio data
 	CryptoVersion  uint32 // 0x14-0x17: crypto version
@@ -31,7 +31,7 @@ type Header struct {
 	CryptoKey      []byte // 0x2c-0x3b: crypto key
 }
 
-func (h *Header) FromFile(rd io.ReadSeeker) error {
+func (h *header) FromFile(rd io.ReadSeeker) error {
 	if _, err := rd.Seek(0, io.SeekStart); err != nil {
 		return fmt.Errorf("kgm seek start: %w", err)
 	}
@@ -44,7 +44,7 @@ func (h *Header) FromFile(rd io.ReadSeeker) error {
 	return h.FromBytes(buf)
 }
 
-func (h *Header) FromBytes(buf []byte) error {
+func (h *header) FromBytes(buf []byte) error {
 	if len(buf) < 0x3c {
 		return errors.New("invalid kgm header length")
 	}

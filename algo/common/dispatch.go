@@ -1,11 +1,12 @@
 package common
 
 import (
+	"io"
 	"path/filepath"
 	"strings"
 )
 
-type NewDecoderFunc func([]byte) Decoder
+type NewDecoderFunc func(rd io.ReadSeeker) Decoder
 
 type decoderItem struct {
 	noop    bool

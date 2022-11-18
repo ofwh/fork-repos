@@ -3,6 +3,8 @@ package tm
 import (
 	"bytes"
 	"errors"
+	"fmt"
+	"io"
 
 	"github.com/unlock-music/cli/algo/common"
 )
@@ -11,66 +13,38 @@ var replaceHeader = []byte{0x00, 0x00, 0x00, 0x20, 0x66, 0x74, 0x79, 0x70}
 var magicHeader = []byte{0x51, 0x51, 0x4D, 0x55} //0x15, 0x1D, 0x1A, 0x21
 
 type Decoder struct {
-	file        []byte
-	audio       []byte
-	headerMatch bool
-	audioExt    string
-}
-
-func (d *Decoder) GetAudioData() []byte {
-	return d.audio
-}
-
-func (d *Decoder) GetAudioExt() string {
-	if d.audioExt != "" {
-		return "." + d.audioExt
-	}
-	return ""
-}
-
-func (d *Decoder) GetMeta() common.Meta {
-	return nil
+	raw    io.ReadSeeker
+	offset int
+	audio  io.Reader
 }
 
 func (d *Decoder) Validate() error {
-	if len(d.file) < 8 {
-		return errors.New("invalid file size")
+	header := make([]byte, 8)
+	if _, err := io.ReadFull(d.raw, header); err != nil {
+		return fmt.Errorf("tm read header: %w", err)
 	}
-	if !bytes.Equal(magicHeader, d.file[:4]) {
-		return errors.New("not a valid tm file")
+	if !bytes.Equal(magicHeader, header[:len(magicHeader)]) {
+		return errors.New("tm: valid magic header")
 	}
-	d.headerMatch = true
+
+	d.audio = io.MultiReader(bytes.NewReader(replaceHeader), d.raw)
 	return nil
 }
 
-func (d *Decoder) Decode() error {
-	d.audio = d.file
-	if d.headerMatch {
-		for i := 0; i < 8; i++ {
-			d.audio[i] = replaceHeader[i]
-		}
-		d.audioExt = "m4a"
-	}
-	return nil
+func (d *Decoder) Read(buf []byte) (int, error) {
+	return d.audio.Read(buf)
 }
 
-//goland:noinspection GoUnusedExportedFunction
-func NewDecoder(data []byte) common.Decoder {
-	return &Decoder{file: data}
-}
+func NewTmDecoder(rd io.ReadSeeker) common.Decoder {
+	return &Decoder{raw: rd}
 
-func DecoderFuncWithExt(ext string) common.NewDecoderFunc {
-	return func(file []byte) common.Decoder {
-		return &Decoder{file: file, audioExt: ext}
-	}
 }
 
 func init() {
 	// QQ Music IOS M4a
-	common.RegisterDecoder("tm2", false, DecoderFuncWithExt("m4a"))
-	common.RegisterDecoder("tm6", false, DecoderFuncWithExt("m4a"))
+	common.RegisterDecoder("tm2", false, NewTmDecoder)
+	common.RegisterDecoder("tm6", false, NewTmDecoder)
 	// QQ Music IOS Mp3
 	common.RegisterDecoder("tm0", false, common.NewRawDecoder)
 	common.RegisterDecoder("tm3", false, common.NewRawDecoder)
-
 }

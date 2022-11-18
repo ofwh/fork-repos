@@ -8,7 +8,7 @@ func PKCS7UnPadding(encrypt []byte) []byte {
 	return encrypt[:(length - unPadding)]
 }
 
-func DecryptAes128Ecb(data, key []byte) []byte {
+func DecryptAES128ECB(data, key []byte) []byte {
 	cipher, _ := aes.NewCipher(key)
 	decrypted := make([]byte, len(data))
 	size := 16

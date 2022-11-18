@@ -3,6 +3,8 @@ package xm
 import (
 	"bytes"
 	"errors"
+	"fmt"
+	"io"
 
 	"github.com/unlock-music/cli/algo/common"
 )
@@ -16,20 +18,17 @@ var (
 		" MP3": "mp3",
 		" A4M": "m4a",
 	}
-	ErrFileSize    = errors.New("xm invalid file size")
 	ErrMagicHeader = errors.New("xm magic header not matched")
 )
 
 type Decoder struct {
-	file      []byte
-	headerLen uint32
+	rd     io.ReadSeeker
+	offset int
+
+	cipher    common.StreamDecoder
 	outputExt string
 	mask      byte
 	audio     []byte
-}
-
-func (d *Decoder) GetAudioData() []byte {
-	return d.audio
 }
 
 func (d *Decoder) GetAudioExt() string {
@@ -40,59 +39,53 @@ func (d *Decoder) GetAudioExt() string {
 	return ""
 }
 
-func (d *Decoder) GetMeta() common.Meta {
-	return nil
-}
-
-func NewDecoder(data []byte) common.Decoder {
-	return &Decoder{file: data}
+func NewDecoder(rd io.ReadSeeker) common.Decoder {
+	return &Decoder{rd: rd}
 }
 
 func (d *Decoder) Validate() error {
-	lenData := len(d.file)
-	if lenData < 16 {
-		return ErrFileSize
+	header := make([]byte, 16) // xm header is fixed to 16 bytes
+
+	if _, err := io.ReadFull(d.rd, header); err != nil {
+		return fmt.Errorf("xm read header: %w", err)
 	}
-	if !bytes.Equal(magicHeader, d.file[:4]) ||
-		!bytes.Equal(magicHeader2, d.file[8:12]) {
+
+	// 0x00 - 0x03 and 0x08 - 0x0B: magic header
+	if !bytes.Equal(magicHeader, header[:4]) || !bytes.Equal(magicHeader2, header[8:12]) {
 		return ErrMagicHeader
 	}
 
+	// 0x04 - 0x07: Audio File Type
 	var ok bool
-	d.outputExt, ok = typeMapping[string(d.file[4:8])]
+	d.outputExt, ok = typeMapping[string(header[4:8])]
 	if !ok {
-		return errors.New("detect unknown xm file type: " + string(d.file[4:8]))
+		return fmt.Errorf("xm detect unknown audio type: %s", string(header[4:8]))
 	}
 
-	d.headerLen = uint32(d.file[12]) | uint32(d.file[13])<<8 | uint32(d.file[14])<<16 // LittleEndian Unit24
-	if d.headerLen+16 > uint32(lenData) {
-		return ErrFileSize
-	}
+	// 0x0C - 0x0E, Encrypt Start At, LittleEndian Unit24
+	encStartAt := uint32(header[12]) | uint32(header[13])<<8 | uint32(header[14])<<16
+
+	// 0x0F, XOR Mask
+	d.cipher = newXmCipher(header[15], int(encStartAt))
+
 	return nil
 }
 
-func (d *Decoder) Decode() error {
-	d.mask = d.file[15]
-	d.audio = d.file[16:]
-	dataLen := uint32(len(d.audio))
-	for i := d.headerLen; i < dataLen; i++ {
-		d.audio[i] = ^(d.audio[i] - d.mask)
+func (d *Decoder) Read(p []byte) (int, error) {
+	n, err := d.rd.Read(p)
+	if n > 0 {
+		d.cipher.Decrypt(p[:n], d.offset)
+		d.offset += n
 	}
-	return nil
-}
-
-func DecoderFuncWithExt(ext string) common.NewDecoderFunc {
-	return func(file []byte) common.Decoder {
-		return &Decoder{file: file, outputExt: ext}
-	}
+	return n, err
 }
 
 func init() {
 	// Xiami Wav/M4a/Mp3/Flac
 	common.RegisterDecoder("xm", false, NewDecoder)
 	// Xiami Typed Format
-	common.RegisterDecoder("wav", false, DecoderFuncWithExt("wav"))
-	common.RegisterDecoder("mp3", false, DecoderFuncWithExt("mp3"))
-	common.RegisterDecoder("flac", false, DecoderFuncWithExt("flac"))
-	common.RegisterDecoder("m4a", false, DecoderFuncWithExt("m4a"))
+	common.RegisterDecoder("wav", false, NewDecoder)
+	common.RegisterDecoder("mp3", false, NewDecoder)
+	common.RegisterDecoder("flac", false, NewDecoder)
+	common.RegisterDecoder("m4a", false, NewDecoder)
 }

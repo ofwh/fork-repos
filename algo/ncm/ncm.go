@@ -16,27 +16,30 @@ import (
 	"github.com/unlock-music/cli/internal/utils"
 )
 
+const magicHeader = "CTENFDAM"
+
 var (
-	magicHeader = []byte{
-		0x43, 0x54, 0x45, 0x4E, 0x46, 0x44, 0x41, 0x4D}
 	keyCore = []byte{
 		0x68, 0x7a, 0x48, 0x52, 0x41, 0x6d, 0x73, 0x6f,
-		0x35, 0x6b, 0x49, 0x6e, 0x62, 0x61, 0x78, 0x57}
+		0x35, 0x6b, 0x49, 0x6e, 0x62, 0x61, 0x78, 0x57,
+	}
 	keyMeta = []byte{
 		0x23, 0x31, 0x34, 0x6C, 0x6A, 0x6B, 0x5F, 0x21,
-		0x5C, 0x5D, 0x26, 0x30, 0x55, 0x3C, 0x27, 0x28}
+		0x5C, 0x5D, 0x26, 0x30, 0x55, 0x3C, 0x27, 0x28,
+	}
 )
 
-func NewDecoder(data []byte) common.Decoder {
+func NewDecoder(rd io.ReadSeeker) common.Decoder {
 	return &Decoder{
-		file:    data,
-		fileLen: uint32(len(data)),
+		rd: rd,
 	}
 }
 
 type Decoder struct {
-	file    []byte
-	fileLen uint32
+	rd     io.ReadSeeker
+	offset int
+
+	cipher common.StreamDecoder
 
 	key []byte
 	box []byte
@@ -47,91 +50,128 @@ type Decoder struct {
 
 	cover []byte
 	audio []byte
-
-	offsetKey   uint32
-	offsetMeta  uint32
-	offsetCover uint32
-	offsetAudio uint32
 }
 
 func (d *Decoder) Validate() error {
-	if !bytes.Equal(magicHeader, d.file[:len(magicHeader)]) {
-		return errors.New("ncm magic header not match")
+	if err := d.validateMagicHeader(); err != nil {
+		return err
 	}
-	d.offsetKey = 8 + 2
+
+	if _, err := d.rd.Seek(2, io.SeekCurrent); err != nil { // 2 bytes gap
+		return fmt.Errorf("ncm seek file: %w", err)
+	}
+
+	keyData, err := d.readKeyData()
+	if err != nil {
+		return err
+	}
+
+	if err := d.readMetaData(); err != nil {
+		return fmt.Errorf("read meta date failed: %w", err)
+	}
+
+	if _, err := d.rd.Seek(5, io.SeekCurrent); err != nil { // 5 bytes gap
+		return fmt.Errorf("ncm seek gap: %w", err)
+	}
+
+	if err := d.readCoverData(); err != nil {
+		return fmt.Errorf("parse ncm cover file failed: %w", err)
+	}
+
+	if err := d.parseMeta(); err != nil {
+		return fmt.Errorf("parse meta failed: %w", err)
+	}
+
+	d.cipher = newNcmCipher(keyData)
 	return nil
 }
 
-func (d *Decoder) readKeyData() error {
-	if d.offsetKey == 0 || d.offsetKey+4 > d.fileLen {
-		return errors.New("invalid cover file offset")
+func (d *Decoder) validateMagicHeader() error {
+	header := make([]byte, len(magicHeader)) // 0x00 - 0x07
+	if _, err := d.rd.Read(header); err != nil {
+		return fmt.Errorf("ncm read magic header: %w", err)
 	}
-	bKeyLen := d.file[d.offsetKey : d.offsetKey+4]
+
+	if !bytes.Equal([]byte(magicHeader), header) {
+		return errors.New("ncm magic header not match")
+	}
+
+	return nil
+}
+
+func (d *Decoder) readKeyData() ([]byte, error) {
+	bKeyLen := make([]byte, 4) //
+	if _, err := io.ReadFull(d.rd, bKeyLen); err != nil {
+		return nil, fmt.Errorf("ncm read key length: %w", err)
+	}
 	iKeyLen := binary.LittleEndian.Uint32(bKeyLen)
-	d.offsetMeta = d.offsetKey + 4 + iKeyLen
 
 	bKeyRaw := make([]byte, iKeyLen)
+	if _, err := io.ReadFull(d.rd, bKeyRaw); err != nil {
+		return nil, fmt.Errorf("ncm read key data: %w", err)
+	}
 	for i := uint32(0); i < iKeyLen; i++ {
-		bKeyRaw[i] = d.file[i+4+d.offsetKey] ^ 0x64
+		bKeyRaw[i] ^= 0x64
 	}
 
-	d.key = utils.PKCS7UnPadding(utils.DecryptAes128Ecb(bKeyRaw, keyCore))[17:]
-	return nil
+	return utils.PKCS7UnPadding(utils.DecryptAES128ECB(bKeyRaw, keyCore))[17:], nil
 }
 
 func (d *Decoder) readMetaData() error {
-	if d.offsetMeta == 0 || d.offsetMeta+4 > d.fileLen {
-		return errors.New("invalid meta file offset")
+	bMetaLen := make([]byte, 4) //
+	if _, err := io.ReadFull(d.rd, bMetaLen); err != nil {
+		return fmt.Errorf("ncm read key length: %w", err)
 	}
-	bMetaLen := d.file[d.offsetMeta : d.offsetMeta+4]
 	iMetaLen := binary.LittleEndian.Uint32(bMetaLen)
-	d.offsetCover = d.offsetMeta + 4 + iMetaLen
+
 	if iMetaLen == 0 {
-		return errors.New("no any meta file found")
+		return nil // no meta data
 	}
 
-	// Why sub 22: Remove "163 key(Don't modify):"
-	bKeyRaw := make([]byte, iMetaLen-22)
-	for i := uint32(0); i < iMetaLen-22; i++ {
-		bKeyRaw[i] = d.file[d.offsetMeta+4+22+i] ^ 0x63
+	bMetaRaw := make([]byte, iMetaLen)
+	if _, err := io.ReadFull(d.rd, bMetaRaw); err != nil {
+		return fmt.Errorf("ncm read meta data: %w", err)
+	}
+	bMetaRaw = bMetaRaw[22:] // skip "163 key(Don't modify):"
+	for i := 0; i < len(bMetaRaw); i++ {
+		bMetaRaw[i] ^= 0x63
 	}
 
-	cipherText, err := base64.StdEncoding.DecodeString(string(bKeyRaw))
+	cipherText, err := base64.StdEncoding.DecodeString(string(bMetaRaw))
 	if err != nil {
 		return errors.New("decode ncm meta failed: " + err.Error())
 	}
-	metaRaw := utils.PKCS7UnPadding(utils.DecryptAes128Ecb(cipherText, keyMeta))
-	sepIdx := bytes.IndexRune(metaRaw, ':')
-	if sepIdx == -1 {
+	metaRaw := utils.PKCS7UnPadding(utils.DecryptAES128ECB(cipherText, keyMeta))
+	sep := bytes.IndexByte(metaRaw, ':')
+	if sep == -1 {
 		return errors.New("invalid ncm meta file")
 	}
 
-	d.metaType = string(metaRaw[:sepIdx])
-	d.metaRaw = metaRaw[sepIdx+1:]
+	d.metaType = string(metaRaw[:sep])
+	d.metaRaw = metaRaw[sep+1:]
+
 	return nil
 }
 
-func (d *Decoder) buildKeyBox() {
-	box := make([]byte, 256)
-	for i := 0; i < 256; i++ {
-		box[i] = byte(i)
+func (d *Decoder) readCoverData() error {
+	bCoverCRC := make([]byte, 4)
+	if _, err := io.ReadFull(d.rd, bCoverCRC); err != nil {
+		return fmt.Errorf("ncm read cover crc: %w", err)
 	}
 
-	keyLen := len(d.key)
-	var j byte
-	for i := 0; i < 256; i++ {
-		j = box[i] + j + d.key[i%keyLen]
-		box[i], box[j] = box[j], box[i]
+	bCoverLen := make([]byte, 4) //
+	if _, err := io.ReadFull(d.rd, bCoverLen); err != nil {
+		return fmt.Errorf("ncm read cover length: %w", err)
 	}
+	iCoverLen := binary.LittleEndian.Uint32(bCoverLen)
 
-	d.box = make([]byte, 256)
-	var _i byte
-	for i := 0; i < 256; i++ {
-		_i = byte(i + 1)
-		si := box[_i]
-		sj := box[_i+si]
-		d.box[i] = box[si+sj]
+	coverBuf := make([]byte, iCoverLen)
+	if _, err := io.ReadFull(d.rd, coverBuf); err != nil {
+		return fmt.Errorf("ncm read cover data: %w", err)
 	}
+	d.cover = coverBuf
+
+	return nil
 }
 
 func (d *Decoder) parseMeta() error {
@@ -147,54 +187,13 @@ func (d *Decoder) parseMeta() error {
 	}
 }
 
-func (d *Decoder) readCoverData() error {
-	if d.offsetCover == 0 || d.offsetCover+13 > d.fileLen {
-		return errors.New("invalid cover file offset")
+func (d *Decoder) Read(buf []byte) (int, error) {
+	n, err := d.rd.Read(buf)
+	if n > 0 {
+		d.cipher.Decrypt(buf[:n], d.offset)
+		d.offset += n
 	}
-
-	coverLenStart := d.offsetCover + 5 + 4
-	bCoverLen := d.file[coverLenStart : coverLenStart+4]
-
-	iCoverLen := binary.LittleEndian.Uint32(bCoverLen)
-	d.offsetAudio = coverLenStart + 4 + iCoverLen
-	if iCoverLen == 0 {
-		return nil
-	}
-	d.cover = d.file[coverLenStart+4 : coverLenStart+4+iCoverLen]
-	return nil
-}
-
-func (d *Decoder) readAudioData() error {
-	if d.offsetAudio == 0 || d.offsetAudio > d.fileLen {
-		return errors.New("invalid audio offset")
-	}
-	audioRaw := d.file[d.offsetAudio:]
-	audioLen := len(audioRaw)
-	d.audio = make([]byte, audioLen)
-	for i := uint32(0); i < uint32(audioLen); i++ {
-		d.audio[i] = d.box[i&0xff] ^ audioRaw[i]
-	}
-	return nil
-}
-
-func (d *Decoder) Decode() error {
-	if err := d.readKeyData(); err != nil {
-		return fmt.Errorf("read key data failed: %w", err)
-	}
-	d.buildKeyBox()
-
-	if err := d.readMetaData(); err != nil {
-		return fmt.Errorf("read meta date failed: %w", err)
-	}
-	if err := d.parseMeta(); err != nil {
-		return fmt.Errorf("parse meta failed: %w", err)
-	}
-
-	if err := d.readCoverData(); err != nil {
-		return fmt.Errorf("parse ncm cover file failed: %w", err)
-	}
-
-	return d.readAudioData()
+	return n, err
 }
 
 func (d *Decoder) GetAudioExt() string {
@@ -204,10 +203,6 @@ func (d *Decoder) GetAudioExt() string {
 		}
 	}
 	return ""
-}
-
-func (d *Decoder) GetAudioData() []byte {
-	return d.audio
 }
 
 func (d *Decoder) GetCoverImage(ctx context.Context) ([]byte, error) {

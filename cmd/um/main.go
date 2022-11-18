@@ -1,8 +1,10 @@
 package main
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -153,10 +155,11 @@ func dealDirectory(inputDir string, outputDir string, skipNoop bool, removeSourc
 }
 
 func tryDecFile(inputFile string, outputDir string, allDec []common.NewDecoderFunc, removeSource bool) error {
-	file, err := os.ReadFile(inputFile)
+	file, err := os.Open(inputFile)
 	if err != nil {
 		return err
 	}
+	defer file.Close()
 
 	var dec common.Decoder
 	for _, decFunc := range allDec {
@@ -171,24 +174,30 @@ func tryDecFile(inputFile string, outputDir string, allDec []common.NewDecoderFu
 	if dec == nil {
 		return errors.New("no any decoder can resolve the file")
 	}
-	if err := dec.Decode(); err != nil {
-		return errors.New("failed while decoding: " + err.Error())
+
+	header := bytes.NewBuffer(nil)
+	_, err = io.CopyN(header, dec, 16)
+	if err != nil {
+		return fmt.Errorf("read header failed: %w", err)
 	}
 
-	outData := dec.GetAudioData()
-	outExt := dec.GetAudioExt()
-	if outExt == "" {
-		if ext, ok := common.SniffAll(outData); ok {
-			outExt = ext
-		} else {
-			outExt = ".mp3"
-		}
+	outExt := ".mp3"
+	if ext, ok := common.SniffAll(header.Bytes()); ok {
+		outExt = ext
 	}
 	filenameOnly := strings.TrimSuffix(filepath.Base(inputFile), filepath.Ext(inputFile))
 
 	outPath := filepath.Join(outputDir, filenameOnly+outExt)
-	err = os.WriteFile(outPath, outData, 0644)
+	outFile, err := os.OpenFile(outPath, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0644)
 	if err != nil {
+		return err
+	}
+	defer outFile.Close()
+
+	if _, err := io.Copy(outFile, header); err != nil {
+		return err
+	}
+	if _, err := io.Copy(outFile, dec); err != nil {
 		return err
 	}
 

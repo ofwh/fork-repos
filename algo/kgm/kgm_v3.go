@@ -3,24 +3,22 @@ package kgm
 import (
 	"crypto/md5"
 	"fmt"
-	"io"
+
+	"github.com/unlock-music/cli/algo/common"
 )
 
 // kgmCryptoV3 is kgm file crypto v3
 type kgmCryptoV3 struct {
 	slotBox []byte
 	fileBox []byte
-
-	rd     io.Reader
-	offset int
 }
 
 var kgmV3Slot2Key = map[uint32][]byte{
 	1: {0x6C, 0x2C, 0x2F, 0x27},
 }
 
-func newKgmCryptoV3(header *Header, body io.Reader) (io.Reader, error) {
-	c := &kgmCryptoV3{rd: body}
+func newKgmCryptoV3(header *header) (common.StreamDecoder, error) {
+	c := &kgmCryptoV3{}
 
 	slotKey, ok := kgmV3Slot2Key[header.CryptoSlot]
 	if !ok {
@@ -33,16 +31,7 @@ func newKgmCryptoV3(header *Header, body io.Reader) (io.Reader, error) {
 	return c, nil
 }
 
-func (d *kgmCryptoV3) Read(buf []byte) (int, error) {
-	n, err := d.rd.Read(buf)
-	if n > 0 {
-		d.decrypt(buf[:n], d.offset)
-		d.offset += n
-	}
-	return n, err
-}
-
-func (d *kgmCryptoV3) decrypt(b []byte, offset int) {
+func (d *kgmCryptoV3) Decrypt(b []byte, offset int) {
 	for i := 0; i < len(b); i++ {
 		b[i] ^= d.fileBox[(offset+i)%len(d.fileBox)]
 		b[i] ^= b[i] << 4
