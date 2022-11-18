@@ -1,8 +1,10 @@
 package qmc
 
 import (
+	"bytes"
 	"encoding/base64"
 	"errors"
+	"fmt"
 	"math"
 
 	"golang.org/x/crypto/tea"
@@ -16,16 +18,30 @@ func simpleMakeKey(salt byte, length int) []byte {
 	}
 	return keyBuf
 }
+
+const rawKeyPrefixV2 = "QQMusic EncV2,Key:"
+
 func DecryptKey(rawKey []byte) ([]byte, error) {
 	rawKeyDec := make([]byte, base64.StdEncoding.DecodedLen(len(rawKey)))
 	n, err := base64.StdEncoding.Decode(rawKeyDec, rawKey)
 	if err != nil {
 		return nil, err
 	}
-	if n < 16 {
+	rawKeyDec = rawKeyDec[:n]
+
+	if bytes.HasPrefix(rawKeyDec, []byte(rawKeyPrefixV2)) {
+		rawKeyDec, err = deriveKeyV2(bytes.TrimPrefix(rawKeyDec, []byte(rawKeyPrefixV2)))
+		if err != nil {
+			return nil, fmt.Errorf("deriveKeyV2 failed: %w", err)
+		}
+	}
+	return deriveKeyV1(rawKeyDec)
+}
+
+func deriveKeyV1(rawKeyDec []byte) ([]byte, error) {
+	if len(rawKeyDec) < 16 {
 		return nil, errors.New("key length is too short")
 	}
-	rawKeyDec = rawKeyDec[:n]
 
 	simpleKey := simpleMakeKey(106, 8)
 	teaKey := make([]byte, 16)
@@ -40,6 +56,37 @@ func DecryptKey(rawKey []byte) ([]byte, error) {
 	}
 	return append(rawKeyDec[:8], rs...), nil
 }
+
+var (
+	deriveV2Key1 = []byte{
+		0x33, 0x38, 0x36, 0x5A, 0x4A, 0x59, 0x21, 0x40,
+		0x23, 0x2A, 0x24, 0x25, 0x5E, 0x26, 0x29, 0x28,
+	}
+
+	deriveV2Key2 = []byte{
+		0x2A, 0x2A, 0x23, 0x21, 0x28, 0x23, 0x24, 0x25,
+		0x26, 0x5E, 0x61, 0x31, 0x63, 0x5A, 0x2C, 0x54,
+	}
+)
+
+func deriveKeyV2(raw []byte) ([]byte, error) {
+	buf, err := decryptTencentTea(raw, deriveV2Key1)
+	if err != nil {
+		return nil, err
+	}
+
+	buf, err = decryptTencentTea(buf, deriveV2Key2)
+	if err != nil {
+		return nil, err
+	}
+
+	n, err := base64.StdEncoding.Decode(buf, buf)
+	if err != nil {
+		return nil, err
+	}
+	return buf[:n], nil
+}
+
 func decryptTencentTea(inBuf []byte, key []byte) ([]byte, error) {
 	const saltLen = 2
 	const zeroLen = 7
@@ -59,9 +106,7 @@ func decryptTencentTea(inBuf []byte, key []byte) ([]byte, error) {
 	blk.Decrypt(destBuf, inBuf)
 	padLen := int(destBuf[0] & 0x7)
 	outLen := len(inBuf) - 1 - padLen - saltLen - zeroLen
-	if padLen+saltLen != 8 {
-		return nil, errors.New("invalid pad len")
-	}
+
 	out := make([]byte, outLen)
 
 	ivPrev := make([]byte, 8)
@@ -108,6 +153,7 @@ func decryptTencentTea(inBuf []byte, key []byte) ([]byte, error) {
 
 	return out, nil
 }
+
 func xor8Bytes(dst, a, b []byte) {
 	for i := 0; i < 8; i++ {
 		dst[i] = a[i] ^ b[i]

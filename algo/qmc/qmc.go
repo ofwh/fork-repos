@@ -131,6 +131,9 @@ func (d *Decoder) readRawKey(rawKeyLen int64) error {
 		return err
 	}
 
+	// clean suffix NULs
+	rawKeyData = bytes.TrimRight(rawKeyData, "\x00")
+
 	d.decodedKey, err = DecryptKey(rawKeyData)
 	if err != nil {
 		return err
