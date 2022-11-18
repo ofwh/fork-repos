@@ -4,8 +4,8 @@ import (
 	"bytes"
 	"encoding/binary"
 	"errors"
+
 	"github.com/unlock-music/cli/algo/common"
-	"github.com/unlock-music/cli/internal/logging"
 )
 
 var (
@@ -31,19 +31,19 @@ func NewDecoder(file []byte) common.Decoder {
 	}
 }
 
-func (d Decoder) GetCoverImage() []byte {
+func (d *Decoder) GetCoverImage() []byte {
 	return nil
 }
 
-func (d Decoder) GetAudioData() []byte {
+func (d *Decoder) GetAudioData() []byte {
 	return d.audio
 }
 
-func (d Decoder) GetAudioExt() string {
+func (d *Decoder) GetAudioExt() string {
 	return "" // use sniffer
 }
 
-func (d Decoder) GetMeta() common.Meta {
+func (d *Decoder) GetMeta() common.Meta {
 	return nil
 }
 
@@ -64,22 +64,14 @@ func (d *Decoder) Validate() error {
 
 func (d *Decoder) Decode() error {
 	headerLen := binary.LittleEndian.Uint32(d.file[0x10:0x14])
-	dataEncrypted := d.file[headerLen:]
-	lenData := len(dataEncrypted)
-	initMask()
-	if fullMaskLen < lenData {
-		logging.Log().Warn("The file is too large and the processed audio is incomplete, " +
-			"please report to us about this file at https://github.com/unlock-music/cli/issues")
-		lenData = fullMaskLen
-	}
-	d.audio = make([]byte, lenData)
+	d.audio = d.file[headerLen:]
 
-	for i := 0; i < lenData; i++ {
-		med8 := dataEncrypted[i] ^ d.key[i%17] ^ maskV2PreDef[i%(16*17)] ^ maskV2[i>>4]
+	for i := 0; i < len(d.audio); i++ {
+		med8 := d.audio[i] ^ d.key[i%17] ^ maskV2PreDef[i%(16*17)] ^ getKgmMaskV2(i>>4)
 		d.audio[i] = med8 ^ (med8&0xf)<<4
 	}
 	if d.isVpr {
-		for i := 0; i < lenData; i++ {
+		for i := 0; i < len(d.audio); i++ {
 			d.audio[i] ^= maskDiffVpr[i%17]
 		}
 	}
