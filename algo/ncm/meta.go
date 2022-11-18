@@ -1,8 +1,9 @@
 package ncm
 
 import (
-	"github.com/unlock-music/cli/algo/common"
 	"strings"
+
+	"unlock-music.dev/cli/algo/common"
 )
 
 type RawMeta interface {

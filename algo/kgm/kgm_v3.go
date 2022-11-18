@@ -4,7 +4,7 @@ import (
 	"crypto/md5"
 	"fmt"
 
-	"github.com/unlock-music/cli/algo/common"
+	"unlock-music.dev/cli/algo/common"
 )
 
 // kgmCryptoV3 is kgm file crypto v3

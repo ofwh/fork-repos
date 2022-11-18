@@ -12,8 +12,8 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/unlock-music/cli/algo/common"
-	"github.com/unlock-music/cli/internal/utils"
+	"unlock-music.dev/cli/algo/common"
+	"unlock-music.dev/cli/internal/utils"
 )
 
 const magicHeader = "CTENFDAM"

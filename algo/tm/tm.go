@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/unlock-music/cli/algo/common"
+	"unlock-music.dev/cli/algo/common"
 )
 
 var replaceHeader = []byte{0x00, 0x00, 0x00, 0x20, 0x66, 0x74, 0x79, 0x70}

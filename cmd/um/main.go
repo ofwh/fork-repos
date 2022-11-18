@@ -16,14 +16,14 @@ import (
 	"github.com/urfave/cli/v2"
 	"go.uber.org/zap"
 
-	"github.com/unlock-music/cli/algo/common"
-	_ "github.com/unlock-music/cli/algo/kgm"
-	_ "github.com/unlock-music/cli/algo/kwm"
-	_ "github.com/unlock-music/cli/algo/ncm"
-	_ "github.com/unlock-music/cli/algo/qmc"
-	_ "github.com/unlock-music/cli/algo/tm"
-	_ "github.com/unlock-music/cli/algo/xm"
-	"github.com/unlock-music/cli/internal/logging"
+	"unlock-music.dev/cli/algo/common"
+	_ "unlock-music.dev/cli/algo/kgm"
+	_ "unlock-music.dev/cli/algo/kwm"
+	_ "unlock-music.dev/cli/algo/ncm"
+	_ "unlock-music.dev/cli/algo/qmc"
+	_ "unlock-music.dev/cli/algo/tm"
+	_ "unlock-music.dev/cli/algo/xm"
+	"unlock-music.dev/cli/internal/logging"
 )
 
 var AppVersion = "v0.0.6"

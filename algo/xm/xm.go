@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/unlock-music/cli/algo/common"
+	"unlock-music.dev/cli/algo/common"
 )
 
 var (

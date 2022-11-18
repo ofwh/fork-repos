@@ -1,4 +1,4 @@
-module github.com/unlock-music/cli
+module unlock-music.dev/cli
 
 go 1.17
 

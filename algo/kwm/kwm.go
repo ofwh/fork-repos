@@ -9,7 +9,7 @@ import (
 	"strings"
 	"unicode"
 
-	"github.com/unlock-music/cli/algo/common"
+	"unlock-music.dev/cli/algo/common"
 )
 
 const magicHeader = "yeelion-kuwo-tme"
