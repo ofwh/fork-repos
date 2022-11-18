@@ -21,7 +21,7 @@ func simpleMakeKey(salt byte, length int) []byte {
 
 const rawKeyPrefixV2 = "QQMusic EncV2,Key:"
 
-func DecryptKey(rawKey []byte) ([]byte, error) {
+func deriveKey(rawKey []byte) ([]byte, error) {
 	rawKeyDec := make([]byte, base64.StdEncoding.DecodedLen(len(rawKey)))
 	n, err := base64.StdEncoding.Decode(rawKeyDec, rawKey)
 	if err != nil {

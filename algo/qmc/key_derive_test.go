@@ -43,13 +43,13 @@ func TestDecryptKey(t *testing.T) {
 			if err != nil {
 				t.Fatalf("load test data failed: %s", err)
 			}
-			got, err := DecryptKey(raw)
+			got, err := deriveKey(raw)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("DecryptKey() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("deriveKey() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 			if !reflect.DeepEqual(got, want) {
-				t.Errorf("DecryptKey() got = %v..., want %v...",
+				t.Errorf("deriveKey() got = %v..., want %v...",
 					string(got[:32]), string(want[:32]))
 			}
 		})

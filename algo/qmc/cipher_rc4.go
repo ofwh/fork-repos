@@ -12,9 +12,9 @@ type rc4Cipher struct {
 	n    int
 }
 
-// NewRC4Cipher creates and returns a new rc4Cipher. The key argument should be the
+// newRC4Cipher creates and returns a new rc4Cipher. The key argument should be the
 // RC4 key, at least 1 byte and at most 256 bytes.
-func NewRC4Cipher(key []byte) (*rc4Cipher, error) {
+func newRC4Cipher(key []byte) (*rc4Cipher, error) {
 	n := len(key)
 	if n == 0 {
 		return nil, errors.New("qmc/cipher_rc4: invalid key size")

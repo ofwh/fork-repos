@@ -28,18 +28,16 @@ type Decoder struct {
 // Validate should call before Read to check if the file is valid.
 func (d *Decoder) Read(p []byte) (int, error) {
 	n := len(p)
-	if d.audioLen-d.offset <= 0 {
+	if d.audioLen <= d.offset {
 		return 0, io.EOF
 	} else if d.audioLen-d.offset < n {
 		n = d.audioLen - d.offset
 	}
 	m, err := d.r.Read(p[:n])
-	if m == 0 {
-		return 0, err
+	if m > 0 {
+		d.cipher.Decrypt(p[:m], d.offset)
+		d.offset += m
 	}
-
-	d.cipher.Decrypt(p[:m], d.offset)
-	d.offset += m
 	return m, err
 }
 
@@ -51,17 +49,17 @@ func NewDecoder(r io.ReadSeeker) (*Decoder, error) {
 	}
 
 	if len(d.decodedKey) > 300 {
-		d.cipher, err = NewRC4Cipher(d.decodedKey)
+		d.cipher, err = newRC4Cipher(d.decodedKey)
 		if err != nil {
 			return nil, err
 		}
 	} else if len(d.decodedKey) != 0 {
-		d.cipher, err = NewMapCipher(d.decodedKey)
+		d.cipher, err = newMapCipher(d.decodedKey)
 		if err != nil {
 			return nil, err
 		}
 	} else {
-		d.cipher = NewStaticCipher()
+		d.cipher = newStaticCipher()
 	}
 
 	_, err = d.r.Seek(0, io.SeekStart)
@@ -110,7 +108,7 @@ func (d *Decoder) searchKey() error {
 		return errors.New("qmc: file with 'STag' suffix doesn't contains media key")
 	} else {
 		size := binary.LittleEndian.Uint32(buf)
-		if size < 0x300 && size != 0 {
+		if size <= 0xFFFF && size != 0 { // assume size is key len
 			return d.readRawKey(int64(size))
 		}
 		// try to use default static cipher
@@ -134,7 +132,7 @@ func (d *Decoder) readRawKey(rawKeyLen int64) error {
 	// clean suffix NULs
 	rawKeyData = bytes.TrimRight(rawKeyData, "\x00")
 
-	d.decodedKey, err = DecryptKey(rawKeyData)
+	d.decodedKey, err = deriveKey(rawKeyData)
 	if err != nil {
 		return err
 	}
@@ -169,7 +167,7 @@ func (d *Decoder) readRawMetaQTag() error {
 		return errors.New("invalid raw meta data")
 	}
 
-	d.decodedKey, err = DecryptKey([]byte(items[0]))
+	d.decodedKey, err = deriveKey([]byte(items[0]))
 	if err != nil {
 		return err
 	}

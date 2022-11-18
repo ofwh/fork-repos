@@ -39,7 +39,7 @@ func Test_mapCipher_Decrypt(t *testing.T) {
 			if err != nil {
 				t.Fatalf("load testing data failed: %s", err)
 			}
-			c, err := NewMapCipher(key)
+			c, err := newMapCipher(key)
 			if err != nil {
 				t.Errorf("init mapCipher failed: %s", err)
 				return

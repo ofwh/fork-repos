@@ -8,7 +8,7 @@ type mapCipher struct {
 	size int
 }
 
-func NewMapCipher(key []byte) (*mapCipher, error) {
+func newMapCipher(key []byte) (*mapCipher, error) {
 	if len(key) == 0 {
 		return nil, errors.New("qmc/cipher_map: invalid key size")
 	}

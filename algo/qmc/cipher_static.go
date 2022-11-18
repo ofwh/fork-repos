@@ -1,6 +1,6 @@
 package qmc
 
-func NewStaticCipher() *staticCipher {
+func newStaticCipher() *staticCipher {
 	return &defaultStaticCipher
 }
 

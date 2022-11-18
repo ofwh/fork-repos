@@ -37,7 +37,7 @@ func Test_rc4Cipher_Decrypt(t *testing.T) {
 			if err != nil {
 				t.Fatalf("load testing data failed: %s", err)
 			}
-			c, err := NewRC4Cipher(key)
+			c, err := newRC4Cipher(key)
 			if err != nil {
 				t.Errorf("init rc4Cipher failed: %s", err)
 				return
@@ -55,7 +55,7 @@ func BenchmarkRc4Cipher_Decrypt(b *testing.B) {
 	if err != nil {
 		b.Fatalf("load testing data failed: %s", err)
 	}
-	c, err := NewRC4Cipher(key)
+	c, err := newRC4Cipher(key)
 	if err != nil {
 		b.Errorf("init rc4Cipher failed: %s", err)
 		return
@@ -72,7 +72,7 @@ func Test_rc4Cipher_encFirstSegment(t *testing.T) {
 		t.Fatalf("load testing data failed: %s", err)
 	}
 	t.Run("first-block(0~128)", func(t *testing.T) {
-		c, err := NewRC4Cipher(key)
+		c, err := newRC4Cipher(key)
 		if err != nil {
 			t.Errorf("init rc4Cipher failed: %s", err)
 			return
@@ -91,7 +91,7 @@ func Test_rc4Cipher_encASegment(t *testing.T) {
 	}
 
 	t.Run("align-block(128~5120)", func(t *testing.T) {
-		c, err := NewRC4Cipher(key)
+		c, err := newRC4Cipher(key)
 		if err != nil {
 			t.Errorf("init rc4Cipher failed: %s", err)
 			return
@@ -102,7 +102,7 @@ func Test_rc4Cipher_encASegment(t *testing.T) {
 		}
 	})
 	t.Run("simple-block(5120~10240)", func(t *testing.T) {
-		c, err := NewRC4Cipher(key)
+		c, err := newRC4Cipher(key)
 		if err != nil {
 			t.Errorf("init rc4Cipher failed: %s", err)
 			return
