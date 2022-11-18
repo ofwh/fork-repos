@@ -23,12 +23,18 @@ func (d *Decoder) Validate() error {
 	if _, err := io.ReadFull(d.raw, header); err != nil {
 		return fmt.Errorf("tm read header: %w", err)
 	}
-	if !bytes.Equal(magicHeader, header[:len(magicHeader)]) {
-		return errors.New("tm: valid magic header")
+
+	if bytes.Equal(magicHeader, header[:len(magicHeader)]) { // replace m4a header
+		d.audio = io.MultiReader(bytes.NewReader(replaceHeader), d.raw)
+		return nil
 	}
 
-	d.audio = io.MultiReader(bytes.NewReader(replaceHeader), d.raw)
-	return nil
+	if _, ok := common.SniffAll(header); ok { // not encrypted
+		d.audio = io.MultiReader(bytes.NewReader(header), d.raw)
+		return nil
+	}
+
+	return errors.New("tm: valid magic header")
 }
 
 func (d *Decoder) Read(buf []byte) (int, error) {
@@ -37,14 +43,14 @@ func (d *Decoder) Read(buf []byte) (int, error) {
 
 func NewTmDecoder(rd io.ReadSeeker) common.Decoder {
 	return &Decoder{raw: rd}
-
 }
 
 func init() {
-	// QQ Music IOS M4a
+	// QQ Music IOS M4a (replace header)
 	common.RegisterDecoder("tm2", false, NewTmDecoder)
 	common.RegisterDecoder("tm6", false, NewTmDecoder)
-	// QQ Music IOS Mp3
-	common.RegisterDecoder("tm0", false, common.NewRawDecoder)
-	common.RegisterDecoder("tm3", false, common.NewRawDecoder)
+
+	// QQ Music IOS Mp3 (not encrypted)
+	common.RegisterDecoder("tm0", false, NewTmDecoder)
+	common.RegisterDecoder("tm3", false, NewTmDecoder)
 }
