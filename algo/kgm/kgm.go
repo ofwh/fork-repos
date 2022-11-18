@@ -19,25 +19,25 @@ func NewDecoder(rd io.ReadSeeker) common.Decoder {
 	return &Decoder{rd: rd}
 }
 
-var kgmCryptoInitializers = map[uint32]func(header *header) (common.StreamDecoder, error){
-	3: newKgmCryptoV3,
-}
-
-func (d *Decoder) Validate() error {
+func (d *Decoder) Validate() (err error) {
 	if err := d.header.FromFile(d.rd); err != nil {
 		return err
 	}
 	// TODO; validate crypto version
 
-	initializer, ok := kgmCryptoInitializers[d.header.CryptoVersion]
-	if !ok {
+	switch d.header.CryptoVersion {
+	case 3:
+		d.cipher, err = newKgmCryptoV3(&d.header)
+		if err != nil {
+			return fmt.Errorf("kgm init crypto v3: %w", err)
+		}
+	default:
 		return fmt.Errorf("kgm: unsupported crypto version %d", d.header.CryptoVersion)
 	}
 
-	var err error
-	d.cipher, err = initializer(&d.header)
-	if err != nil {
-		return fmt.Errorf("kgm: failed to initialize crypto: %w", err)
+	// prepare for read
+	if _, err := d.rd.Seek(int64(d.header.AudioOffset), io.SeekStart); err != nil {
+		return fmt.Errorf("kgm seek to audio: %w", err)
 	}
 
 	return nil
