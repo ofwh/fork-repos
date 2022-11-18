@@ -1,12 +1,17 @@
 package common
 
+import "context"
+
 type Decoder interface {
 	Validate() error
 	Decode() error
-	GetCoverImage() []byte
 	GetAudioData() []byte
 	GetAudioExt() string
 	GetMeta() Meta
+}
+
+type CoverImageGetter interface {
+	GetCoverImage(ctx context.Context) ([]byte, error)
 }
 
 type Meta interface {

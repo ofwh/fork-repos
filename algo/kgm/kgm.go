@@ -31,10 +31,6 @@ func NewDecoder(file []byte) common.Decoder {
 	}
 }
 
-func (d *Decoder) GetCoverImage() []byte {
-	return nil
-}
-
 func (d *Decoder) GetAudioData() []byte {
 	return d.audio
 }

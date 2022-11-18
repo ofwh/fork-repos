@@ -3,6 +3,7 @@ package tm
 import (
 	"bytes"
 	"errors"
+
 	"github.com/unlock-music/cli/algo/common"
 )
 
@@ -14,10 +15,6 @@ type Decoder struct {
 	audio       []byte
 	headerMatch bool
 	audioExt    string
-}
-
-func (d *Decoder) GetCoverImage() []byte {
-	return nil
 }
 
 func (d *Decoder) GetAudioData() []byte {

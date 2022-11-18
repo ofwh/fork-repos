@@ -3,9 +3,8 @@ package xm
 import (
 	"bytes"
 	"errors"
+
 	"github.com/unlock-music/cli/algo/common"
-	"github.com/unlock-music/cli/internal/logging"
-	"go.uber.org/zap"
 )
 
 var (
@@ -27,10 +26,6 @@ type Decoder struct {
 	outputExt string
 	mask      byte
 	audio     []byte
-}
-
-func (d *Decoder) GetCoverImage() []byte {
-	return nil
 }
 
 func (d *Decoder) GetAudioData() []byte {
@@ -69,9 +64,6 @@ func (d *Decoder) Validate() error {
 		return errors.New("detect unknown xm file type: " + string(d.file[4:8]))
 	}
 
-	if d.file[14] != 0 {
-		logging.Log().Warn("not a simple xm file", zap.Uint8("b[14]", d.file[14]))
-	}
 	d.headerLen = uint32(d.file[12]) | uint32(d.file[13])<<8 | uint32(d.file[14])<<16 // LittleEndian Unit24
 	if d.headerLen+16 > uint32(lenData) {
 		return ErrFileSize

@@ -28,10 +28,6 @@ func (d RawDecoder) Decode() error {
 	return nil
 }
 
-func (d RawDecoder) GetCoverImage() []byte {
-	return nil
-}
-
 func (d RawDecoder) GetAudioData() []byte {
 	return d.file
 }

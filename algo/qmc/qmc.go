@@ -244,10 +244,6 @@ func (c *compactDecoder) Decode() error {
 	return err
 }
 
-func (c *compactDecoder) GetCoverImage() []byte {
-	return nil
-}
-
 func (c *compactDecoder) GetAudioData() []byte {
 	return c.buf.Bytes()
 }

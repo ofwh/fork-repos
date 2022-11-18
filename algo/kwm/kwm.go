@@ -4,10 +4,11 @@ import (
 	"bytes"
 	"encoding/binary"
 	"errors"
-	"github.com/unlock-music/cli/algo/common"
 	"strconv"
 	"strings"
 	"unicode"
+
+	"github.com/unlock-music/cli/algo/common"
 )
 
 var (
@@ -29,10 +30,6 @@ type Decoder struct {
 	mask      []byte
 
 	audio []byte
-}
-
-func (d *Decoder) GetCoverImage() []byte {
-	return nil
 }
 
 func (d *Decoder) GetAudioData() []byte {

@@ -2,17 +2,18 @@ package ncm
 
 import (
 	"bytes"
+	"context"
 	"encoding/base64"
 	"encoding/binary"
 	"encoding/json"
 	"errors"
-	"github.com/unlock-music/cli/algo/common"
-	"github.com/unlock-music/cli/internal/logging"
-	"github.com/unlock-music/cli/internal/utils"
-	"go.uber.org/zap"
-	"io/ioutil"
+	"fmt"
+	"io"
 	"net/http"
 	"strings"
+
+	"github.com/unlock-music/cli/algo/common"
+	"github.com/unlock-music/cli/internal/utils"
 )
 
 var (
@@ -157,9 +158,9 @@ func (d *Decoder) readCoverData() error {
 	iCoverLen := binary.LittleEndian.Uint32(bCoverLen)
 	d.offsetAudio = coverLenStart + 4 + iCoverLen
 	if iCoverLen == 0 {
-		return errors.New("no any cover file found")
+		return nil
 	}
-	d.cover = d.file[coverLenStart+4 : 4+coverLenStart+iCoverLen]
+	d.cover = d.file[coverLenStart+4 : coverLenStart+4+iCoverLen]
 	return nil
 }
 
@@ -178,27 +179,25 @@ func (d *Decoder) readAudioData() error {
 
 func (d *Decoder) Decode() error {
 	if err := d.readKeyData(); err != nil {
-		return err
+		return fmt.Errorf("read key data failed: %w", err)
 	}
 	d.buildKeyBox()
 
-	err := d.readMetaData()
-	if err == nil {
-		err = d.parseMeta()
+	if err := d.readMetaData(); err != nil {
+		return fmt.Errorf("read meta date failed: %w", err)
 	}
-	if err != nil {
-		logging.Log().Warn("parse ncm meta file failed", zap.Error(err))
+	if err := d.parseMeta(); err != nil {
+		return fmt.Errorf("parse meta failed: %w", err)
 	}
 
-	err = d.readCoverData()
-	if err != nil {
-		logging.Log().Warn("parse ncm cover file failed", zap.Error(err))
+	if err := d.readCoverData(); err != nil {
+		return fmt.Errorf("parse ncm cover file failed: %w", err)
 	}
 
 	return d.readAudioData()
 }
 
-func (d Decoder) GetAudioExt() string {
+func (d *Decoder) GetAudioExt() string {
 	if d.meta != nil {
 		if format := d.meta.GetFormat(); format != "" {
 			return "." + d.meta.GetFormat()
@@ -207,40 +206,38 @@ func (d Decoder) GetAudioExt() string {
 	return ""
 }
 
-func (d Decoder) GetAudioData() []byte {
+func (d *Decoder) GetAudioData() []byte {
 	return d.audio
 }
 
-func (d Decoder) GetCoverImage() []byte {
+func (d *Decoder) GetCoverImage(ctx context.Context) ([]byte, error) {
 	if d.cover != nil {
-		return d.cover
+		return d.cover, nil
 	}
-	{
-		imgURL := d.meta.GetAlbumImageURL()
-		if d.meta != nil && !strings.HasPrefix(imgURL, "http") {
-			return nil
-		}
-		resp, err := http.Get(imgURL)
-		if err != nil {
-			logging.Log().Warn("download image failed", zap.Error(err), zap.String("url", imgURL))
-			return nil
-		}
-		defer resp.Body.Close()
-		if resp.StatusCode != http.StatusOK {
-			logging.Log().Warn("download image failed", zap.String("http", resp.Status),
-				zap.String("url", imgURL))
-			return nil
-		}
-		data, err := ioutil.ReadAll(resp.Body)
-		if err != nil {
-			logging.Log().Warn("download image failed", zap.Error(err), zap.String("url", imgURL))
-			return nil
-		}
-		return data
+	imgURL := d.meta.GetAlbumImageURL()
+	if d.meta != nil && !strings.HasPrefix(imgURL, "http") {
+		return nil, nil // no cover image
 	}
+
+	// fetch cover image
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, imgURL, nil)
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("download image failed: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("download image failed: unexpected http status %s", resp.Status)
+	}
+	data, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("download image failed: %w", err)
+	}
+	return data, nil
 }
 
-func (d Decoder) GetMeta() common.Meta {
+func (d *Decoder) GetMeta() common.Meta {
 	return d.meta
 }
 
