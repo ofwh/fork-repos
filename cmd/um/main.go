@@ -6,8 +6,10 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"runtime/debug"
 	"sort"
 	"strings"
+	"time"
 
 	"github.com/urfave/cli/v2"
 	"go.uber.org/zap"
@@ -25,10 +27,14 @@ import (
 var AppVersion = "v0.0.6"
 
 func main() {
+	module, ok := debug.ReadBuildInfo()
+	if ok && module.Main.Version != "(devel)" {
+		AppVersion = module.Main.Version
+	}
 	app := cli.App{
 		Name:     "Unlock Music CLI",
 		HelpName: "um",
-		Usage:    "Unlock your encrypted music file https://github.com/unlock-music/cli",
+		Usage:    "Unlock your encrypted music file https://git.unlock-music.dev/um/cli",
 		Version:  fmt.Sprintf("%s (%s,%s/%s)", AppVersion, runtime.Version(), runtime.GOOS, runtime.GOARCH),
 		Flags: []cli.Flag{
 			&cli.StringFlag{Name: "input", Aliases: []string{"i"}, Usage: "path to input file or dir", Required: false},
@@ -39,7 +45,7 @@ func main() {
 		},
 
 		Action:          appMain,
-		Copyright:       "Copyright (c) 2020 - 2021 Unlock Music https://github.com/unlock-music/cli/blob/master/LICENSE",
+		Copyright:       fmt.Sprintf("Copyright (c) 2020 - %d Unlock Music https://git.unlock-music.dev/um/cli/src/branch/master/LICENSE", time.Now().Year()),
 		HideHelpCommand: true,
 		UsageText:       "um [-o /path/to/output/dir] [--extra-flags] [-i] /path/to/input",
 	}
@@ -138,7 +144,7 @@ func dealDirectory(inputDir string, outputDir string, skipNoop bool, removeSourc
 
 		err := tryDecFile(filepath.Join(inputDir, item.Name()), outputDir, allDec, removeSource)
 		if err != nil {
-			logging.Log().Error("conversion failed", zap.String("source", item.Name()))
+			logging.Log().With(zap.Error(err)).Error("conversion failed", zap.String("source", item.Name()))
 		}
 	}
 	return nil
@@ -155,9 +161,10 @@ func tryDecFile(inputFile string, outputDir string, allDec []common.NewDecoderFu
 		dec = decFunc(file)
 		if err := dec.Validate(); err == nil {
 			break
+		} else {
+			logging.Log().With(zap.Error(err)).Warn("try decode failed")
+			dec = nil
 		}
-		logging.Log().Warn("try decode failed", zap.Error(err))
-		dec = nil
 	}
 	if dec == nil {
 		return errors.New("no any decoder can resolve the file")
