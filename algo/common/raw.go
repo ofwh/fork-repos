@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"strings"
 )
 
 type RawDecoder struct {
@@ -26,13 +25,12 @@ func (d *RawDecoder) Validate() error {
 		return fmt.Errorf("seek file failed: %v", err)
 	}
 
-	for ext, sniffer := range snifferRegistry {
-		if sniffer(header) {
-			d.audioExt = strings.ToLower(ext)
-			return nil
-		}
+	var ok bool
+	d.audioExt, ok = SniffAll(header)
+	if !ok {
+		return errors.New("raw: sniff audio type failed")
 	}
-	return errors.New("audio doesn't recognized")
+	return nil
 }
 
 func (d *RawDecoder) Read(p []byte) (n int, err error) {
