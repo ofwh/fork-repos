@@ -91,7 +91,7 @@ func (d *Decoder) Validate() error {
 	return nil
 }
 
-func (d Decoder) GetFileExt() string {
+func (d *Decoder) GetFileExt() string {
 	return d.fileExt
 }
 
@@ -105,20 +105,18 @@ func (d *Decoder) searchKey() error {
 		return err
 	}
 	if string(buf) == "QTag" {
-		if err := d.readRawMetaQTag(); err != nil {
-			return err
-		}
+		return d.readRawMetaQTag()
+	} else if string(buf) == "STag" {
+		return errors.New("qmc: file with 'STag' suffix doesn't contains media key")
 	} else {
 		size := binary.LittleEndian.Uint32(buf)
 		if size < 0x300 && size != 0 {
 			return d.readRawKey(int64(size))
-		} else {
-			// try to use default static cipher
-			d.audioLen = int(fileSizeM4 + 4)
-			return nil
 		}
+		// try to use default static cipher
+		d.audioLen = int(fileSizeM4 + 4)
+		return nil
 	}
-	return nil
 }
 
 func (d *Decoder) readRawKey(rawKeyLen int64) error {
