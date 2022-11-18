@@ -19,10 +19,10 @@ var (
 )
 
 type Decoder struct {
-	file  []byte
-	key   []byte
-	isVpr bool
-	audio []byte
+	file     []byte
+	key      []byte
+	maskFunc func(int) byte
+	audio    []byte
 }
 
 func NewDecoder(file []byte) common.Decoder {
@@ -49,9 +49,9 @@ func (d *Decoder) GetMeta() common.Meta {
 
 func (d *Decoder) Validate() error {
 	if bytes.Equal(kgmHeader, d.file[:len(kgmHeader)]) {
-		d.isVpr = false
+		d.maskFunc = getKgmMask
 	} else if bytes.Equal(vprHeader, d.file[:len(vprHeader)]) {
-		d.isVpr = true
+		d.maskFunc = getVprMask
 	} else {
 		return ErrKgmMagicHeader
 	}
@@ -67,14 +67,10 @@ func (d *Decoder) Decode() error {
 	d.audio = d.file[headerLen:]
 
 	for i := 0; i < len(d.audio); i++ {
-		med8 := d.audio[i] ^ d.key[i%17] ^ maskV2PreDef[i%(16*17)] ^ getKgmMaskV2(i>>4)
+		med8 := d.audio[i] ^ d.key[i%17] ^ d.maskFunc(i)
 		d.audio[i] = med8 ^ (med8&0xf)<<4
 	}
-	if d.isVpr {
-		for i := 0; i < len(d.audio); i++ {
-			d.audio[i] ^= maskDiffVpr[i%17]
-		}
-	}
+
 	return nil
 }
 func init() {
