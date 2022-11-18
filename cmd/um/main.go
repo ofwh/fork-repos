@@ -26,6 +26,8 @@ import (
 
 var AppVersion = "v0.0.6"
 
+var logger, _ = logging.NewZapLogger() // TODO: inject logger to application, instead of using global logger
+
 func main() {
 	module, ok := debug.ReadBuildInfo()
 	if ok && module.Main.Version != "(devel)" {
@@ -51,11 +53,11 @@ func main() {
 	}
 	err := app.Run(os.Args)
 	if err != nil {
-		logging.Log().Fatal("run app failed", zap.Error(err))
+		logger.Fatal("run app failed", zap.Error(err))
 	}
 }
 func printSupportedExtensions() {
-	exts := []string{}
+	var exts []string
 	for ext := range common.DecoderRegistry {
 		exts = append(exts, ext)
 	}
@@ -121,7 +123,7 @@ func appMain(c *cli.Context) (err error) {
 	} else {
 		allDec := common.GetDecoder(inputStat.Name(), skipNoop)
 		if len(allDec) == 0 {
-			logging.Log().Fatal("skipping while no suitable decoder")
+			logger.Fatal("skipping while no suitable decoder")
 		}
 		return tryDecFile(input, output, allDec, removeSource)
 	}
@@ -138,13 +140,13 @@ func dealDirectory(inputDir string, outputDir string, skipNoop bool, removeSourc
 		}
 		allDec := common.GetDecoder(item.Name(), skipNoop)
 		if len(allDec) == 0 {
-			logging.Log().Info("skipping while no suitable decoder", zap.String("file", item.Name()))
+			logger.Info("skipping while no suitable decoder", zap.String("file", item.Name()))
 			continue
 		}
 
 		err := tryDecFile(filepath.Join(inputDir, item.Name()), outputDir, allDec, removeSource)
 		if err != nil {
-			logging.Log().With(zap.Error(err)).Error("conversion failed", zap.String("source", item.Name()))
+			logger.Error("conversion failed", zap.String("source", item.Name()), zap.Error(err))
 		}
 	}
 	return nil
@@ -162,7 +164,7 @@ func tryDecFile(inputFile string, outputDir string, allDec []common.NewDecoderFu
 		if err := dec.Validate(); err == nil {
 			break
 		} else {
-			logging.Log().With(zap.Error(err)).Warn("try decode failed")
+			logger.Warn("try decode failed", zap.Error(err))
 			dec = nil
 		}
 	}
@@ -196,9 +198,9 @@ func tryDecFile(inputFile string, outputDir string, allDec []common.NewDecoderFu
 		if err != nil {
 			return err
 		}
-		logging.Log().Info("successfully converted, and source file is removed", zap.String("source", inputFile), zap.String("destination", outPath))
+		logger.Info("successfully converted, and source file is removed", zap.String("source", inputFile), zap.String("destination", outPath))
 	} else {
-		logging.Log().Info("successfully converted", zap.String("source", inputFile), zap.String("destination", outPath))
+		logger.Info("successfully converted", zap.String("source", inputFile), zap.String("destination", outPath))
 	}
 
 	return nil
