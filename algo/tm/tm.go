@@ -13,9 +13,10 @@ var replaceHeader = []byte{0x00, 0x00, 0x00, 0x20, 0x66, 0x74, 0x79, 0x70}
 var magicHeader = []byte{0x51, 0x51, 0x4D, 0x55} //0x15, 0x1D, 0x1A, 0x21
 
 type Decoder struct {
-	raw    io.ReadSeeker
+	raw io.ReadSeeker // raw is the original file reader
+
 	offset int
-	audio  io.Reader
+	audio  io.Reader // audio is the decrypted audio data
 }
 
 func (d *Decoder) Validate() error {

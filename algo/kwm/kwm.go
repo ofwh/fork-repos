@@ -16,9 +16,9 @@ const magicHeader = "yeelion-kuwo-tme"
 const keyPreDefined = "MoOtOiTvINGwd2E6n0E1i7L5t2IoOoNk"
 
 type Decoder struct {
-	cipher common.StreamDecoder
+	rd io.ReadSeeker
 
-	rd     io.ReadSeeker
+	cipher common.StreamDecoder
 	offset int
 
 	outputExt string
@@ -33,6 +33,8 @@ func NewDecoder(rd io.ReadSeeker) common.Decoder {
 	return &Decoder{rd: rd}
 }
 
+// Validate checks if the file is a valid Kuwo .kw file.
+// rd will be seeked to the beginning of the encrypted audio.
 func (d *Decoder) Validate() error {
 	header := make([]byte, 0x400) // kwm header is fixed to 1024 bytes
 	_, err := io.ReadFull(d.rd, header)

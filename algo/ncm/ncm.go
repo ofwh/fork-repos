@@ -36,22 +36,19 @@ func NewDecoder(rd io.ReadSeeker) common.Decoder {
 }
 
 type Decoder struct {
-	rd     io.ReadSeeker
+	rd io.ReadSeeker // rd is the original file reader
+
 	offset int
-
 	cipher common.StreamDecoder
-
-	key []byte
-	box []byte
 
 	metaRaw  []byte
 	metaType string
 	meta     RawMeta
-
-	cover []byte
-	audio []byte
+	cover    []byte
 }
 
+// Validate checks if the file is a valid Netease .ncm file.
+// rd will be seeked to the beginning of the encrypted audio.
 func (d *Decoder) Validate() error {
 	if err := d.validateMagicHeader(); err != nil {
 		return err

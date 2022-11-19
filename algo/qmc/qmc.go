@@ -13,14 +13,15 @@ import (
 )
 
 type Decoder struct {
-	raw      io.ReadSeeker
-	audio    io.Reader
-	offset   int
-	audioLen int
+	raw io.ReadSeeker // raw is the original file reader
 
-	cipher common.StreamDecoder
+	audio    io.Reader // audio is the encrypted audio data
+	audioLen int       // audioLen is the audio data length
+	offset   int       // offset is the current audio read position
 
-	decodedKey    []byte
+	decodedKey []byte // decodedKey is the decoded key for cipher
+	cipher     common.StreamDecoder
+
 	rawMetaExtra1 int
 	rawMetaExtra2 int
 }
@@ -100,23 +101,29 @@ func (d *Decoder) searchKey() error {
 	if err != nil {
 		return err
 	}
-	buf, err := io.ReadAll(io.LimitReader(d.raw, 4))
-	if err != nil {
+
+	suffixBuf := make([]byte, 4)
+	if _, err := io.ReadFull(d.raw, suffixBuf); err != nil {
 		return err
 	}
-	if string(buf) == "QTag" {
+
+	switch string(suffixBuf) {
+	case "QTag":
 		return d.readRawMetaQTag()
-	} else if string(buf) == "STag" {
+	case "STag":
 		return errors.New("qmc: file with 'STag' suffix doesn't contains media key")
-	} else {
-		size := binary.LittleEndian.Uint32(buf)
+	default:
+		size := binary.LittleEndian.Uint32(suffixBuf)
+
 		if size <= 0xFFFF && size != 0 { // assume size is key len
 			return d.readRawKey(int64(size))
 		}
+
 		// try to use default static cipher
 		d.audioLen = int(fileSizeM4 + 4)
 		return nil
 	}
+
 }
 
 func (d *Decoder) readRawKey(rawKeyLen int64) error {

@@ -22,13 +22,11 @@ var (
 )
 
 type Decoder struct {
-	rd     io.ReadSeeker
+	rd     io.ReadSeeker // rd is the original file reader
 	offset int
 
 	cipher    common.StreamDecoder
 	outputExt string
-	mask      byte
-	audio     []byte
 }
 
 func (d *Decoder) GetAudioExt() string {
@@ -43,6 +41,8 @@ func NewDecoder(rd io.ReadSeeker) common.Decoder {
 	return &Decoder{rd: rd}
 }
 
+// Validate checks if the file is a valid xiami .xm file.
+// rd will set to the beginning of the encrypted audio data.
 func (d *Decoder) Validate() error {
 	header := make([]byte, 16) // xm header is fixed to 16 bytes
 

@@ -8,17 +8,20 @@ import (
 )
 
 type Decoder struct {
-	header header
-	cipher common.StreamDecoder
+	rd io.ReadSeeker
 
-	rd     io.ReadSeeker
+	cipher common.StreamDecoder
 	offset int
+
+	header header
 }
 
 func NewDecoder(rd io.ReadSeeker) common.Decoder {
 	return &Decoder{rd: rd}
 }
 
+// Validate checks if the file is a valid Kugou (.kgm, .vpr, .kgma) file.
+// rd will be seeked to the beginning of the encrypted audio.
 func (d *Decoder) Validate() (err error) {
 	if err := d.header.FromFile(d.rd); err != nil {
 		return err
