@@ -45,11 +45,11 @@ func TestMflac0Decoder_Read(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			d, err := NewDecoder(bytes.NewReader(raw))
-			if err != nil {
-				t.Error(err)
-				return
+			d := NewDecoder(bytes.NewReader(raw))
+			if err := d.Validate(); err != nil {
+				t.Errorf("validate file error = %v", err)
 			}
+
 			buf := make([]byte, len(target))
 			if _, err := io.ReadFull(d, buf); err != nil {
 				t.Errorf("read bytes from decoder error = %v", err)
@@ -81,18 +81,11 @@ func TestMflac0Decoder_Validate(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			d, err := NewDecoder(bytes.NewReader(raw))
-			if err != nil {
-				t.Error(err)
-				return
-			}
+			d := NewDecoder(bytes.NewReader(raw))
 
 			if err := d.Validate(); err != nil {
 				t.Errorf("read bytes from decoder error = %v", err)
 				return
-			}
-			if tt.fileExt != d.GetFileExt() {
-				t.Errorf("Decrypt() got = %v, want %v", d.GetFileExt(), tt.fileExt)
 			}
 		})
 	}
