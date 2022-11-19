@@ -1,4 +1,4 @@
-package xm
+package xiami
 
 type xmCipher struct {
 	mask           byte
