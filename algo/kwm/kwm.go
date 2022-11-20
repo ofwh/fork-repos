@@ -12,7 +12,8 @@ import (
 	"unlock-music.dev/cli/algo/common"
 )
 
-const magicHeader = "yeelion-kuwo-tme"
+const magicHeader1 = "yeelion-kuwo-tme"
+const magicHeader2 = "yeelion-kuwo\x00\x00\x00\x00"
 const keyPreDefined = "MoOtOiTvINGwd2E6n0E1i7L5t2IoOoNk"
 
 type Decoder struct {
@@ -43,7 +44,9 @@ func (d *Decoder) Validate() error {
 	}
 
 	// check magic header, 0x00 - 0x0F
-	if !bytes.Equal([]byte(magicHeader), header[:len(magicHeader)]) {
+	magicHeader := header[:0x10]
+	if !bytes.Equal([]byte(magicHeader1), magicHeader) &&
+		!bytes.Equal([]byte(magicHeader2), magicHeader) {
 		return errors.New("kwm magic header not matched")
 	}
 
