@@ -23,6 +23,7 @@ import (
 	_ "unlock-music.dev/cli/algo/qmc"
 	_ "unlock-music.dev/cli/algo/tm"
 	_ "unlock-music.dev/cli/algo/xiami"
+	_ "unlock-music.dev/cli/algo/ximalaya"
 	"unlock-music.dev/cli/internal/logging"
 )
 
