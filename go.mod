@@ -1,12 +1,11 @@
 module unlock-music.dev/cli
 
-go 1.19
+go 1.17
 
 require (
 	github.com/urfave/cli/v2 v2.23.5
 	go.uber.org/zap v1.23.0
 	golang.org/x/crypto v0.3.0
-	golang.org/x/exp v0.0.0-20221114191408-850992195362
 )
 
 require (
