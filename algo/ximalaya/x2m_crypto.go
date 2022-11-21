@@ -15,10 +15,10 @@ var x2mScrambleTableBytes []byte
 
 func init() {
 	if len(x2mScrambleTableBytes) != 2*x2mHeaderSize {
-		panic("invalid x3m scramble table")
+		panic("invalid x2m scramble table")
 	}
-	for i := range x3mScrambleTable {
-		x3mScrambleTable[i] = binary.LittleEndian.Uint16(x2mScrambleTableBytes[i*2:])
+	for i := range x2mScrambleTable {
+		x2mScrambleTable[i] = binary.LittleEndian.Uint16(x2mScrambleTableBytes[i*2:])
 	}
 }
 
