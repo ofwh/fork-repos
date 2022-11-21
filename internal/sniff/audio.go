@@ -13,7 +13,7 @@ type Sniffer interface {
 
 var audioExtensions = map[string]Sniffer{
 	// ref: https://mimesniff.spec.whatwg.org
-	".mp3": prefixSniffer("ID3"),
+	".mp3": prefixSniffer("ID3"), // todo: check mp3 without ID3v2 tag
 	".ogg": prefixSniffer("OggS"),
 	".wav": prefixSniffer("RIFF"),
 

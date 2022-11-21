@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"context"
 	"errors"
 	"fmt"
 	"io"
@@ -206,6 +207,25 @@ func tryDecFile(inputFile string, outputDir string, allDec []common.NewDecoderFu
 	}
 	if _, err := io.Copy(outFile, dec); err != nil {
 		return err
+	}
+
+	if coverGetter, ok := dec.(common.CoverImageGetter); ok {
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer cancel()
+
+		cover, err := coverGetter.GetCoverImage(ctx)
+		if err != nil {
+			logger.Warn("get cover image failed", zap.Error(err))
+		} else if imgExt, ok := sniff.ImageExtension(cover); !ok {
+			logger.Warn("sniff cover image type failed", zap.Error(err))
+		} else {
+			coverPath := filepath.Join(outputDir, inFilename+imgExt)
+			err = os.WriteFile(coverPath, cover, 0644)
+			if err != nil {
+				logger.Warn("write cover image failed", zap.Error(err))
+			}
+		}
+
 	}
 
 	// if source file need to be removed
