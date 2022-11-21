@@ -29,6 +29,7 @@ func RegisterDecoder(ext string, noop bool, dispatchFunc NewDecoderFunc) {
 	DecoderRegistry[ext] = append(DecoderRegistry[ext],
 		decoderItem{noop: noop, decoder: dispatchFunc})
 }
+
 func GetDecoder(filename string, skipNoop bool) (rs []NewDecoderFunc) {
 	ext := strings.ToLower(strings.TrimLeft(filepath.Ext(filename), "."))
 	for _, dec := range DecoderRegistry[ext] {

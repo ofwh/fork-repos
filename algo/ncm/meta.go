@@ -6,12 +6,17 @@ import (
 	"unlock-music.dev/cli/algo/common"
 )
 
-type RawMeta interface {
-	common.Meta
+type ncmMeta interface {
+	common.AudioMeta
+
+	// GetFormat return the audio format, e.g. mp3, flac
 	GetFormat() string
+
+	// GetAlbumImageURL return the album image url
 	GetAlbumImageURL() string
 }
-type RawMetaMusic struct {
+
+type ncmMetaMusic struct {
 	Format        string          `json:"format"`
 	MusicID       int             `json:"musicId"`
 	MusicName     string          `json:"musicName"`
@@ -28,10 +33,11 @@ type RawMetaMusic struct {
 	TransNames    []interface{}   `json:"transNames"`
 }
 
-func (m RawMetaMusic) GetAlbumImageURL() string {
+func (m *ncmMetaMusic) GetAlbumImageURL() string {
 	return m.AlbumPic
 }
-func (m RawMetaMusic) GetArtists() (artists []string) {
+
+func (m *ncmMetaMusic) GetArtists() (artists []string) {
 	for _, artist := range m.Artist {
 		for _, item := range artist {
 			name, ok := item.(string)
@@ -43,22 +49,23 @@ func (m RawMetaMusic) GetArtists() (artists []string) {
 	return
 }
 
-func (m RawMetaMusic) GetTitle() string {
+func (m *ncmMetaMusic) GetTitle() string {
 	return m.MusicName
 }
 
-func (m RawMetaMusic) GetAlbum() string {
+func (m *ncmMetaMusic) GetAlbum() string {
 	return m.Album
 }
-func (m RawMetaMusic) GetFormat() string {
+
+func (m *ncmMetaMusic) GetFormat() string {
 	return m.Format
 }
 
 //goland:noinspection SpellCheckingInspection
-type RawMetaDJ struct {
+type ncmMetaDJ struct {
 	ProgramID          int          `json:"programId"`
 	ProgramName        string       `json:"programName"`
-	MainMusic          RawMetaMusic `json:"mainMusic"`
+	MainMusic          ncmMetaMusic `json:"mainMusic"`
 	DjID               int          `json:"djId"`
 	DjName             string       `json:"djName"`
 	DjAvatarURL        string       `json:"djAvatarUrl"`
@@ -80,32 +87,32 @@ type RawMetaDJ struct {
 	RadioPurchaseCount int          `json:"radioPurchaseCount"`
 }
 
-func (m RawMetaDJ) GetArtists() []string {
+func (m *ncmMetaDJ) GetArtists() []string {
 	if m.DjName != "" {
 		return []string{m.DjName}
 	}
 	return m.MainMusic.GetArtists()
 }
 
-func (m RawMetaDJ) GetTitle() string {
+func (m *ncmMetaDJ) GetTitle() string {
 	if m.ProgramName != "" {
 		return m.ProgramName
 	}
 	return m.MainMusic.GetTitle()
 }
 
-func (m RawMetaDJ) GetAlbum() string {
+func (m *ncmMetaDJ) GetAlbum() string {
 	if m.Brand != "" {
 		return m.Brand
 	}
 	return m.MainMusic.GetAlbum()
 }
 
-func (m RawMetaDJ) GetFormat() string {
+func (m *ncmMetaDJ) GetFormat() string {
 	return m.MainMusic.GetFormat()
 }
 
-func (m RawMetaDJ) GetAlbumImageURL() string {
+func (m *ncmMetaDJ) GetAlbumImageURL() string {
 	if strings.HasPrefix(m.MainMusic.GetAlbumImageURL(), "http") {
 		return m.MainMusic.GetAlbumImageURL()
 	}

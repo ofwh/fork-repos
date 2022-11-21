@@ -41,7 +41,7 @@ type Decoder struct {
 
 	metaRaw  []byte
 	metaType string
-	meta     RawMeta
+	meta     ncmMeta
 	cover    []byte
 }
 
@@ -172,10 +172,10 @@ func (d *Decoder) readCoverData() error {
 func (d *Decoder) parseMeta() error {
 	switch d.metaType {
 	case "music":
-		d.meta = new(RawMetaMusic)
+		d.meta = new(ncmMetaMusic)
 		return json.Unmarshal(d.metaRaw, d.meta)
 	case "dj":
-		d.meta = new(RawMetaDJ)
+		d.meta = new(ncmMetaDJ)
 		return json.Unmarshal(d.metaRaw, d.meta)
 	default:
 		return errors.New("unknown ncm meta type: " + d.metaType)
@@ -232,8 +232,8 @@ func (d *Decoder) GetCoverImage(ctx context.Context) ([]byte, error) {
 	return d.cover, nil
 }
 
-func (d *Decoder) GetMeta() common.Meta {
-	return d.meta
+func (d *Decoder) GetAudioMeta(_ context.Context) (common.AudioMeta, error) {
+	return d.meta, nil
 }
 
 func init() {
