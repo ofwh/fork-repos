@@ -4,6 +4,8 @@ import (
 	"errors"
 	"fmt"
 	"io"
+
+	"unlock-music.dev/cli/internal/sniff"
 )
 
 type RawDecoder struct {
@@ -26,7 +28,7 @@ func (d *RawDecoder) Validate() error {
 	}
 
 	var ok bool
-	d.audioExt, ok = SniffAll(header)
+	d.audioExt, ok = sniff.AudioExtension(header)
 	if !ok {
 		return errors.New("raw: sniff audio type failed")
 	}

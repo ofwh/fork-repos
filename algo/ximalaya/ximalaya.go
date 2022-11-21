@@ -6,6 +6,7 @@ import (
 	"io"
 
 	"unlock-music.dev/cli/algo/common"
+	"unlock-music.dev/cli/internal/sniff"
 )
 
 type Decoder struct {
@@ -27,7 +28,7 @@ func (d *Decoder) Validate() error {
 
 	{ // try to decode with x2m
 		header := decryptX2MHeader(encryptedHeader)
-		if _, ok := common.SniffAll(header); ok {
+		if _, ok := sniff.AudioExtension(header); ok {
 			d.audio = io.MultiReader(bytes.NewReader(header), d.rd)
 			return nil
 		}
@@ -36,7 +37,7 @@ func (d *Decoder) Validate() error {
 	{ // try to decode with x3m
 		// not read file again, since x2m and x3m have the same header size
 		header := decryptX3MHeader(encryptedHeader)
-		if _, ok := common.SniffAll(header); ok {
+		if _, ok := sniff.AudioExtension(header); ok {
 			d.audio = io.MultiReader(bytes.NewReader(header), d.rd)
 			return nil
 		}

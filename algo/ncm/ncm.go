@@ -206,8 +206,12 @@ func (d *Decoder) GetCoverImage(ctx context.Context) ([]byte, error) {
 	if d.cover != nil {
 		return d.cover, nil
 	}
+
+	if d.meta == nil {
+		return nil, errors.New("ncm meta not found")
+	}
 	imgURL := d.meta.GetAlbumImageURL()
-	if d.meta != nil && !strings.HasPrefix(imgURL, "http") {
+	if !strings.HasPrefix(imgURL, "http") {
 		return nil, nil // no cover image
 	}
 
@@ -215,18 +219,19 @@ func (d *Decoder) GetCoverImage(ctx context.Context) ([]byte, error) {
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, imgURL, nil)
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
-		return nil, fmt.Errorf("download image failed: %w", err)
+		return nil, fmt.Errorf("ncm download image failed: %w", err)
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("download image failed: unexpected http status %s", resp.Status)
+		return nil, fmt.Errorf("ncm download image failed: unexpected http status %s", resp.Status)
 	}
-	data, err := io.ReadAll(resp.Body)
+	d.cover, err = io.ReadAll(resp.Body)
 	if err != nil {
-		return nil, fmt.Errorf("download image failed: %w", err)
+		return nil, fmt.Errorf("ncm download image failed: %w", err)
 	}
-	return data, nil
+
+	return d.cover, nil
 }
 
 func (d *Decoder) GetMeta() common.Meta {

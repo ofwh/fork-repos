@@ -7,6 +7,7 @@ import (
 	"io"
 
 	"unlock-music.dev/cli/algo/common"
+	"unlock-music.dev/cli/internal/sniff"
 )
 
 var replaceHeader = []byte{0x00, 0x00, 0x00, 0x20, 0x66, 0x74, 0x79, 0x70}
@@ -30,7 +31,7 @@ func (d *Decoder) Validate() error {
 		return nil
 	}
 
-	if _, ok := common.SniffAll(header); ok { // not encrypted
+	if _, ok := sniff.AudioExtension(header); ok { // not encrypted
 		d.audio = io.MultiReader(bytes.NewReader(header), d.raw)
 		return nil
 	}

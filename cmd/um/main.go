@@ -25,6 +25,7 @@ import (
 	_ "unlock-music.dev/cli/algo/xiami"
 	_ "unlock-music.dev/cli/algo/ximalaya"
 	"unlock-music.dev/cli/internal/logging"
+	"unlock-music.dev/cli/internal/sniff"
 )
 
 var AppVersion = "v0.0.6"
@@ -182,13 +183,10 @@ func tryDecFile(inputFile string, outputDir string, allDec []common.NewDecoderFu
 		return fmt.Errorf("read header failed: %w", err)
 	}
 
-	outExt := ".mp3"
-	if ext, ok := common.SniffAll(header.Bytes()); ok {
-		outExt = ext
-	}
-	filenameOnly := strings.TrimSuffix(filepath.Base(inputFile), filepath.Ext(inputFile))
+	outExt := sniff.AudioExtensionWithFallback(header.Bytes(), ".mp3")
+	inFilename := strings.TrimSuffix(filepath.Base(inputFile), filepath.Ext(inputFile))
 
-	outPath := filepath.Join(outputDir, filenameOnly+outExt)
+	outPath := filepath.Join(outputDir, inFilename+outExt)
 	outFile, err := os.OpenFile(outPath, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0644)
 	if err != nil {
 		return err

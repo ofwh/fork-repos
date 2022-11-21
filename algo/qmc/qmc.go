@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"unlock-music.dev/cli/algo/common"
+	"unlock-music.dev/cli/internal/sniff"
 )
 
 type Decoder struct {
@@ -89,7 +90,7 @@ func (d *Decoder) validateDecode() error {
 	}
 
 	d.cipher.Decrypt(buf, 0)
-	_, ok := common.SniffAll(buf)
+	_, ok := sniff.AudioExtension(buf)
 	if !ok {
 		return errors.New("qmc: detect file type failed")
 	}
