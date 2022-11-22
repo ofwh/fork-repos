@@ -27,9 +27,17 @@ type Decoder struct {
 	decodedKey []byte // decodedKey is the decoded key for cipher
 	cipher     common.StreamDecoder
 
-	rawMetaExtra1 int
+	songID        int
 	rawMetaExtra2 int
 
+	albumID       int
+	albumMediaID  string
+
+	// cache
+	meta  common.AudioMeta
+	cover []byte
+
+	// provider
 	logger *zap.Logger
 }
 
@@ -199,7 +207,7 @@ func (d *Decoder) readRawMetaQTag() error {
 		return err
 	}
 
-	d.rawMetaExtra1, err = strconv.Atoi(items[1])
+	d.songID, err = strconv.Atoi(items[1])
 	if err != nil {
 		return err
 	}

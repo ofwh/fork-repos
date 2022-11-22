@@ -209,6 +209,22 @@ func tryDecFile(inputFile string, outputDir string, allDec []common.NewDecoderFu
 		return err
 	}
 
+	if audioMetaGetter, ok := dec.(common.AudioMetaGetter); ok {
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer cancel()
+
+		meta, err := audioMetaGetter.GetAudioMeta(ctx)
+		if err != nil {
+			logger.Warn("get audio meta failed", zap.Error(err))
+		} else {
+			logger.Info("audio metadata",
+				zap.String("title", meta.GetTitle()),
+				zap.Strings("artists", meta.GetArtists()),
+				zap.String("album", meta.GetAlbum()),
+			)
+		}
+	}
+
 	if coverGetter, ok := dec.(common.CoverImageGetter); ok {
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 		defer cancel()
@@ -224,22 +240,6 @@ func tryDecFile(inputFile string, outputDir string, allDec []common.NewDecoderFu
 			if err != nil {
 				logger.Warn("write cover image failed", zap.Error(err))
 			}
-		}
-	}
-
-	if audioMetaGetter, ok := dec.(common.AudioMetaGetter); ok {
-		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-		defer cancel()
-
-		meta, err := audioMetaGetter.GetAudioMeta(ctx)
-		if err != nil {
-			logger.Warn("get audio meta failed", zap.Error(err))
-		} else {
-			logger.Info("audio metadata",
-				zap.String("title", meta.GetTitle()),
-				zap.Strings("artists", meta.GetArtists()),
-				zap.String("album", meta.GetAlbum()),
-			)
 		}
 	}
 
