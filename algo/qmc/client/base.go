@@ -10,28 +10,23 @@ import (
 	"time"
 )
 
-const endpointURL = "https://u.y.qq.com/cgi-bin/musicu.fcg"
-
 type QQMusic struct {
 	http *http.Client
 }
 
-func (c *QQMusic) doRequest(ctx context.Context, reqBody any) ([]byte, error) {
-	reqBodyBuf, ok := reqBody.([]byte)
-	if !ok {
-		var err error
-		reqBodyBuf, err = json.Marshal(reqBody)
-		if err != nil {
-			return nil, fmt.Errorf("qqMusicClient[doRequest] marshal request: %w", err)
-		}
+func (c *QQMusic) rpcDoRequest(ctx context.Context, reqBody any) ([]byte, error) {
+	reqBodyBuf, err := json.Marshal(reqBody)
+	if err != nil {
+		return nil, fmt.Errorf("qqMusicClient[rpcDoRequest] marshal request: %w", err)
 	}
 
+	const endpointURL = "https://u.y.qq.com/cgi-bin/musicu.fcg"
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost,
 		endpointURL+fmt.Sprintf("?pcachetime=%d", time.Now().Unix()),
 		bytes.NewReader(reqBodyBuf),
 	)
 	if err != nil {
-		return nil, fmt.Errorf("qqMusicClient[doRequest] create request: %w", err)
+		return nil, fmt.Errorf("qqMusicClient[rpcDoRequest] create request: %w", err)
 	}
 
 	req.Header.Set("Accept", "*/*")
@@ -42,13 +37,13 @@ func (c *QQMusic) doRequest(ctx context.Context, reqBody any) ([]byte, error) {
 
 	reqp, err := c.http.Do(req)
 	if err != nil {
-		return nil, fmt.Errorf("qqMusicClient[doRequest] send request: %w", err)
+		return nil, fmt.Errorf("qqMusicClient[rpcDoRequest] send request: %w", err)
 	}
 	defer reqp.Body.Close()
 
 	respBodyBuf, err := io.ReadAll(reqp.Body)
 	if err != nil {
-		return nil, fmt.Errorf("qqMusicClient[doRequest] read response: %w", err)
+		return nil, fmt.Errorf("qqMusicClient[rpcDoRequest] read response: %w", err)
 	}
 
 	return respBodyBuf, nil
@@ -82,7 +77,7 @@ func (c *QQMusic) rpcCall(ctx context.Context,
 		Param:  param,
 	}}
 
-	respBodyBuf, err := c.doRequest(ctx, reqBody)
+	respBodyBuf, err := c.rpcDoRequest(ctx, reqBody)
 	if err != nil {
 		return nil, fmt.Errorf("qqMusicClient[rpcCall] do request: %w", err)
 	}
