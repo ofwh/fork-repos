@@ -45,6 +45,10 @@ func (r *Result) GetArtists() []string {
 	return artists
 }
 
+func (r *Result) HasMetadata() bool {
+	return r.GetTitle() != "" || r.GetAlbum() != "" || len(r.GetArtists()) > 0
+}
+
 type Format struct {
 	Filename       string            `json:"filename"`
 	NbStreams      int               `json:"nb_streams"`

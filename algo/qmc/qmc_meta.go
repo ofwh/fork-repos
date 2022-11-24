@@ -4,9 +4,14 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
+	"strings"
+
+	"github.com/samber/lo"
 
 	"unlock-music.dev/cli/algo/common"
 	"unlock-music.dev/cli/algo/qmc/client"
+	"unlock-music.dev/cli/internal/ffmpeg"
 )
 
 func (d *Decoder) GetAudioMeta(ctx context.Context) (common.AudioMeta, error) {
@@ -15,10 +20,27 @@ func (d *Decoder) GetAudioMeta(ctx context.Context) (common.AudioMeta, error) {
 	}
 
 	if d.songID != 0 {
-		return d.meta, d.getMetaBySongID(ctx)
+		if err := d.getMetaBySongID(ctx); err != nil {
+			return nil, err
+		}
+		return d.meta, nil
 	}
 
-	return nil, errors.New("qmc[GetAudioMeta] not implemented")
+	embedMeta, err := ffmpeg.ProbeReader(ctx, d.probeBuf)
+	if err != nil {
+		return nil, fmt.Errorf("qmc[GetAudioMeta] probe reader: %w", err)
+	}
+	d.meta = embedMeta
+	d.embeddedCover = embedMeta.HasAttachedPic()
+
+	if !d.embeddedCover && embedMeta.HasMetadata() {
+		if err := d.searchMetaOnline(ctx, embedMeta); err != nil {
+			return nil, err
+		}
+		return d.meta, nil
+	}
+
+	return d.meta, nil
 }
 
 func (d *Decoder) getMetaBySongID(ctx context.Context) error {
@@ -38,12 +60,56 @@ func (d *Decoder) getMetaBySongID(ctx context.Context) error {
 	return nil
 }
 
+func (d *Decoder) searchMetaOnline(ctx context.Context, original common.AudioMeta) error {
+	c := client.NewQQMusicClient() // todo: use global client
+	keyword := lo.WithoutEmpty(append(
+		[]string{original.GetTitle(), original.GetAlbum()},
+		original.GetArtists()...),
+	)
+	if len(keyword) == 0 {
+		return errors.New("qmc[searchMetaOnline] no keyword")
+	}
+
+	trackList, err := c.Search(ctx, strings.Join(keyword, " "))
+	if err != nil {
+		return fmt.Errorf("qmc[searchMetaOnline] search: %w", err)
+	}
+
+	if len(trackList) == 0 {
+		return errors.New("qmc[searchMetaOnline] no result")
+	}
+
+	meta := trackList[0]
+	d.meta = meta
+	d.albumID = meta.Album.Id
+	if meta.Album.Pmid == "" {
+		d.albumMediaID = meta.Album.Pmid
+	} else {
+		d.albumMediaID = meta.Album.Mid
+	}
+
+	return nil
+}
+
 func (d *Decoder) GetCoverImage(ctx context.Context) ([]byte, error) {
 	if d.cover != nil {
 		return d.cover, nil
 	}
 
-	// todo: get meta if possible
+	if d.embeddedCover {
+		img, err := ffmpeg.ExtractAlbumArt(ctx, d.probeBuf)
+		if err != nil {
+			return nil, fmt.Errorf("qmc[GetCoverImage] extract album art: %w", err)
+		}
+
+		d.cover, err = io.ReadAll(img)
+		if err != nil {
+			return nil, fmt.Errorf("qmc[GetCoverImage] read embed cover: %w", err)
+		}
+
+		return d.cover, nil
+	}
+
 	c := client.NewQQMusicClient() // todo: use global client
 	var err error
 
@@ -62,4 +128,5 @@ func (d *Decoder) GetCoverImage(ctx context.Context) ([]byte, error) {
 	}
 
 	return d.cover, nil
+
 }

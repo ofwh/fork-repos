@@ -34,8 +34,10 @@ type Decoder struct {
 	albumMediaID  string
 
 	// cache
-	meta  common.AudioMeta
-	cover []byte
+	meta          common.AudioMeta
+	cover         []byte
+	embeddedCover bool          // embeddedCover is true if the cover is embedded in the file
+	probeBuf      *bytes.Buffer // probeBuf is the buffer for sniffing metadata
 
 	// provider
 	logger *zap.Logger
@@ -48,6 +50,8 @@ func (d *Decoder) Read(p []byte) (int, error) {
 	if n > 0 {
 		d.cipher.Decrypt(p[:n], d.offset)
 		d.offset += n
+
+		_, _ = d.probeBuf.Write(p[:n]) // bytes.Buffer.Write never return error
 	}
 	return n, err
 }
@@ -88,6 +92,9 @@ func (d *Decoder) Validate() error {
 		return err
 	}
 	d.audio = io.LimitReader(d.raw, int64(d.audioLen))
+
+	// prepare for sniffing metadata
+	d.probeBuf = bytes.NewBuffer(make([]byte, 0, d.audioLen))
 
 	return nil
 }
