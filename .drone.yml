@@ -1,0 +1,106 @@
+---
+kind: pipeline
+name: build linux/amd64
+steps:
+- commands:
+  - git fetch --tags
+  image: alpine/git
+  name: fetch tags
+- commands:
+  - go test -v ./...
+  image: golang:1.19
+  name: go test
+- commands:
+  - DIST_DIR=$(mktemp -d)
+  - go build -v -trimpath -ldflags="-w -s -X main.AppVersion=$(git describe --tags
+    --always)" -o $DIST_DIR ./cmd/um
+  - tar cz -f um-linux-amd64.tar.gz -C $DIST_DIR .
+  environment:
+    GOARCH: amd64
+    GOOS: linux
+  image: golang:1.19
+  name: go build
+- commands:
+  - curl --fail --include --user "um-release-bot:$GITEA_API_KEY" --upload-file "um-linux-amd64.tar.gz"
+    "$DRONE_GITEA_SERVER/api/packages/${DRONE_REPO_NAMESPACE}/generic/${DRONE_REPO_NAME}-build/${DRONE_BUILD_NUMBER}/um-linux-amd64.tar.gz"
+  - sha256sum um-linux-amd64.tar.gz
+  - echo $DRONE_GITEA_SERVER/${DRONE_REPO_NAMESPACE}/-/packages/generic/${DRONE_REPO_NAME}-build/${DRONE_BUILD_NUMBER}
+  environment:
+    DRONE_GITEA_SERVER: https://git.unlock-music.dev
+    GITEA_API_KEY:
+      from_secret: GITEA_API_KEY
+  image: golang:1.19
+  name: upload artifact
+trigger:
+  event:
+  - push
+  - pull_request
+type: docker
+---
+kind: pipeline
+name: build windows/amd64
+steps:
+- commands:
+  - git fetch --tags
+  image: alpine/git
+  name: fetch tags
+- commands:
+  - DIST_DIR=$(mktemp -d)
+  - go build -v -trimpath -ldflags="-w -s -X main.AppVersion=$(git describe --tags
+    --always)" -o $DIST_DIR ./cmd/um
+  - tar cz -f um-windows-amd64.tar.gz -C $DIST_DIR .
+  environment:
+    GOARCH: amd64
+    GOOS: windows
+  image: golang:1.19
+  name: go build
+- commands:
+  - curl --fail --include --user "um-release-bot:$GITEA_API_KEY" --upload-file "um-windows-amd64.tar.gz"
+    "$DRONE_GITEA_SERVER/api/packages/${DRONE_REPO_NAMESPACE}/generic/${DRONE_REPO_NAME}-build/${DRONE_BUILD_NUMBER}/um-windows-amd64.tar.gz"
+  - sha256sum um-windows-amd64.tar.gz
+  - echo $DRONE_GITEA_SERVER/${DRONE_REPO_NAMESPACE}/-/packages/generic/${DRONE_REPO_NAME}-build/${DRONE_BUILD_NUMBER}
+  environment:
+    DRONE_GITEA_SERVER: https://git.unlock-music.dev
+    GITEA_API_KEY:
+      from_secret: GITEA_API_KEY
+  image: golang:1.19
+  name: upload artifact
+trigger:
+  event:
+  - push
+  - pull_request
+type: docker
+---
+kind: pipeline
+name: build darwin/amd64
+steps:
+- commands:
+  - git fetch --tags
+  image: alpine/git
+  name: fetch tags
+- commands:
+  - DIST_DIR=$(mktemp -d)
+  - go build -v -trimpath -ldflags="-w -s -X main.AppVersion=$(git describe --tags
+    --always)" -o $DIST_DIR ./cmd/um
+  - tar cz -f um-darwin-amd64.tar.gz -C $DIST_DIR .
+  environment:
+    GOARCH: amd64
+    GOOS: darwin
+  image: golang:1.19
+  name: go build
+- commands:
+  - curl --fail --include --user "um-release-bot:$GITEA_API_KEY" --upload-file "um-darwin-amd64.tar.gz"
+    "$DRONE_GITEA_SERVER/api/packages/${DRONE_REPO_NAMESPACE}/generic/${DRONE_REPO_NAME}-build/${DRONE_BUILD_NUMBER}/um-darwin-amd64.tar.gz"
+  - sha256sum um-darwin-amd64.tar.gz
+  - echo $DRONE_GITEA_SERVER/${DRONE_REPO_NAMESPACE}/-/packages/generic/${DRONE_REPO_NAME}-build/${DRONE_BUILD_NUMBER}
+  environment:
+    DRONE_GITEA_SERVER: https://git.unlock-music.dev
+    GITEA_API_KEY:
+      from_secret: GITEA_API_KEY
+  image: golang:1.19
+  name: upload artifact
+trigger:
+  event:
+  - push
+  - pull_request
+type: docker
