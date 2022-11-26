@@ -2,22 +2,22 @@
 // drone jsonnet --format --stream
 
 
-// local CreateRelease() = {
-//   name: 'create release',
-//   image: 'plugins/gitea-release',
-//   settings: {
-//     api_key: { from_secret: 'GITEA_API_KEY' },
-//     base_url: 'https://git.unlock-music.dev',
-//     files: 'dist/*',
-//     checksum: 'sha256',
-//     draft: true,
-//     title: '${DRONE_TAG}',
-//   },
-// };
+local CreateRelease() = {
+  name: 'create release',
+  image: 'plugins/gitea-release',
+  settings: {
+    api_key: { from_secret: 'GITEA_API_KEY' },
+    base_url: 'https://git.unlock-music.dev',
+    files: 'dist/*',
+    checksum: 'sha256',
+    draft: true,
+    title: '${DRONE_TAG}',
+  },
+};
 
 
 local StepGoBuild(GOOS, GOARCH) = {
-  local filename = 'um-%s-%s.tar.gz' % [GOOS, GOARCH],
+  local filepath = 'dist/um-%s-%s.tar.gz' % [GOOS, GOARCH],
 
   name: 'go build',
   image: 'golang:1.19',
@@ -28,12 +28,13 @@ local StepGoBuild(GOOS, GOARCH) = {
   commands: [
     'DIST_DIR=$(mktemp -d)',
     'go build -v -trimpath -ldflags="-w -s -X main.AppVersion=$(git describe --tags --always)" -o $DIST_DIR ./cmd/um',
-    'tar cz -f %s -C $DIST_DIR .' % filename,
+    'tar cz -f %s -C $DIST_DIR .' % filepath,
   ],
 };
 
 local StepUploadArtifact(GOOS, GOARCH) = {
   local filename = 'um-%s-%s.tar.gz' % [GOOS, GOARCH],
+  local filepath = 'dist/%s' % filename,
   local pkgname = '${DRONE_REPO_NAME}-build',
 
   name: 'upload artifact',
@@ -44,9 +45,9 @@ local StepUploadArtifact(GOOS, GOARCH) = {
   },
   commands: [
     'curl --fail --include --user "um-release-bot:$GITEA_API_KEY" ' +
-    '--upload-file "%s" ' % filename +
+    '--upload-file "%s" ' % filepath +
     '"$DRONE_GITEA_SERVER/api/packages/${DRONE_REPO_NAMESPACE}/generic/%s/${DRONE_BUILD_NUMBER}/%s"' % [pkgname, filename],
-    'sha256sum %s' % filename,
+    'sha256sum %s' % filepath,
     'echo $DRONE_GITEA_SERVER/${DRONE_REPO_NAMESPACE}/-/packages/generic/%s/${DRONE_BUILD_NUMBER}' % pkgname,
   ],
 };
@@ -80,8 +81,38 @@ local PipelineBuild(GOOS, GOARCH, RUN_TEST) = {
   },
 };
 
+local PipelineRelease() = {
+  name: 'release',
+  kind: 'pipeline',
+  type: 'docker',
+  steps: [
+    {
+      name: 'fetch tags',
+      image: 'alpine/git',
+      commands: ['git fetch --tags'],
+    },
+    {
+      name: 'go test',
+      image: 'golang:1.19',
+      commands: ['go test -v ./...'],
+    },
+    StepGoBuild('linux', 'amd64'),
+    StepGoBuild('linux', 'arm64'),
+    StepGoBuild('linux', '386'),
+    StepGoBuild('windows', 'amd64'),
+    StepGoBuild('windows', '386'),
+    StepGoBuild('darwin', 'amd64'),
+    StepGoBuild('darwin', 'arm64'),
+    CreateRelease(),
+  ],
+  trigger: {
+    event: ['tag'],
+  },
+};
+
 [
   PipelineBuild('linux', 'amd64', true),
   PipelineBuild('windows', 'amd64', false),
   PipelineBuild('darwin', 'amd64', false),
+  PipelineRelease(),
 ]
