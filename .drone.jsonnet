@@ -19,7 +19,7 @@ local CreateRelease() = {
 local StepGoBuild(GOOS, GOARCH) = {
   local filepath = 'dist/um-%s-%s.tar.gz' % [GOOS, GOARCH],
 
-  name: 'go build',
+  name: 'go build %s/%s' % [GOOS, GOARCH],
   image: 'golang:1.19',
   environment: {
     GOOS: GOOS,

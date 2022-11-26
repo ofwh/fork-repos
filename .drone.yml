@@ -19,7 +19,7 @@ steps:
     GOARCH: amd64
     GOOS: linux
   image: golang:1.19
-  name: go build
+  name: go build linux/amd64
 - commands:
   - curl --fail --include --user "um-release-bot:$GITEA_API_KEY" --upload-file "dist/um-linux-amd64.tar.gz"
     "$DRONE_GITEA_SERVER/api/packages/${DRONE_REPO_NAMESPACE}/generic/${DRONE_REPO_NAME}-build/${DRONE_BUILD_NUMBER}/um-linux-amd64.tar.gz"
@@ -53,7 +53,7 @@ steps:
     GOARCH: amd64
     GOOS: windows
   image: golang:1.19
-  name: go build
+  name: go build windows/amd64
 - commands:
   - curl --fail --include --user "um-release-bot:$GITEA_API_KEY" --upload-file "dist/um-windows-amd64.tar.gz"
     "$DRONE_GITEA_SERVER/api/packages/${DRONE_REPO_NAMESPACE}/generic/${DRONE_REPO_NAME}-build/${DRONE_BUILD_NUMBER}/um-windows-amd64.tar.gz"
@@ -87,7 +87,7 @@ steps:
     GOARCH: amd64
     GOOS: darwin
   image: golang:1.19
-  name: go build
+  name: go build darwin/amd64
 - commands:
   - curl --fail --include --user "um-release-bot:$GITEA_API_KEY" --upload-file "dist/um-darwin-amd64.tar.gz"
     "$DRONE_GITEA_SERVER/api/packages/${DRONE_REPO_NAMESPACE}/generic/${DRONE_REPO_NAME}-build/${DRONE_BUILD_NUMBER}/um-darwin-amd64.tar.gz"
@@ -125,7 +125,7 @@ steps:
     GOARCH: amd64
     GOOS: linux
   image: golang:1.19
-  name: go build
+  name: go build linux/amd64
 - commands:
   - DIST_DIR=$(mktemp -d)
   - go build -v -trimpath -ldflags="-w -s -X main.AppVersion=$(git describe --tags
@@ -135,7 +135,7 @@ steps:
     GOARCH: arm64
     GOOS: linux
   image: golang:1.19
-  name: go build
+  name: go build linux/arm64
 - commands:
   - DIST_DIR=$(mktemp -d)
   - go build -v -trimpath -ldflags="-w -s -X main.AppVersion=$(git describe --tags
@@ -145,7 +145,7 @@ steps:
     GOARCH: "386"
     GOOS: linux
   image: golang:1.19
-  name: go build
+  name: go build linux/386
 - commands:
   - DIST_DIR=$(mktemp -d)
   - go build -v -trimpath -ldflags="-w -s -X main.AppVersion=$(git describe --tags
@@ -155,7 +155,7 @@ steps:
     GOARCH: amd64
     GOOS: windows
   image: golang:1.19
-  name: go build
+  name: go build windows/amd64
 - commands:
   - DIST_DIR=$(mktemp -d)
   - go build -v -trimpath -ldflags="-w -s -X main.AppVersion=$(git describe --tags
@@ -165,7 +165,7 @@ steps:
     GOARCH: "386"
     GOOS: windows
   image: golang:1.19
-  name: go build
+  name: go build windows/386
 - commands:
   - DIST_DIR=$(mktemp -d)
   - go build -v -trimpath -ldflags="-w -s -X main.AppVersion=$(git describe --tags
@@ -175,7 +175,7 @@ steps:
     GOARCH: amd64
     GOOS: darwin
   image: golang:1.19
-  name: go build
+  name: go build darwin/amd64
 - commands:
   - DIST_DIR=$(mktemp -d)
   - go build -v -trimpath -ldflags="-w -s -X main.AppVersion=$(git describe --tags
@@ -185,7 +185,7 @@ steps:
     GOARCH: arm64
     GOOS: darwin
   image: golang:1.19
-  name: go build
+  name: go build darwin/arm64
 - image: plugins/gitea-release
   name: create release
   settings:
