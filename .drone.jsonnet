@@ -28,6 +28,7 @@ local StepGoBuild(GOOS, GOARCH) = {
   commands: [
     'DIST_DIR=$(mktemp -d)',
     'go build -v -trimpath -ldflags="-w -s -X main.AppVersion=$(git describe --tags --always)" -o $DIST_DIR ./cmd/um',
+    'mkdir -p dist',
     'tar cz -f %s -C $DIST_DIR .' % filepath,
   ],
 };

@@ -14,6 +14,7 @@ steps:
   - DIST_DIR=$(mktemp -d)
   - go build -v -trimpath -ldflags="-w -s -X main.AppVersion=$(git describe --tags
     --always)" -o $DIST_DIR ./cmd/um
+  - mkdir -p dist
   - tar cz -f dist/um-linux-amd64.tar.gz -C $DIST_DIR .
   environment:
     GOARCH: amd64
@@ -48,6 +49,7 @@ steps:
   - DIST_DIR=$(mktemp -d)
   - go build -v -trimpath -ldflags="-w -s -X main.AppVersion=$(git describe --tags
     --always)" -o $DIST_DIR ./cmd/um
+  - mkdir -p dist
   - tar cz -f dist/um-windows-amd64.tar.gz -C $DIST_DIR .
   environment:
     GOARCH: amd64
@@ -82,6 +84,7 @@ steps:
   - DIST_DIR=$(mktemp -d)
   - go build -v -trimpath -ldflags="-w -s -X main.AppVersion=$(git describe --tags
     --always)" -o $DIST_DIR ./cmd/um
+  - mkdir -p dist
   - tar cz -f dist/um-darwin-amd64.tar.gz -C $DIST_DIR .
   environment:
     GOARCH: amd64
@@ -120,6 +123,7 @@ steps:
   - DIST_DIR=$(mktemp -d)
   - go build -v -trimpath -ldflags="-w -s -X main.AppVersion=$(git describe --tags
     --always)" -o $DIST_DIR ./cmd/um
+  - mkdir -p dist
   - tar cz -f dist/um-linux-amd64.tar.gz -C $DIST_DIR .
   environment:
     GOARCH: amd64
@@ -130,6 +134,7 @@ steps:
   - DIST_DIR=$(mktemp -d)
   - go build -v -trimpath -ldflags="-w -s -X main.AppVersion=$(git describe --tags
     --always)" -o $DIST_DIR ./cmd/um
+  - mkdir -p dist
   - tar cz -f dist/um-linux-arm64.tar.gz -C $DIST_DIR .
   environment:
     GOARCH: arm64
@@ -140,6 +145,7 @@ steps:
   - DIST_DIR=$(mktemp -d)
   - go build -v -trimpath -ldflags="-w -s -X main.AppVersion=$(git describe --tags
     --always)" -o $DIST_DIR ./cmd/um
+  - mkdir -p dist
   - tar cz -f dist/um-linux-386.tar.gz -C $DIST_DIR .
   environment:
     GOARCH: "386"
@@ -150,6 +156,7 @@ steps:
   - DIST_DIR=$(mktemp -d)
   - go build -v -trimpath -ldflags="-w -s -X main.AppVersion=$(git describe --tags
     --always)" -o $DIST_DIR ./cmd/um
+  - mkdir -p dist
   - tar cz -f dist/um-windows-amd64.tar.gz -C $DIST_DIR .
   environment:
     GOARCH: amd64
@@ -160,6 +167,7 @@ steps:
   - DIST_DIR=$(mktemp -d)
   - go build -v -trimpath -ldflags="-w -s -X main.AppVersion=$(git describe --tags
     --always)" -o $DIST_DIR ./cmd/um
+  - mkdir -p dist
   - tar cz -f dist/um-windows-386.tar.gz -C $DIST_DIR .
   environment:
     GOARCH: "386"
@@ -170,6 +178,7 @@ steps:
   - DIST_DIR=$(mktemp -d)
   - go build -v -trimpath -ldflags="-w -s -X main.AppVersion=$(git describe --tags
     --always)" -o $DIST_DIR ./cmd/um
+  - mkdir -p dist
   - tar cz -f dist/um-darwin-amd64.tar.gz -C $DIST_DIR .
   environment:
     GOARCH: amd64
@@ -180,6 +189,7 @@ steps:
   - DIST_DIR=$(mktemp -d)
   - go build -v -trimpath -ldflags="-w -s -X main.AppVersion=$(git describe --tags
     --always)" -o $DIST_DIR ./cmd/um
+  - mkdir -p dist
   - tar cz -f dist/um-darwin-arm64.tar.gz -C $DIST_DIR .
   environment:
     GOARCH: arm64
