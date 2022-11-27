@@ -1,12 +1,14 @@
 # Unlock Music Project - CLI Edition
 
-Original: Web Edition https://github.com/ix64/unlock-music
+Original: Web Edition https://git.unlock-music.dev/um/web
 
-- [Release Download](https://github.com/unlock-music/cli/releases/latest)
+- [![Build Status](https://ci.unlock-music.dev/api/badges/um/cli/status.svg)](https://ci.unlock-music.dev/um/cli)
+- [Release Download](https://git.unlock-music.dev/um/cli/releases/latest)
+- [Latest Build](https://git.unlock-music.dev/um/-/packages/generic/cli-build/)
 
 ## Features
 
-- [x] All Algorithm Supported By `ix64/unlock-music`
+- [x] All Algorithm Supported By `unlock-music/web`
 - [ ] Complete Cover Image
 - [ ] Parse Meta Data
 - [ ] Complete Meta Data
@@ -15,8 +17,7 @@ Original: Web Edition https://github.com/ix64/unlock-music
 
 - Requirements: **Golang 1.17**
 
-1. Clone this repo `git clone https://github.com/unlock-music/cli && cd cli`
-2. Build the executable `go build ./cmd/um`
+1. run `go install unlock-music.dev/cli/cmd/um@master`
 
 ## How to use
 
