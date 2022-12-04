@@ -69,10 +69,7 @@ local PipelineBuild(GOOS, GOARCH, RUN_TEST) = {
            if RUN_TEST then [{
              name: 'go test',
              image: 'golang:1.19',
-             commands: [
-              'apt-get update && apt-get -y install zlib1g-dev',
-              'go test -v ./...'
-              ],
+             commands: ['go test -v ./...'],
            }] else []
          )
          +

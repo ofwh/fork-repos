@@ -7,7 +7,6 @@ steps:
   image: alpine/git
   name: fetch tags
 - commands:
-  - apt-get update && apt-get -y install zlib1g-dev
   - go test -v ./...
   image: golang:1.19
   name: go test
