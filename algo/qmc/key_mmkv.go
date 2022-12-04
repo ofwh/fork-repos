@@ -11,7 +11,7 @@ import (
 	"unlock-music.dev/mmkv"
 )
 
-var streamKeyVault mmkv.MMKV
+var streamKeyVault mmkv.Vault
 
 func readKeyFromMMKV(file string) ([]byte, error) {
 	if file == "" {
@@ -31,18 +31,28 @@ func readKeyFromMMKV(file string) ([]byte, error) {
 				return nil, fmt.Errorf("mmkv key valut not found: %w", err)
 			}
 		}
-		mmkv.InitializeMMKV(mmkvDir)
-		streamKeyVault = mmkv.MMKVWithID("MMKVStreamEncryptId")
+		mgr, err := mmkv.NewManager(mmkvDir)
+		if err != nil {
+			return nil, fmt.Errorf("init mmkv manager: %w", err)
+		}
+
+		streamKeyVault, err = mgr.OpenVault("MMKVStreamEncryptId")
+		if err != nil {
+			return nil, fmt.Errorf("open mmkv vault: %w", err)
+		}
 	}
 
-	buf := streamKeyVault.GetBytes(file)
-	if len(buf) == 0 {
+	buf, err := streamKeyVault.GetBytes(file)
+	if err != nil { // fallback match filename only
 		_, partName := filepath.Split(file)
-		keys := streamKeyVault.AllKeys()
+		keys := streamKeyVault.Keys()
 		for _, key := range keys {
-			if strings.HasSuffix(key, partName) {
-				buf = streamKeyVault.GetBytes(key)
-				break
+			if !strings.HasSuffix(key, partName) {
+				continue
+			}
+			buf, err = streamKeyVault.GetBytes(key)
+			if err != nil {
+				// TODO: logger
 			}
 		}
 	}
