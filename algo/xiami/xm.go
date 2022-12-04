@@ -37,8 +37,8 @@ func (d *Decoder) GetAudioExt() string {
 	return ""
 }
 
-func NewDecoder(rd io.ReadSeeker) common.Decoder {
-	return &Decoder{rd: rd}
+func NewDecoder(p *common.DecoderParams) common.Decoder {
+	return &Decoder{rd: p.Reader}
 }
 
 // Validate checks if the file is a valid xiami .xm file.

@@ -29,10 +29,8 @@ var (
 	}
 )
 
-func NewDecoder(rd io.ReadSeeker) common.Decoder {
-	return &Decoder{
-		rd: rd,
-	}
+func NewDecoder(p *common.DecoderParams) common.Decoder {
+	return &Decoder{rd: p.Reader}
 }
 
 type Decoder struct {

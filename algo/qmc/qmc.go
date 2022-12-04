@@ -38,8 +38,8 @@ func (d *Decoder) Read(p []byte) (int, error) {
 	return n, err
 }
 
-func NewDecoder(r io.ReadSeeker) common.Decoder {
-	return &Decoder{raw: r}
+func NewDecoder(p *common.DecoderParams) common.Decoder {
+	return &Decoder{raw: p.Reader}
 }
 
 func (d *Decoder) Validate() error {
@@ -214,6 +214,8 @@ func init() {
 
 		"mgg", "mgg1", "mggl", //QQ Music New Ogg
 		"mflac", "mflac0", //QQ Music New Flac
+
+		"mflach", // QQ Music Flac (storing key in dedicate MMKV)
 	}
 	for _, ext := range supportedExts {
 		common.RegisterDecoder(ext, false, NewDecoder)

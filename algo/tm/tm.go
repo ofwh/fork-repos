@@ -43,8 +43,8 @@ func (d *Decoder) Read(buf []byte) (int, error) {
 	return d.audio.Read(buf)
 }
 
-func NewTmDecoder(rd io.ReadSeeker) common.Decoder {
-	return &Decoder{raw: rd}
+func NewTmDecoder(p *common.DecoderParams) common.Decoder {
+	return &Decoder{raw: p.Reader}
 }
 
 func init() {

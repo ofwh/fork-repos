@@ -163,9 +163,15 @@ func tryDecFile(inputFile string, outputDir string, allDec []common.NewDecoderFu
 	}
 	defer file.Close()
 
+	decParams := &common.DecoderParams{
+		Reader:    file,
+		Extension: filepath.Ext(inputFile),
+		FilePath:  inputFile,
+	}
+
 	var dec common.Decoder
 	for _, decFunc := range allDec {
-		dec = decFunc(file)
+		dec = decFunc(decParams)
 		if err := dec.Validate(); err == nil {
 			break
 		} else {
