@@ -14,7 +14,8 @@ import (
 )
 
 type Decoder struct {
-	raw io.ReadSeeker // raw is the original file reader
+	raw    io.ReadSeeker // raw is the original file reader
+	params *common.DecoderParams
 
 	audio    io.Reader // audio is the encrypted audio data
 	audioLen int       // audioLen is the audio data length
@@ -39,7 +40,7 @@ func (d *Decoder) Read(p []byte) (int, error) {
 }
 
 func NewDecoder(p *common.DecoderParams) common.Decoder {
-	return &Decoder{raw: p.Reader}
+	return &Decoder{raw: p.Reader, params: p}
 }
 
 func (d *Decoder) Validate() error {
@@ -97,7 +98,12 @@ func (d *Decoder) validateDecode() error {
 	return nil
 }
 
-func (d *Decoder) searchKey() error {
+func (d *Decoder) searchKey() (err error) {
+	if d.params.Extension == ".mflach" {
+		d.decodedKey, err = readKeyFromMMKV(d.params.FilePath)
+		return err
+	}
+
 	fileSizeM4, err := d.raw.Seek(-4, io.SeekEnd)
 	if err != nil {
 		return err
