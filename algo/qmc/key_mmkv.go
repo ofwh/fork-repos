@@ -60,13 +60,6 @@ func readKeyFromMMKV(file string, logger *zap.Logger) ([]byte, error) {
 			return normalizeUnicode(name)
 		})
 
-		logger.Debug("filename",
-			zap.String("partName", partName),
-			zap.Int("partName", len(partName)),
-			zap.String("fileNames", fileNames[0]),
-			zap.Int("fileNames", len(fileNames[0])),
-		)
-
 		for _, key := range fileNames { // fallback: match filename only
 			if key != partName {
 				continue
