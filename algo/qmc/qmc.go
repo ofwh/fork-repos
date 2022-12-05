@@ -111,7 +111,7 @@ func (d *Decoder) searchKey() (err error) {
 	fileSize := int(fileSizeM4) + 4
 
 	//goland:noinspection GoBoolExpressions
-	if runtime.GOOS == "darwin" {
+	if runtime.GOOS == "darwin" && !strings.HasPrefix(d.params.Extension, ".qmc") {
 		d.decodedKey, err = readKeyFromMMKV(d.params.FilePath, d.logger)
 		if err == nil {
 			d.audioLen = fileSize
