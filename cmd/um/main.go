@@ -164,12 +164,13 @@ func tryDecFile(inputFile string, outputDir string, allDec []common.NewDecoderFu
 		return err
 	}
 	defer file.Close()
+	logger := logger.With(zap.String("source", inputFile))
 
 	decParams := &common.DecoderParams{
 		Reader:    file,
 		Extension: filepath.Ext(inputFile),
 		FilePath:  inputFile,
-		Logger:    logger.With(zap.String("source", inputFile)),
+		Logger:    logger,
 	}
 
 	var dec common.Decoder
