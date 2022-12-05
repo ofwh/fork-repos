@@ -4,6 +4,8 @@ import (
 	"io"
 	"path/filepath"
 	"strings"
+
+	"go.uber.org/zap"
 )
 
 type DecoderParams struct {
@@ -11,6 +13,8 @@ type DecoderParams struct {
 	Extension string        // required, source extension, eg. ".mp3"
 
 	FilePath string // optional, source file path
+
+	Logger *zap.Logger // required
 }
 type NewDecoderFunc func(p *DecoderParams) Decoder
 

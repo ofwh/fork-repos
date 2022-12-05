@@ -148,9 +148,10 @@ func dealDirectory(inputDir string, outputDir string, skipNoop bool, removeSourc
 			continue
 		}
 
-		err := tryDecFile(filepath.Join(inputDir, item.Name()), outputDir, allDec, removeSource)
+		filePath := filepath.Join(inputDir, item.Name())
+		err := tryDecFile(filePath, outputDir, allDec, removeSource)
 		if err != nil {
-			logger.Error("conversion failed", zap.String("source", item.Name()), zap.Error(err))
+			logger.Error("conversion failed", zap.String("source", filePath), zap.Error(err))
 		}
 	}
 	return nil
@@ -167,6 +168,7 @@ func tryDecFile(inputFile string, outputDir string, allDec []common.NewDecoderFu
 		Reader:    file,
 		Extension: filepath.Ext(inputFile),
 		FilePath:  inputFile,
+		Logger:    logger.With(zap.String("source", inputFile)),
 	}
 
 	var dec common.Decoder

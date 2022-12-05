@@ -6,8 +6,11 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"runtime"
 	"strconv"
 	"strings"
+
+	"go.uber.org/zap"
 
 	"unlock-music.dev/cli/algo/common"
 	"unlock-music.dev/cli/internal/sniff"
@@ -26,6 +29,8 @@ type Decoder struct {
 
 	rawMetaExtra1 int
 	rawMetaExtra2 int
+
+	logger *zap.Logger
 }
 
 // Read implements io.Reader, offer the decrypted audio data.
@@ -40,7 +45,7 @@ func (d *Decoder) Read(p []byte) (int, error) {
 }
 
 func NewDecoder(p *common.DecoderParams) common.Decoder {
-	return &Decoder{raw: p.Reader, params: p}
+	return &Decoder{raw: p.Reader, params: p, logger: p.Logger}
 }
 
 func (d *Decoder) Validate() error {
@@ -99,14 +104,20 @@ func (d *Decoder) validateDecode() error {
 }
 
 func (d *Decoder) searchKey() (err error) {
-	if d.params.Extension == ".mflach" {
-		d.decodedKey, err = readKeyFromMMKV(d.params.FilePath)
-		return err
-	}
-
 	fileSizeM4, err := d.raw.Seek(-4, io.SeekEnd)
 	if err != nil {
 		return err
+	}
+	fileSize := int(fileSizeM4) + 4
+
+	//goland:noinspection GoBoolExpressions
+	if runtime.GOOS == "darwin" {
+		d.decodedKey, err = readKeyFromMMKV(d.params.FilePath, d.logger)
+		if err == nil {
+			d.audioLen = fileSize
+			return
+		}
+		d.logger.Warn("read key from mmkv failed", zap.Error(err))
 	}
 
 	suffixBuf := make([]byte, 4)
@@ -127,7 +138,7 @@ func (d *Decoder) searchKey() (err error) {
 		}
 
 		// try to use default static cipher
-		d.audioLen = int(fileSizeM4 + 4)
+		d.audioLen = fileSize
 		return nil
 	}
 

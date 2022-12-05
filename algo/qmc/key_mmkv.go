@@ -8,12 +8,14 @@ import (
 	"runtime"
 	"strings"
 
+	"go.uber.org/zap"
 	"unlock-music.dev/mmkv"
 )
 
 var streamKeyVault mmkv.Vault
 
-func readKeyFromMMKV(file string) ([]byte, error) {
+// TODO: move to factory
+func readKeyFromMMKV(file string, logger *zap.Logger) ([]byte, error) {
 	if file == "" {
 		return nil, errors.New("file path is required while reading key from mmkv")
 	}
@@ -31,6 +33,7 @@ func readKeyFromMMKV(file string) ([]byte, error) {
 				return nil, fmt.Errorf("mmkv key valut not found: %w", err)
 			}
 		}
+
 		mgr, err := mmkv.NewManager(mmkvDir)
 		if err != nil {
 			return nil, fmt.Errorf("init mmkv manager: %w", err)
@@ -40,6 +43,8 @@ func readKeyFromMMKV(file string) ([]byte, error) {
 		if err != nil {
 			return nil, fmt.Errorf("open mmkv vault: %w", err)
 		}
+
+		logger.Debug("mmkv vault opened", zap.Strings("keys", streamKeyVault.Keys()))
 	}
 
 	buf, err := streamKeyVault.GetBytes(file)
@@ -52,9 +57,12 @@ func readKeyFromMMKV(file string) ([]byte, error) {
 			}
 			buf, err = streamKeyVault.GetBytes(key)
 			if err != nil {
-				// TODO: logger
+				logger.Warn("read key from mmkv", zap.String("key", key), zap.Error(err))
 			}
 		}
+		// TODO: use editorial judgement to select the best match
+		//       since MacOS may change some characters in the file name.
+		//       eg. "ぜ" -> "ぜ"
 	}
 
 	if len(buf) == 0 {
