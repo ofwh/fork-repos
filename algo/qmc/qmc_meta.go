@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"io"
 	"strings"
 
 	"github.com/samber/lo"
@@ -102,10 +101,7 @@ func (d *Decoder) GetCoverImage(ctx context.Context) ([]byte, error) {
 			return nil, fmt.Errorf("qmc[GetCoverImage] extract album art: %w", err)
 		}
 
-		d.cover, err = io.ReadAll(img)
-		if err != nil {
-			return nil, fmt.Errorf("qmc[GetCoverImage] read embed cover: %w", err)
-		}
+		d.cover = img.Bytes()
 
 		return d.cover, nil
 	}
