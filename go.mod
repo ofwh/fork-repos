@@ -3,12 +3,12 @@ module unlock-music.dev/cli
 go 1.19
 
 require (
-	github.com/hbollon/go-edlib v1.6.0
 	github.com/samber/lo v1.36.0
 	github.com/urfave/cli/v2 v2.23.6
 	go.uber.org/zap v1.24.0
 	golang.org/x/crypto v0.3.0
 	golang.org/x/exp v0.0.0-20221204150635-6dcec336b2bb
+	golang.org/x/text v0.5.0
 	unlock-music.dev/mmkv v0.0.0-20221204231432-41a75bd29939
 )
 
