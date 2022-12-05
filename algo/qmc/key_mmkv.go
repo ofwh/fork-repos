@@ -6,12 +6,11 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
-	"strings"
 
-	"github.com/hbollon/go-edlib"
 	"github.com/samber/lo"
 	"go.uber.org/zap"
 	"golang.org/x/exp/slices"
+	"golang.org/x/text/unicode/norm"
 	"unlock-music.dev/mmkv"
 )
 
@@ -51,45 +50,27 @@ func readKeyFromMMKV(file string, logger *zap.Logger) ([]byte, error) {
 	}
 
 	_, partName := filepath.Split(file)
-	buf, err := streamKeyVault.GetBytes(file)
+	partName = normalizeUnicode(partName)
 
+	buf, err := streamKeyVault.GetBytes(file)
 	if buf == nil {
 		filePaths := streamKeyVault.Keys()
+		fileNames := lo.Map(filePaths, func(filePath string, _ int) string {
+			_, name := filepath.Split(filePath)
+			return normalizeUnicode(name)
+		})
 
-		for _, key := range filePaths { // fallback 1: match filename only
-			if !strings.HasSuffix(key, partName) {
+		for _, key := range fileNames { // fallback: match filename only
+			if key != partName {
 				continue
 			}
-			buf, err = streamKeyVault.GetBytes(key)
+			idx := slices.Index(fileNames, key)
+			buf, err = streamKeyVault.GetBytes(filePaths[idx])
 			if err != nil {
-				logger.Warn("read key from mmkv", zap.String("key", key), zap.Error(err))
+				logger.Warn("read key from mmkv", zap.String("key", filePaths[idx]), zap.Error(err))
 			}
 		}
 
-		if buf == nil { // fallback 2: match filename with edit distance
-			// use editorial judgement to select the best match
-			//     since macOS may change some characters in the file name.
-			//     e.g. "ぜ"(e3 81 9c) -> "ぜ"(e3 81 9b e3 82 99)
-			fileNames := lo.Map(filePaths, func(filePath string, _ int) string {
-				_, name := filepath.Split(filePath)
-				return name
-			})
-
-			minDisStr, err := edlib.FuzzySearch(partName, fileNames, edlib.Levenshtein)
-			if err != nil {
-				logger.Warn("fuzzy search failed", zap.Error(err))
-			}
-
-			// TODO: make distance configurable
-			// for now, assume only 1 character changed to 2 characters
-			if edlib.LevenshteinDistance(partName, minDisStr) < 3 {
-				idx := slices.Index(fileNames, minDisStr)
-				buf, err = streamKeyVault.GetBytes(filePaths[idx])
-				if err != nil {
-					logger.Warn("read key from mmkv", zap.String("key", minDisStr), zap.Error(err))
-				}
-			}
-		}
 	}
 
 	if len(buf) == 0 {
@@ -134,4 +115,11 @@ func getDefaultMMKVDir() (string, error) {
 	}
 
 	return mmkvDir, nil
+}
+
+// normalizeUnicode normalizes unicode string to NFC.
+// since macOS may change some characters in the file name.
+// e.g. "ぜ"(e3 81 9c) -> "ぜ"(e3 81 9b e3 82 99)
+func normalizeUnicode(str string) string {
+	return norm.NFC.String(str)
 }
