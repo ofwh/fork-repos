@@ -27,6 +27,17 @@ func (r *Result) getTagByKey(key string) string {
 			return v
 		}
 	}
+
+	for _, stream := range r.Streams { // try to find in streams
+		if stream.CodecType != "audio" {
+			continue
+		}
+		for k, v := range stream.Tags {
+			if key == strings.ToLower(k) {
+				return v
+			}
+		}
+	}
 	return ""
 }
 func (r *Result) GetTitle() string {
@@ -81,6 +92,7 @@ type Stream struct {
 	StartTime      string            `json:"start_time"`
 	BitRate        string            `json:"bit_rate"`
 	Disposition    *ProbeDisposition `json:"disposition"`
+	Tags           map[string]string `json:"tags"`
 }
 
 type ProbeDisposition struct {
