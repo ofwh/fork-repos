@@ -7,6 +7,8 @@ import (
 	"os"
 	"reflect"
 	"testing"
+
+	"unlock-music.dev/cli/algo/common"
 )
 
 func loadTestDataQmcDecoder(filename string) ([]byte, []byte, error) {
@@ -29,13 +31,14 @@ func loadTestDataQmcDecoder(filename string) ([]byte, []byte, error) {
 func TestMflac0Decoder_Read(t *testing.T) {
 	tests := []struct {
 		name    string
+		fileExt string
 		wantErr bool
 	}{
-		{"mflac0_rc4", false},
-		{"mflac_rc4", false},
-		{"mflac_map", false},
-		{"mgg_map", false},
-		{"qmc0_static", false},
+		{"mflac0_rc4", ".mflac0", false},
+		{"mflac_rc4", ".mflac", false},
+		{"mflac_map", ".mflac", false},
+		{"mgg_map", ".mgg", false},
+		{"qmc0_static", ".qmc0", false},
 	}
 
 	for _, tt := range tests {
@@ -45,7 +48,10 @@ func TestMflac0Decoder_Read(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			d := NewDecoder(bytes.NewReader(raw))
+			d := NewDecoder(&common.DecoderParams{
+				Reader:    bytes.NewReader(raw),
+				Extension: tt.fileExt,
+			})
 			if err := d.Validate(); err != nil {
 				t.Errorf("validate file error = %v", err)
 			}
@@ -81,7 +87,10 @@ func TestMflac0Decoder_Validate(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			d := NewDecoder(bytes.NewReader(raw))
+			d := NewDecoder(&common.DecoderParams{
+				Reader:    bytes.NewReader(raw),
+				Extension: tt.fileExt,
+			})
 
 			if err := d.Validate(); err != nil {
 				t.Errorf("read bytes from decoder error = %v", err)

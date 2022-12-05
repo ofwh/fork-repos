@@ -4,9 +4,19 @@ import (
 	"io"
 	"path/filepath"
 	"strings"
+
+	"go.uber.org/zap"
 )
 
-type NewDecoderFunc func(rd io.ReadSeeker) Decoder
+type DecoderParams struct {
+	Reader    io.ReadSeeker // required
+	Extension string        // required, source extension, eg. ".mp3"
+
+	FilePath string // optional, source file path
+
+	Logger *zap.Logger // required
+}
+type NewDecoderFunc func(p *DecoderParams) Decoder
 
 type decoderItem struct {
 	noop    bool

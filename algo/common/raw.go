@@ -14,8 +14,8 @@ type RawDecoder struct {
 	audioExt string
 }
 
-func NewRawDecoder(rd io.ReadSeeker) Decoder {
-	return &RawDecoder{rd: rd}
+func NewRawDecoder(p *DecoderParams) Decoder {
+	return &RawDecoder{rd: p.Reader}
 }
 
 func (d *RawDecoder) Validate() error {

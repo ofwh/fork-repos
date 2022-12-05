@@ -6,15 +6,19 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"runtime"
 	"strconv"
 	"strings"
+
+	"go.uber.org/zap"
 
 	"unlock-music.dev/cli/algo/common"
 	"unlock-music.dev/cli/internal/sniff"
 )
 
 type Decoder struct {
-	raw io.ReadSeeker // raw is the original file reader
+	raw    io.ReadSeeker // raw is the original file reader
+	params *common.DecoderParams
 
 	audio    io.Reader // audio is the encrypted audio data
 	audioLen int       // audioLen is the audio data length
@@ -25,6 +29,8 @@ type Decoder struct {
 
 	rawMetaExtra1 int
 	rawMetaExtra2 int
+
+	logger *zap.Logger
 }
 
 // Read implements io.Reader, offer the decrypted audio data.
@@ -38,8 +44,8 @@ func (d *Decoder) Read(p []byte) (int, error) {
 	return n, err
 }
 
-func NewDecoder(r io.ReadSeeker) common.Decoder {
-	return &Decoder{raw: r}
+func NewDecoder(p *common.DecoderParams) common.Decoder {
+	return &Decoder{raw: p.Reader, params: p, logger: p.Logger}
 }
 
 func (d *Decoder) Validate() error {
@@ -97,10 +103,21 @@ func (d *Decoder) validateDecode() error {
 	return nil
 }
 
-func (d *Decoder) searchKey() error {
+func (d *Decoder) searchKey() (err error) {
 	fileSizeM4, err := d.raw.Seek(-4, io.SeekEnd)
 	if err != nil {
 		return err
+	}
+	fileSize := int(fileSizeM4) + 4
+
+	//goland:noinspection GoBoolExpressions
+	if runtime.GOOS == "darwin" && !strings.HasPrefix(d.params.Extension, ".qmc") {
+		d.decodedKey, err = readKeyFromMMKV(d.params.FilePath, d.logger)
+		if err == nil {
+			d.audioLen = fileSize
+			return
+		}
+		d.logger.Warn("read key from mmkv failed", zap.Error(err))
 	}
 
 	suffixBuf := make([]byte, 4)
@@ -121,7 +138,7 @@ func (d *Decoder) searchKey() error {
 		}
 
 		// try to use default static cipher
-		d.audioLen = int(fileSizeM4 + 4)
+		d.audioLen = fileSize
 		return nil
 	}
 
@@ -214,6 +231,8 @@ func init() {
 
 		"mgg", "mgg1", "mggl", //QQ Music New Ogg
 		"mflac", "mflac0", //QQ Music New Flac
+
+		"mflach", // QQ Music Flac (storing key in dedicate MMKV)
 	}
 	for _, ext := range supportedExts {
 		common.RegisterDecoder(ext, false, NewDecoder)
