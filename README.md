@@ -13,7 +13,7 @@ Original: Web Edition https://git.unlock-music.dev/um/web
 
 ## Hou to Build
 
-- Requirements: **Golang 1.17**
+- Requirements: **Golang 1.19**
 
 1. run `go install unlock-music.dev/cli/cmd/um@master`
 
