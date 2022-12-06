@@ -9,9 +9,7 @@ Original: Web Edition https://git.unlock-music.dev/um/web
 ## Features
 
 - [x] All Algorithm Supported By `unlock-music/web`
-- [ ] Complete Cover Image
-- [ ] Parse Meta Data
-- [ ] Complete Meta Data
+- [x] Complete Metadata & Cover Image
 
 ## Hou to Build
 
