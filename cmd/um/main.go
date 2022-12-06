@@ -25,8 +25,10 @@ import (
 	_ "unlock-music.dev/cli/algo/tm"
 	_ "unlock-music.dev/cli/algo/xiami"
 	_ "unlock-music.dev/cli/algo/ximalaya"
+	"unlock-music.dev/cli/internal/ffmpeg"
 	"unlock-music.dev/cli/internal/logging"
 	"unlock-music.dev/cli/internal/sniff"
+	"unlock-music.dev/cli/internal/utils"
 )
 
 var AppVersion = "v0.0.6"
@@ -187,60 +189,80 @@ func tryDecFile(inputFile string, outputDir string, allDec []common.NewDecoderFu
 		return errors.New("no any decoder can resolve the file")
 	}
 
+	params := &ffmpeg.UpdateMetadataParams{}
+
 	header := bytes.NewBuffer(nil)
 	_, err = io.CopyN(header, dec, 64)
 	if err != nil {
 		return fmt.Errorf("read header failed: %w", err)
 	}
-
-	outExt := sniff.AudioExtensionWithFallback(header.Bytes(), ".mp3")
-	inFilename := strings.TrimSuffix(filepath.Base(inputFile), filepath.Ext(inputFile))
-
-	outPath := filepath.Join(outputDir, inFilename+outExt)
-	outFile, err := os.OpenFile(outPath, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0644)
-	if err != nil {
-		return err
-	}
-	defer outFile.Close()
-
-	if _, err := io.Copy(outFile, header); err != nil {
-		return err
-	}
-	if _, err := io.Copy(outFile, dec); err != nil {
-		return err
-	}
+	audio := io.MultiReader(header, dec)
+	params.AudioExt = sniff.AudioExtensionWithFallback(header.Bytes(), ".mp3")
 
 	if audioMetaGetter, ok := dec.(common.AudioMetaGetter); ok {
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 		defer cancel()
 
-		meta, err := audioMetaGetter.GetAudioMeta(ctx)
+		// since ffmpeg doesn't support multiple input streams,
+		// we need to write the audio to a temp file.
+		// since qmc decoder doesn't support seeking & relying on ffmpeg probe, we need to read the whole file.
+		// TODO: support seeking or using pipe for qmc decoder.
+		params.Audio, err = utils.WriteTempFile(audio, params.AudioExt)
+		if err != nil {
+			return fmt.Errorf("updateAudioMeta write temp file: %w", err)
+		}
+		defer os.Remove(params.Audio)
+
+		params.Meta, err = audioMetaGetter.GetAudioMeta(ctx)
 		if err != nil {
 			logger.Warn("get audio meta failed", zap.Error(err))
-		} else {
-			logger.Info("audio metadata",
-				zap.String("title", meta.GetTitle()),
-				zap.Strings("artists", meta.GetArtists()),
-				zap.String("album", meta.GetAlbum()),
-			)
+		}
+
+		if params.Meta == nil { // reset audio meta if failed
+			audio, err = os.Open(params.Audio)
+			if err != nil {
+				return fmt.Errorf("updateAudioMeta open temp file: %w", err)
+			}
 		}
 	}
 
-	if coverGetter, ok := dec.(common.CoverImageGetter); ok {
-		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	if params.Meta != nil {
+		if coverGetter, ok := dec.(common.CoverImageGetter); ok {
+			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+			defer cancel()
+
+			if cover, err := coverGetter.GetCoverImage(ctx); err != nil {
+				logger.Warn("get cover image failed", zap.Error(err))
+			} else if imgExt, ok := sniff.ImageExtension(cover); !ok {
+				logger.Warn("sniff cover image type failed", zap.Error(err))
+			} else {
+				params.AlbumArtExt = imgExt
+				params.AlbumArt = bytes.NewReader(cover)
+			}
+		}
+	}
+
+	inFilename := strings.TrimSuffix(filepath.Base(inputFile), filepath.Ext(inputFile))
+	outPath := filepath.Join(outputDir, inFilename+params.AudioExt)
+
+	if params.Meta == nil {
+		outFile, err := os.OpenFile(outPath, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0644)
+		if err != nil {
+			return err
+		}
+		defer outFile.Close()
+
+		if _, err = io.Copy(outFile, audio); err != nil {
+			return err
+		}
+		outFile.Close()
+
+	} else {
+		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 		defer cancel()
 
-		cover, err := coverGetter.GetCoverImage(ctx)
-		if err != nil {
-			logger.Warn("get cover image failed", zap.Error(err))
-		} else if imgExt, ok := sniff.ImageExtension(cover); !ok {
-			logger.Warn("sniff cover image type failed", zap.Error(err))
-		} else {
-			coverPath := filepath.Join(outputDir, inFilename+imgExt)
-			err = os.WriteFile(coverPath, cover, 0644)
-			if err != nil {
-				logger.Warn("write cover image failed", zap.Error(err))
-			}
+		if err := ffmpeg.UpdateAudioMetadata(ctx, outPath, params); err != nil {
+			return err
 		}
 	}
 

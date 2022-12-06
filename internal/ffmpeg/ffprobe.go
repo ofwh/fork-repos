@@ -1,6 +1,7 @@
 package ffmpeg
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"io"
@@ -119,17 +120,20 @@ func ProbeReader(ctx context.Context, rd io.Reader) (*Result, error) {
 	cmd := exec.CommandContext(ctx, "ffprobe",
 		"-v", "quiet", // disable logging
 		"-print_format", "json", // use json format
-		"-show_format", "-show_streams", // retrieve format and streams
-		"-", // input from stdin
+		"-show_format", "-show_streams", "-show_error", // retrieve format and streams
+		"pipe:0", // input from stdin
 	)
+
 	cmd.Stdin = rd
-	out, err := cmd.Output()
-	if err != nil {
+	stdout, stderr := &bytes.Buffer{}, &bytes.Buffer{}
+	cmd.Stdout, cmd.Stderr = stdout, stderr
+
+	if err := cmd.Run(); err != nil {
 		return nil, err
 	}
 
 	ret := new(Result)
-	if err := json.Unmarshal(out, ret); err != nil {
+	if err := json.Unmarshal(stdout.Bytes(), ret); err != nil {
 		return nil, err
 	}
 

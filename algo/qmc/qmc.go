@@ -30,14 +30,14 @@ type Decoder struct {
 	songID        int
 	rawMetaExtra2 int
 
-	albumID       int
-	albumMediaID  string
+	albumID      int
+	albumMediaID string
 
 	// cache
 	meta          common.AudioMeta
 	cover         []byte
 	embeddedCover bool          // embeddedCover is true if the cover is embedded in the file
-	probeBuf      *bytes.Buffer // probeBuf is the buffer for sniffing metadata
+	probeBuf      *bytes.Buffer // probeBuf is the buffer for sniffing metadata, TODO: consider pipe?
 
 	// provider
 	logger *zap.Logger
