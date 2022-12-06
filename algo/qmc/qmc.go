@@ -230,9 +230,9 @@ func init() {
 		"776176",   //QQ Music Weiyun Wav
 
 		"mgg", "mgg1", "mggl", //QQ Music New Ogg
-		"mflac", "mflac0", //QQ Music New Flac
+		"mflac", "mflac0", "mflach", //QQ Music New Flac
 
-		"mflach", // QQ Music Flac (storing key in dedicate MMKV)
+		"mmp4", // QQ Music MP4 Container, tipically used for Dolby EAC3 stream
 	}
 	for _, ext := range supportedExts {
 		common.RegisterDecoder(ext, false, NewDecoder)
