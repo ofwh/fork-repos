@@ -90,7 +90,7 @@ func (d *Decoder) validateDecode() error {
 		return fmt.Errorf("qmc seek to start: %w", err)
 	}
 
-	buf := make([]byte, 16)
+	buf := make([]byte, 64)
 	if _, err := io.ReadFull(d.raw, buf); err != nil {
 		return fmt.Errorf("qmc read header: %w", err)
 	}

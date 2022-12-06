@@ -186,7 +186,7 @@ func tryDecFile(inputFile string, outputDir string, allDec []common.NewDecoderFu
 	}
 
 	header := bytes.NewBuffer(nil)
-	_, err = io.CopyN(header, dec, 16)
+	_, err = io.CopyN(header, dec, 64)
 	if err != nil {
 		return fmt.Errorf("read header failed: %w", err)
 	}

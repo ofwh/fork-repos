@@ -1,6 +1,11 @@
 package sniff
 
-import "bytes"
+import (
+	"bytes"
+	"encoding/binary"
+
+	"golang.org/x/exp/slices"
+)
 
 type Sniffer interface {
 	Sniff(header []byte) bool
@@ -19,8 +24,8 @@ var audioExtensions = map[string]Sniffer{
 	},
 
 	// ref: https://www.garykessler.net/library/file_sigs.html
-	".m4a": mpeg4Sniffer{},            // MPEG-4 container, m4a treat as audio
-	".aac": prefixSniffer{0xFF, 0xF1}, // MPEG-4 AAC-LC
+	".m4a": m4aSniffer{},    // MPEG-4 container, Apple Lossless Audio Codec
+	".mp4": &mpeg4Sniffer{}, // MPEG-4 container, other fallback
 
 	".flac": prefixSniffer("fLaC"), // ref: https://xiph.org/flac/format.html
 	".dff":  prefixSniffer("FRM8"), // DSDIFF, ref: https://www.sonicstudio.com/pdf/dsd/DSDIFF_1.5_Spec.pdf
@@ -54,8 +59,48 @@ func (s prefixSniffer) Sniff(header []byte) bool {
 	return bytes.HasPrefix(header, s)
 }
 
+type m4aSniffer struct{}
+
+func (m4aSniffer) Sniff(header []byte) bool {
+	box := readMpeg4FtypBox(header)
+	if box == nil {
+		return false
+	}
+
+	return box.majorBrand == "M4A " || slices.Contains(box.compatibleBrands, "M4A ")
+}
+
 type mpeg4Sniffer struct{}
 
-func (mpeg4Sniffer) Sniff(header []byte) bool {
-	return len(header) >= 8 && bytes.Equal([]byte("ftyp"), header[4:8])
+func (s *mpeg4Sniffer) Sniff(header []byte) bool {
+	return readMpeg4FtypBox(header) != nil
+}
+
+type mpeg4FtpyBox struct {
+	majorBrand       string
+	minorVersion     uint32
+	compatibleBrands []string
+}
+
+func readMpeg4FtypBox(header []byte) *mpeg4FtpyBox {
+	if (len(header) < 8) || !bytes.Equal([]byte("ftyp"), header[4:8]) {
+		return nil // not a valid ftyp box
+	}
+
+	size := binary.BigEndian.Uint32(header[0:4]) // size
+	if size < 16 || size%4 != 0 {
+		return nil // invalid ftyp box
+	}
+
+	box := mpeg4FtpyBox{
+		majorBrand:   string(header[8:12]),
+		minorVersion: binary.BigEndian.Uint32(header[12:16]),
+	}
+
+	// compatible brands
+	for i := 16; i < int(size) && i+4 < len(header); i += 4 {
+		box.compatibleBrands = append(box.compatibleBrands, string(header[i:i+4]))
+	}
+
+	return &box
 }
