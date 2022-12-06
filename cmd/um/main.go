@@ -50,7 +50,9 @@ func main() {
 			&cli.StringFlag{Name: "output", Aliases: []string{"o"}, Usage: "path to output dir", Required: false},
 			&cli.BoolFlag{Name: "remove-source", Aliases: []string{"rs"}, Usage: "remove source file", Required: false, Value: false},
 			&cli.BoolFlag{Name: "skip-noop", Aliases: []string{"n"}, Usage: "skip noop decoder", Required: false, Value: true},
-			&cli.BoolFlag{Name: "supported-ext", Usage: "Show supported file extensions and exit", Required: false, Value: false},
+			&cli.BoolFlag{Name: "update-metadata", Usage: "update metadata & album art from network", Required: false, Value: false},
+
+			&cli.BoolFlag{Name: "supported-ext", Usage: "show supported file extensions and exit", Required: false, Value: false},
 		},
 
 		Action:          appMain,
@@ -105,9 +107,6 @@ func appMain(c *cli.Context) (err error) {
 		}
 	}
 
-	skipNoop := c.Bool("skip-noop")
-	removeSource := c.Bool("remove-source")
-
 	inputStat, err := os.Stat(input)
 	if err != nil {
 		return err
@@ -125,18 +124,30 @@ func appMain(c *cli.Context) (err error) {
 		return errors.New("output should be a writable directory")
 	}
 
+	proc := &processor{
+		outputDir:       output,
+		skipNoopDecoder: c.Bool("skip-noop"),
+		removeSource:    c.Bool("remove-source"),
+		updateMetadata:  c.Bool("update-metadata"),
+	}
+
 	if inputStat.IsDir() {
-		return dealDirectory(input, output, skipNoop, removeSource)
+		return proc.processDir(input)
 	} else {
-		allDec := common.GetDecoder(inputStat.Name(), skipNoop)
-		if len(allDec) == 0 {
-			logger.Fatal("skipping while no suitable decoder")
-		}
-		return tryDecFile(input, output, allDec, removeSource)
+		return proc.processFile(input)
 	}
 
 }
-func dealDirectory(inputDir string, outputDir string, skipNoop bool, removeSource bool) error {
+
+type processor struct {
+	outputDir string
+
+	skipNoopDecoder bool
+	removeSource    bool
+	updateMetadata  bool
+}
+
+func (p *processor) processDir(inputDir string) error {
 	items, err := os.ReadDir(inputDir)
 	if err != nil {
 		return err
@@ -145,14 +156,9 @@ func dealDirectory(inputDir string, outputDir string, skipNoop bool, removeSourc
 		if item.IsDir() {
 			continue
 		}
-		allDec := common.GetDecoder(item.Name(), skipNoop)
-		if len(allDec) == 0 {
-			logger.Info("skipping while no suitable decoder", zap.String("file", item.Name()))
-			continue
-		}
 
 		filePath := filepath.Join(inputDir, item.Name())
-		err := tryDecFile(filePath, outputDir, allDec, removeSource)
+		err := p.processFile(filePath)
 		if err != nil {
 			logger.Error("conversion failed", zap.String("source", filePath), zap.Error(err))
 		}
@@ -160,7 +166,15 @@ func dealDirectory(inputDir string, outputDir string, skipNoop bool, removeSourc
 	return nil
 }
 
-func tryDecFile(inputFile string, outputDir string, allDec []common.NewDecoderFunc, removeSource bool) error {
+func (p *processor) processFile(filePath string) error {
+	allDec := common.GetDecoder(filePath, p.skipNoopDecoder)
+	if len(allDec) == 0 {
+		logger.Fatal("skipping while no suitable decoder")
+	}
+	return p.process(filePath, allDec)
+}
+
+func (p *processor) process(inputFile string, allDec []common.NewDecoderFunc) error {
 	file, err := os.Open(inputFile)
 	if err != nil {
 		return err
@@ -199,34 +213,36 @@ func tryDecFile(inputFile string, outputDir string, allDec []common.NewDecoderFu
 	audio := io.MultiReader(header, dec)
 	params.AudioExt = sniff.AudioExtensionWithFallback(header.Bytes(), ".mp3")
 
-	if audioMetaGetter, ok := dec.(common.AudioMetaGetter); ok {
-		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-		defer cancel()
+	if p.updateMetadata {
+		if audioMetaGetter, ok := dec.(common.AudioMetaGetter); ok {
+			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+			defer cancel()
 
-		// since ffmpeg doesn't support multiple input streams,
-		// we need to write the audio to a temp file.
-		// since qmc decoder doesn't support seeking & relying on ffmpeg probe, we need to read the whole file.
-		// TODO: support seeking or using pipe for qmc decoder.
-		params.Audio, err = utils.WriteTempFile(audio, params.AudioExt)
-		if err != nil {
-			return fmt.Errorf("updateAudioMeta write temp file: %w", err)
-		}
-		defer os.Remove(params.Audio)
-
-		params.Meta, err = audioMetaGetter.GetAudioMeta(ctx)
-		if err != nil {
-			logger.Warn("get audio meta failed", zap.Error(err))
-		}
-
-		if params.Meta == nil { // reset audio meta if failed
-			audio, err = os.Open(params.Audio)
+			// since ffmpeg doesn't support multiple input streams,
+			// we need to write the audio to a temp file.
+			// since qmc decoder doesn't support seeking & relying on ffmpeg probe, we need to read the whole file.
+			// TODO: support seeking or using pipe for qmc decoder.
+			params.Audio, err = utils.WriteTempFile(audio, params.AudioExt)
 			if err != nil {
-				return fmt.Errorf("updateAudioMeta open temp file: %w", err)
+				return fmt.Errorf("updateAudioMeta write temp file: %w", err)
+			}
+			defer os.Remove(params.Audio)
+
+			params.Meta, err = audioMetaGetter.GetAudioMeta(ctx)
+			if err != nil {
+				logger.Warn("get audio meta failed", zap.Error(err))
+			}
+
+			if params.Meta == nil { // reset audio meta if failed
+				audio, err = os.Open(params.Audio)
+				if err != nil {
+					return fmt.Errorf("updateAudioMeta open temp file: %w", err)
+				}
 			}
 		}
 	}
 
-	if params.Meta != nil {
+	if p.updateMetadata && params.Meta != nil {
 		if coverGetter, ok := dec.(common.CoverImageGetter); ok {
 			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 			defer cancel()
@@ -243,7 +259,7 @@ func tryDecFile(inputFile string, outputDir string, allDec []common.NewDecoderFu
 	}
 
 	inFilename := strings.TrimSuffix(filepath.Base(inputFile), filepath.Ext(inputFile))
-	outPath := filepath.Join(outputDir, inFilename+params.AudioExt)
+	outPath := filepath.Join(p.outputDir, inFilename+params.AudioExt)
 
 	if params.Meta == nil {
 		outFile, err := os.OpenFile(outPath, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0644)
@@ -252,7 +268,7 @@ func tryDecFile(inputFile string, outputDir string, allDec []common.NewDecoderFu
 		}
 		defer outFile.Close()
 
-		if _, err = io.Copy(outFile, audio); err != nil {
+		if _, err := io.Copy(outFile, audio); err != nil {
 			return err
 		}
 		outFile.Close()
@@ -267,7 +283,7 @@ func tryDecFile(inputFile string, outputDir string, allDec []common.NewDecoderFu
 	}
 
 	// if source file need to be removed
-	if removeSource {
+	if p.removeSource {
 		err := os.RemoveAll(inputFile)
 		if err != nil {
 			return err
