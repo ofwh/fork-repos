@@ -253,7 +253,7 @@ func (p *processor) process(inputFile string, allDec []common.NewDecoderFunc) er
 				logger.Warn("sniff cover image type failed", zap.Error(err))
 			} else {
 				params.AlbumArtExt = imgExt
-				params.AlbumArt = bytes.NewReader(cover)
+				params.AlbumArt = cover
 			}
 		}
 	}
@@ -277,7 +277,7 @@ func (p *processor) process(inputFile string, allDec []common.NewDecoderFunc) er
 		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 		defer cancel()
 
-		if err := ffmpeg.UpdateAudioMetadata(ctx, outPath, params); err != nil {
+		if err := ffmpeg.UpdateMeta(ctx, outPath, params); err != nil {
 			return err
 		}
 	}

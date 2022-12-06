@@ -39,11 +39,18 @@ type UpdateMetadataParams struct {
 
 	Meta common.AudioMeta // required
 
-	AlbumArt    io.Reader // optional
-	AlbumArtExt string    // required if AlbumArt is not nil
+	AlbumArt    []byte // optional
+	AlbumArtExt string // required if AlbumArt is not nil
 }
 
-func UpdateAudioMetadata(ctx context.Context, outPath string, params *UpdateMetadataParams) error {
+func UpdateMeta(ctx context.Context, outPath string, params *UpdateMetadataParams) error {
+	if params.AudioExt == ".flac" {
+		return updateMetaFlac(ctx, outPath, params)
+	} else {
+		return updateMetaFFmpeg(ctx, outPath, params)
+	}
+}
+func updateMetaFFmpeg(ctx context.Context, outPath string, params *UpdateMetadataParams) error {
 	builder := newFFmpegBuilder()
 
 	out := newOutputBuilder(outPath) // output to file
@@ -60,7 +67,7 @@ func UpdateAudioMetadata(ctx context.Context, outPath string, params *UpdateMeta
 		params.AudioExt != ".wav" /* wav doesn't support attached image */ {
 
 		// write cover to temp file
-		artPath, err := utils.WriteTempFile(params.AlbumArt, params.AlbumArtExt)
+		artPath, err := utils.WriteTempFile(bytes.NewReader(params.AlbumArt), params.AlbumArtExt)
 		if err != nil {
 			return fmt.Errorf("updateAudioMeta write temp file: %w", err)
 		}
@@ -75,6 +82,10 @@ func UpdateAudioMetadata(ctx context.Context, outPath string, params *UpdateMeta
 		case ".m4a": // .m4a(mp4) requires set codec, disposition, stream metadata
 			out.AddOption("codec:v", "mjpeg")
 			out.AddOption("disposition:v", "attached_pic")
+			out.AddMetadata("s:v", "title", "Album cover")
+			out.AddMetadata("s:v", "comment", "Cover (front)")
+		case ".mp3":
+			out.AddOption("codec:v", "mjpeg")
 			out.AddMetadata("s:v", "title", "Album cover")
 			out.AddMetadata("s:v", "comment", "Cover (front)")
 		default: // other formats use default behavior
@@ -96,6 +107,11 @@ func UpdateAudioMetadata(ctx context.Context, outPath string, params *UpdateMeta
 	if len(artists) != 0 {
 		// TODO: it seems that ffmpeg doesn't support multiple artists
 		out.AddMetadata("", "artist", strings.Join(artists, " / "))
+	}
+
+	if params.AudioExt == ".mp3" {
+		out.AddOption("write_id3v1", "true")
+		out.AddOption("id3v2_version", "3")
 	}
 
 	// execute ffmpeg
