@@ -158,9 +158,14 @@ func (p *processor) processDir(inputDir string) error {
 		}
 
 		filePath := filepath.Join(inputDir, item.Name())
-		err := p.processFile(filePath)
-		if err != nil {
-			logger.Error("conversion failed", zap.String("source", filePath), zap.Error(err))
+		allDec := common.GetDecoder(filePath, p.skipNoopDecoder)
+		if len(allDec) == 0 {
+			logger.Info("skipping while no suitable decoder", zap.String("source", item.Name()))
+			continue
+		}
+
+		if err := p.process(filePath, allDec); err != nil {
+			logger.Error("conversion failed", zap.String("source", item.Name()), zap.Error(err))
 		}
 	}
 	return nil
