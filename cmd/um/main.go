@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"os/signal"
 	"path/filepath"
 	"runtime"
 	"runtime/debug"
@@ -14,6 +15,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/fsnotify/fsnotify"
 	"github.com/urfave/cli/v2"
 	"go.uber.org/zap"
 
@@ -51,6 +53,8 @@ func main() {
 			&cli.BoolFlag{Name: "remove-source", Aliases: []string{"rs"}, Usage: "remove source file", Required: false, Value: false},
 			&cli.BoolFlag{Name: "skip-noop", Aliases: []string{"n"}, Usage: "skip noop decoder", Required: false, Value: true},
 			&cli.BoolFlag{Name: "update-metadata", Usage: "update metadata & album art from network", Required: false, Value: false},
+			&cli.BoolFlag{Name: "overwrite", Usage: "overwrite output file without asking", Required: false, Value: false},
+			&cli.BoolFlag{Name: "watch", Usage: "watch the input dir and process new files", Required: false, Value: false},
 
 			&cli.BoolFlag{Name: "supported-ext", Usage: "show supported file extensions and exit", Required: false, Value: false},
 		},
@@ -65,6 +69,7 @@ func main() {
 		logger.Fatal("run app failed", zap.Error(err))
 	}
 }
+
 func printSupportedExtensions() {
 	var exts []string
 	for ext := range common.DecoderRegistry {
@@ -75,6 +80,7 @@ func printSupportedExtensions() {
 		fmt.Printf("%s: %d\n", ext, len(common.DecoderRegistry[ext]))
 	}
 }
+
 func appMain(c *cli.Context) (err error) {
 	if c.Bool("supported-ext") {
 		printSupportedExtensions()
@@ -129,10 +135,16 @@ func appMain(c *cli.Context) (err error) {
 		skipNoopDecoder: c.Bool("skip-noop"),
 		removeSource:    c.Bool("remove-source"),
 		updateMetadata:  c.Bool("update-metadata"),
+		overwriteOutput: c.Bool("overwrite"),
 	}
 
 	if inputStat.IsDir() {
-		return proc.processDir(input)
+		wacthDir := c.Bool("watch")
+		if !wacthDir {
+			return proc.processDir(input)
+		} else {
+			return proc.watchDir(input)
+		}
 	} else {
 		return proc.processFile(input)
 	}
@@ -145,6 +157,61 @@ type processor struct {
 	skipNoopDecoder bool
 	removeSource    bool
 	updateMetadata  bool
+	overwriteOutput bool
+}
+
+func (p *processor) watchDir(inputDir string) error {
+	if err := p.processDir(inputDir); err != nil {
+		return err
+	}
+
+	watcher, err := fsnotify.NewWatcher()
+	if err != nil {
+		return fmt.Errorf("failed to create watcher: %w", err)
+	}
+	defer watcher.Close()
+
+	go func() {
+		for {
+			select {
+			case event, ok := <-watcher.Events:
+				if !ok {
+					return
+				}
+
+				if event.Has(fsnotify.Create) || event.Has(fsnotify.Write) {
+					// try open with exclusive mode, to avoid file is still writing
+					f, err := os.OpenFile(event.Name, os.O_RDONLY, os.ModeExclusive)
+					if err != nil {
+						logger.Debug("failed to open file exclusively", zap.String("path", event.Name), zap.Error(err))
+						time.Sleep(1 * time.Second) // wait for file writing complete
+						continue
+					}
+					_ = f.Close()
+
+					if err := p.processFile(event.Name); err != nil {
+						logger.Warn("failed to process file", zap.String("path", event.Name), zap.Error(err))
+					}
+				}
+			case err, ok := <-watcher.Errors:
+				if !ok {
+					return
+				}
+				logger.Error("file watcher got error", zap.Error(err))
+			}
+		}
+	}()
+
+	err = watcher.Add(inputDir)
+	if err != nil {
+		return fmt.Errorf("failed to watch dir %s: %w", inputDir, err)
+	}
+
+	signalCtx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
+	defer stop()
+
+	<-signalCtx.Done()
+	return nil
 }
 
 func (p *processor) processDir(inputDir string) error {
@@ -265,6 +332,15 @@ func (p *processor) process(inputFile string, allDec []common.NewDecoderFunc) er
 
 	inFilename := strings.TrimSuffix(filepath.Base(inputFile), filepath.Ext(inputFile))
 	outPath := filepath.Join(p.outputDir, inFilename+params.AudioExt)
+
+	if !p.overwriteOutput {
+		_, err := os.Stat(outPath)
+		if err == nil {
+			return fmt.Errorf("output file %s is already exist", outPath)
+		} else if !errors.Is(err, os.ErrNotExist) {
+			return fmt.Errorf("stat output file failed: %w", err)
+		}
+	}
 
 	if params.Meta == nil {
 		outFile, err := os.OpenFile(outPath, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0644)
