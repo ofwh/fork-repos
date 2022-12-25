@@ -51,6 +51,7 @@ func main() {
 			&cli.BoolFlag{Name: "remove-source", Aliases: []string{"rs"}, Usage: "remove source file", Required: false, Value: false},
 			&cli.BoolFlag{Name: "skip-noop", Aliases: []string{"n"}, Usage: "skip noop decoder", Required: false, Value: true},
 			&cli.BoolFlag{Name: "update-metadata", Usage: "update metadata & album art from network", Required: false, Value: false},
+			&cli.BoolFlag{Name: "overwrite", Usage: "overwrite output file without asking", Required: false, Value: false},
 
 			&cli.BoolFlag{Name: "supported-ext", Usage: "show supported file extensions and exit", Required: false, Value: false},
 		},
@@ -129,6 +130,7 @@ func appMain(c *cli.Context) (err error) {
 		skipNoopDecoder: c.Bool("skip-noop"),
 		removeSource:    c.Bool("remove-source"),
 		updateMetadata:  c.Bool("update-metadata"),
+		overwriteOutput: c.Bool("overwrite"),
 	}
 
 	if inputStat.IsDir() {
@@ -145,6 +147,7 @@ type processor struct {
 	skipNoopDecoder bool
 	removeSource    bool
 	updateMetadata  bool
+	overwriteOutput bool
 }
 
 func (p *processor) processDir(inputDir string) error {
@@ -265,6 +268,15 @@ func (p *processor) process(inputFile string, allDec []common.NewDecoderFunc) er
 
 	inFilename := strings.TrimSuffix(filepath.Base(inputFile), filepath.Ext(inputFile))
 	outPath := filepath.Join(p.outputDir, inFilename+params.AudioExt)
+
+	if !p.overwriteOutput {
+		_, err := os.Stat(outPath)
+		if err == nil {
+			return fmt.Errorf("output file %s is already exist", outPath)
+		} else if !errors.Is(err, os.ErrNotExist) {
+			return fmt.Errorf("stat output file failed: %w", err)
+		}
+	}
 
 	if params.Meta == nil {
 		outFile, err := os.OpenFile(outPath, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0644)
