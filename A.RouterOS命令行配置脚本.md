@@ -16,15 +16,18 @@
 
 |目录名称|文件名|说明|适用对象|
 |--|--|--|--|
-|interfaces|fox_ros_define_interfaces.conf|RouterOS 定义接口脚本，适用于PPPoE拨号场景|CHR / 官方硬件|
-|firewall|fox_ros_firewall_ipv4.conf|RouterOS IPv4 高级防火墙脚本，fasttrack关闭|CHR / 官方硬件|
-||fox_ros_firewall_ipv6.conf|RouterOS IPv6 高级防火墙脚本|CHR / 官方硬件|
-|qos|fox_ros_qos_cake.conf|RouterOS 使用CAKE算法的简单队列配置脚本，要求fasttrack关闭|CHR / 官方硬件|
-||fox_ros_qos_cake_fasttrack.conf|RouterOS 使用CAKE算法的队列树配置脚本，可与fasttrack搭配使用|CHR / 官方硬件|
-|schedule|fox_ros_schedule_script.conf|RouterOS 定时任务配置脚本，定时邮件推送、PPPoE重播、系统自动升级|CHR / 官方硬件|
-|email|fox_ros_email_log_worker.conf|RouterOS 日志收集邮件推送脚本|CHR / 官方硬件|
-||fox_ros_email_res_worker.conf|||
-|||||
-|||||
-|||||
+|[interfaces](./src/interfaces)|[fox_ros_define_interfaces.conf](./src/interfaces/fox_ros_define_interfaces.conf)|RouterOS 定义接口脚本，适用于PPPoE拨号场景|CHR / 官方硬件|
+|[firewall](./src/firewall)|[fox_ros_firewall_ipv4.conf](./src/firewall/fox_ros_firewall_ipv4.conf)|RouterOS IPv4 高级防火墙脚本，fasttrack关闭|CHR / 官方硬件|
+||[fox_ros_firewall_ipv6.conf](./src/firewall/fox_ros_firewall_ipv6.conf)|RouterOS IPv6 高级防火墙脚本|CHR / 官方硬件|
+|[qos](./src/qos)|[fox_ros_qos_cake.conf](./src/qos/fox_ros_qos_cake.conf)|RouterOS 使用CAKE算法的简单队列配置脚本，要求fasttrack关闭|CHR / 官方硬件|
+||[fox_ros_qos_cake_fasttrack.conf](./src/qos/fox_ros_qos_cake_fasttrack.conf)|RouterOS 使用CAKE算法的队列树配置脚本，可与fasttrack搭配使用|CHR / 官方硬件|
+|[schedule](./src/schedule)|[fox_ros_schedule_script.conf](./src/schedule/fox_ros_schedule_script.conf)|RouterOS 定时任务配置脚本，定时邮件推送、PPPoE重播、系统自动升级|CHR / 官方硬件|
+|[email](./src/email)|[fox_ros_email_log_worker.conf](./src/email/fox_ros_email_log_worker.conf)|RouterOS 日志收集邮件推送脚本|CHR / 官方硬件|
+||[fox_ros_email_res_worker.conf](./src/email/fox_ros_email_res_worker.conf)|RouterOS 资源状态邮件推送脚本|CHR|
+||[fox_ros_rb750gr3_email_res_worker.conf](./src/email/fox_ros_rb750gr3_email_res_worker.conf)|RouterOS 资源状态邮件推送脚本|官方硬件|
+|[shortcut](./src/shortcut)|[fox_ros_native_init_script.conf](./src/shortcut/fox_ros_native_init_script.conf)|RouterOS 官方硬件自带的初始化脚本，仅供研究|官方硬件|
+||[fox_ros_chr_shortcut.conf](./src/shortcut/fox_ros_chr_shortcut.conf)|RouterOS 命令行配置脚本，包含高级防火墙，CAKE QoS，邮件推送，额外日志存储等|CHR / 高性能官方硬件|
+||[fox_ros_rb750gr3_shortcut.conf](./src/shortcut/fox_ros_rb750gr3_shortcut.conf)|与CHR版本版本类似，但根据官方硬件的不同，做了部分适配修改，使用 Fq_Codel QoS|高性能官方硬件|
+||[fox_ros_rb750gr3_simple_shortcut.conf](./src/shortcut/fox_ros_rb750gr3_simple_shortcut.conf)|与CHR版本版本类似，但根据硬件性能使用精简防火墙并移除了QoS|官方硬件|
+
 
