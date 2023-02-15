@@ -34,6 +34,6 @@
 ||[fox_ros_native_sys_upgrade_worker.conf](./src/upgrade/fox_ros_native_sys_upgrade_worker.conf)|RouterOS 系统自动更新脚本|官方硬件|
 |-|-|-|-|
 |[shortcut](./src/shortcut)|[fox_ros_native_init_script.conf](./src/shortcut/fox_ros_native_init_script.conf)|RouterOS 官方硬件自带的初始化脚本，仅供研究|官方硬件|
-||[fox_ros_chr_shortcut.conf](./src/shortcut/fox_ros_chr_shortcut.conf)|RouterOS CHR 命令行配置脚本，包含高级防火墙，内网 DNS，CAKE QoS，邮件推送，额外日志存储等|CHR|
-||[fox_ros_native_shortcut.conf](./src/shortcut/fox_ros_native_shortcut.conf)|与 CHR 脚本类似，但根据官方硬件，做了部分适配修改，使用 Fq_Codel QoS|高性能官方硬件|
-||[fox_ros_rb750gr3_simple_shortcut.conf](./src/shortcut/fox_ros_rb750gr3_simple_shortcut.conf)|与 CHR 脚本类似，但根据硬件性能使用精简防火墙并移除了QoS|官方硬件|
+||[fox_ros_chr_shortcut.conf](./src/shortcut/fox_ros_chr_shortcut.conf)|RouterOS CHR 命令行配置脚本，包含高级防火墙、内网 DNS、CAKE QoS、邮件推送、额外日志存储等|CHR|
+||[fox_ros_native_shortcut.conf](./src/shortcut/fox_ros_native_shortcut.conf)|与 CHR 脚本类似，但根据官方硬件做了部分适配修改，使用 Fq_Codel QoS|高性能官方硬件|
+||[fox_ros_rb750gr3_simple_shortcut.conf](./src/shortcut/fox_ros_rb750gr3_simple_shortcut.conf)|与高性能官方硬件脚本类似，但根据硬件性能使用精简防火墙并移除了QoS|官方硬件|
