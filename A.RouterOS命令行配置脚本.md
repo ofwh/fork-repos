@@ -18,7 +18,9 @@
 |--|--|--|:--:|
 |[interfaces](./src/interfaces)|[ros_define_interfaces.conf](./src/interfaces/ros_define_interfaces.conf)|RouterOS 定义接口脚本，适用于 PPPoE 拨号场景|CHR / 官方硬件|
 |-|-|-|-|
-|[firewall](./src/firewall)|[ros_firewall_ipv4.conf](./src/firewall/ros_firewall_ipv4.conf)|RouterOS IPv4 高级防火墙脚本，Fasttrack 关闭|CHR / 官方硬件|
+|[firewall](./src/firewall)|[ros_blackhole_ipv4.conf](./src/firewall/ros_blackhole_ipv4.conf)|RouterOS IPv4 黑洞路由脚本|CHR / 官方硬件|
+||[ros_blackhole_ipv6.conf](./src/firewall/ros_blackhole_ipv6.conf)|RouterOS IPv6 黑洞路由脚本|CHR / 官方硬件|
+||[ros_firewall_ipv4.conf](./src/firewall/ros_firewall_ipv4.conf)|RouterOS IPv4 高级防火墙脚本，Fasttrack 关闭|CHR / 官方硬件|
 ||[ros_firewall_ipv6.conf](./src/firewall/ros_firewall_ipv6.conf)|RouterOS IPv6 高级防火墙脚本|CHR / 官方硬件|
 |-|-|-|-|
 |[qos](./src/qos)|[ros_qos_cake.conf](./src/qos/ros_qos_cake.conf)|RouterOS 使用 CAKE 算法的简单队列配置脚本，要求 Fasttrack 关闭|CHR / 官方硬件|
