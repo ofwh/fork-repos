@@ -21,10 +21,10 @@
 |[firewall](./src/firewall)|[ros_blackhole_ipv4.conf](./src/firewall/ros_blackhole_ipv4.conf)|RouterOS IPv4 黑洞路由脚本|CHR / 官方硬件|
 ||[ros_blackhole_ipv6.conf](./src/firewall/ros_blackhole_ipv6.conf)|RouterOS IPv6 黑洞路由脚本|CHR / 官方硬件|
 ||[ros_firewall_ipv4_pppoe.conf](./src/firewall/ros_firewall_ipv4_pppoe.conf)|RouterOS IPv4 高级防火墙脚本，Fasttrack 关闭|CHR / 官方硬件|
-||[ros_firewall_ipv4_pppoe_dns.conf](./src/firewall/ros_firewall_ipv4_pppoe_dns.conf)|RouterOS IPv4 高级防火墙脚本，Fasttrack 关闭，内网 DNS 服务器|CHR / 官方硬件|
+||[ros_firewall_ipv4_pppoe_dns.conf](./src/firewall/ros_firewall_ipv4_pppoe_dns.conf)|RouterOS IPv4 高级防火墙脚本，Fasttrack 关闭，包含内网 DNS 服务器设置|CHR / 官方硬件|
 ||[ros_firewall_ipv4_pppoe_simple.conf](./src/firewall/ros_firewall_ipv4_pppoe_simple.conf)|RouterOS IPv4 精简防火墙脚本，Fasttrack 关闭|CHR / 官方硬件|
 ||[ros_firewall_ipv6_pppoe.conf](./src/firewall/ros_firewall_ipv6_pppoe.conf)|RouterOS IPv6 高级防火墙脚本|CHR / 官方硬件|
-||[ros_firewall_ipv6_pppoe_dns.conf](./src/firewall/ros_firewall_ipv6_pppoe_dns.conf)|RouterOS IPv6 高级防火墙脚本，内网 DNS 服务器|CHR / 官方硬件|
+||[ros_firewall_ipv6_pppoe_dns.conf](./src/firewall/ros_firewall_ipv6_pppoe_dns.conf)|RouterOS IPv6 高级防火墙脚本，包含内网 DNS 服务器设置|CHR / 官方硬件|
 ||[ros_firewall_ipv6_pppoe_simple.conf](./src/firewall/ros_firewall_ipv6_pppoe_simple.conf)|RouterOS IPv6 精简防火墙脚本|CHR / 官方硬件|
 |-|-|-|-|
 |[qos](./src/qos)|[ros_qos_cake.conf](./src/qos/ros_qos_cake.conf)|RouterOS 使用 CAKE 算法的简单队列配置脚本，要求 Fasttrack 关闭|CHR / 官方硬件|
@@ -40,6 +40,7 @@
 ||[ros_sys_upgrade_worker_native.conf](./src/upgrade/ros_sys_upgrade_worker_native.conf)|RouterOS 系统自动更新脚本|官方硬件|
 |-|-|-|-|
 |[shortcut](./src/shortcut)|[ros_official_init_script.conf](./src/shortcut/ros_official_init_script.conf)|RouterOS 官方硬件自带的初始化脚本，仅供研究|官方硬件|
-||[ros_shortcut_chr_pppoe_dns.conf](./src/shortcut/ros_shortcut_chr_pppoe_dns.conf)|RouterOS CHR 命令行配置脚本，包含高级防火墙、内网 DNS、CAKE QoS、邮件推送、额外日志存储等|CHR|
-||[ros_shortcut_native_pppoe.conf](./src/shortcut/ros_shortcut_native_pppoe.conf)|与 CHR 脚本类似，但根据官方硬件做了部分适配修改，使用 Fq_Codel QoS|高性能官方硬件|
-||[ros_shortcut_native_pppoe_simple.conf](./src/shortcut/ros_shortcut_native_pppoe_simple.conf)|与高性能官方硬件脚本类似，但根据硬件性能使用精简防火墙并移除了QoS|官方硬件|
+||[ros_shortcut_chr_pppoe.conf](./src/shortcut/ros_shortcut_chr_pppoe.conf)| CHR 命令行配置脚本，包含高级防火墙、CAKE QoS、邮件推送、额外日志存储等|CHR|
+||[ros_shortcut_chr_pppoe_dns.conf](./src/shortcut/ros_shortcut_chr_pppoe_dns.conf)|与 CHR 脚本类似，包含内网 DNS 服务器设置|CHR|
+||[ros_shortcut_native_pppoe.conf](./src/shortcut/ros_shortcut_native_pppoe.conf)|与 CHR 脚本类似，但根据官方硬件做了部分适配修改，使用 Fq_Codel QoS|官方硬件|
+||[ros_shortcut_native_pppoe_simple.conf](./src/shortcut/ros_shortcut_native_pppoe_simple.conf)|与官方硬件脚本类似，但根据硬件性能使用精简防火墙并移除了QoS|官方硬件|
