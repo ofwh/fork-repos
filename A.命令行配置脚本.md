@@ -40,7 +40,7 @@
 ||[ros_sys_upgrade_worker_native.conf](./src/upgrade/ros_sys_upgrade_worker_native.conf)|RouterOS 系统自动更新脚本|官方硬件|
 |-|-|-|-|
 |[shortcut](./src/shortcut)|[ros_official_init_script.conf](./src/shortcut/ros_official_init_script.conf)|RouterOS 官方硬件自带的初始化脚本，仅供研究|官方硬件|
-||[ros_shortcut_chr_pppoe.conf](./src/shortcut/ros_shortcut_chr_pppoe.conf)| CHR 命令行配置脚本，包含高级防火墙、CAKE QoS、邮件推送、额外日志存储等|CHR|
+||[ros_shortcut_chr_pppoe.conf](./src/shortcut/ros_shortcut_chr_pppoe.conf)| CHR 配置脚本，包含高级防火墙、CAKE QoS、邮件推送、额外日志存储等|CHR|
 ||[ros_shortcut_chr_pppoe_dns.conf](./src/shortcut/ros_shortcut_chr_pppoe_dns.conf)|与 CHR 脚本类似，包含内网 DNS 服务器设置|CHR|
 ||[ros_shortcut_native_pppoe.conf](./src/shortcut/ros_shortcut_native_pppoe.conf)|与 CHR 脚本类似，但根据官方硬件做了部分适配修改，使用 Fq_Codel QoS|官方硬件|
 ||[ros_shortcut_native_pppoe_simple.conf](./src/shortcut/ros_shortcut_native_pppoe_simple.conf)|与官方硬件脚本类似，但根据硬件性能使用精简防火墙并移除了QoS|官方硬件|
