@@ -21,10 +21,10 @@
 |[firewall](./src/firewall)|[ros_blackhole_ipv4.conf](./src/firewall/ros_blackhole_ipv4.conf)|RouterOS IPv4 黑洞路由脚本|CHR / 官方硬件|
 ||[ros_blackhole_ipv6.conf](./src/firewall/ros_blackhole_ipv6.conf)|RouterOS IPv6 黑洞路由脚本|CHR / 官方硬件|
 ||[ros_firewall_ipv4_pppoe.conf](./src/firewall/ros_firewall_ipv4_pppoe.conf)|RouterOS IPv4 高级防火墙脚本，Fasttrack 关闭|CHR / 官方硬件|
-||[ros_firewall_ipv4_pppoe_dns.conf](./src/firewall/ros_firewall_ipv4_pppoe_dns.conf)|RouterOS IPv4 高级防火墙脚本，Fasttrack 关闭，自建 DNS 服务器|CHR / 官方硬件|
+||[ros_firewall_ipv4_pppoe_dns.conf](./src/firewall/ros_firewall_ipv4_pppoe_dns.conf)|RouterOS IPv4 高级防火墙脚本，Fasttrack 关闭，内网 DNS 服务器|CHR / 官方硬件|
 ||[ros_firewall_ipv4_pppoe_simple.conf](./src/firewall/ros_firewall_ipv4_pppoe_simple.conf)|RouterOS IPv4 精简防火墙脚本，Fasttrack 关闭|CHR / 官方硬件|
 ||[ros_firewall_ipv6_pppoe.conf](./src/firewall/ros_firewall_ipv6_pppoe.conf)|RouterOS IPv6 高级防火墙脚本|CHR / 官方硬件|
-||[ros_firewall_ipv6_pppoe_dns.conf](./src/firewall/ros_firewall_ipv6_pppoe_dns.conf)|RouterOS IPv6 高级防火墙脚本，自建 DNS 服务器|CHR / 官方硬件|
+||[ros_firewall_ipv6_pppoe_dns.conf](./src/firewall/ros_firewall_ipv6_pppoe_dns.conf)|RouterOS IPv6 高级防火墙脚本，内网 DNS 服务器|CHR / 官方硬件|
 ||[ros_firewall_ipv6_pppoe_simple.conf](./src/firewall/ros_firewall_ipv6_pppoe_simple.conf)|RouterOS IPv6 精简防火墙脚本|CHR / 官方硬件|
 |-|-|-|-|
 |[qos](./src/qos)|[ros_qos_cake.conf](./src/qos/ros_qos_cake.conf)|RouterOS 使用 CAKE 算法的简单队列配置脚本，要求 Fasttrack 关闭|CHR / 官方硬件|
