@@ -16,7 +16,8 @@
 
 |目录名称|文件名|说明|适用对象|
 |--|--|--|:--:|
-|[interfaces](./src/interfaces)|[ros_define_interfaces.conf](./src/interfaces/ros_define_interfaces.conf)|RouterOS 定义接口脚本，适用于 PPPoE 拨号场景|CHR / 官方硬件|
+|[interfaces](./src/interfaces)|[ros_define_interfaces_pppoe.conf](./src/interfaces/ros_define_interfaces_pppoe.conf)|RouterOS 定义接口脚本，适用于 PPPoE 拨号场景|CHR / 官方硬件|
+||[ros_define_interfaces_dhcp.conf](./src/interfaces/ros_define_interfaces_dhcp.conf)|RouterOS 定义接口脚本，适用于光猫拨号场景|CHR / 官方硬件|
 |-|-|-|-|
 |[firewall](./src/firewall)|[ros_blackhole_ipv4.conf](./src/firewall/ros_blackhole_ipv4.conf)|RouterOS IPv4 黑洞路由脚本|CHR / 官方硬件|
 ||[ros_blackhole_ipv6.conf](./src/firewall/ros_blackhole_ipv6.conf)|RouterOS IPv6 黑洞路由脚本|CHR / 官方硬件|
