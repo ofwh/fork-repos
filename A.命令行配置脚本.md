@@ -23,7 +23,7 @@
 ||[ros_blackhole_ipv6.conf](./src/firewall/ros_blackhole_ipv6.conf)|IPv6 黑洞路由脚本|CHR / 官方硬件|
 ||[ros_firewall_ipv4_pppoe.conf](./src/firewall/ros_firewall_ipv4_pppoe.conf)|PPPoE 模式，IPv4 高级防火墙脚本，Fasttrack 关闭|CHR / 官方硬件|
 ||[ros_firewall_ipv4_pppoe_dns.conf](./src/firewall/ros_firewall_ipv4_pppoe_dns.conf)|PPPoE 模式，IPv4 高级防火墙脚本，Fasttrack 关闭，内网 DNS 服务器|CHR / 官方硬件|
-||[ros_firewall_ipv4_pppoe_simple.conf](./src/firewall/ros_firewall_ipv4_pppoe_simple.conf)|PPPoE 模式，IPv4 精简防火墙脚本，Fasttrack 关闭|CHR / 官方硬件|
+||[ros_firewall_ipv4_pppoe_simple.conf](./src/firewall/ros_firewall_ipv4_pppoe_simple.conf)|PPPoE 模式，IPv4 精简防火墙脚本|CHR / 官方硬件|
 ||[ros_firewall_ipv4_dhcp.conf](./src/firewall/ros_firewall_ipv4_dhcp.conf)|DHCP 模式，IPv4 高级防火墙脚本|CHR / 官方硬件|
 ||[ros_firewall_ipv4_dhcp_dns.conf](./src/firewall/ros_firewall_ipv4_dhcp_dns.conf)|DHCP 模式，IPv4 高级防火墙脚本，内网 DNS 服务器|CHR / 官方硬件|
 ||[ros_firewall_ipv4_dhcp_simple.conf](./src/firewall/ros_firewall_ipv4_dhcp_simple.conf)|DHCP 模式，IPv4 精简防火墙脚本|CHR / 官方硬件|
