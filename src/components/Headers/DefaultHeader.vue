@@ -151,7 +151,7 @@
 
 </script>
 
-<style lang="scss" scoped>
+<style lang="less" scoped>
 
 	.nav-link svg {
 		margin-right: 5px;

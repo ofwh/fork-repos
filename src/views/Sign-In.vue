@@ -89,7 +89,7 @@
 
 </script>
 
-<style lang="scss">
+<style lang="less">
 	body {
 		background-color: #ffffff;
 	}

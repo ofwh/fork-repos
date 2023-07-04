@@ -94,7 +94,7 @@
 
 </script>
 
-<style lang="scss" scoped>
+<style lang="less" scoped>
 	canvas {
 		background-image: linear-gradient(to right, #00369E, #005CFD, #A18DFF ) ;
 	}

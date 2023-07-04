@@ -21,7 +21,8 @@ import DashboardRTLLayout from './layouts/DashboardRTL.vue'
 import router from './router'
 // import './plugins/click-away'
 
-import './scss/app.scss';
+// import './scss/app.scss';
+import './less/app.less';
 
 Vue.use(Antd);
 
