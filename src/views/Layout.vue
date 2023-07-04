@@ -4,22 +4,20 @@
  -->
 
 <template>
-	<div class="mb-24">
-		<div class="bg-white border-gray-3" style="height: calc(100vh - 89px); border: 1px solid">
-		</div>
-	</div>
+  <div class="mb-24">
+    <div
+      class="bg-white border-gray-3"
+      style="height: calc(100vh - 89px); border: 1px solid"
+    ></div>
+  </div>
 </template>
 
 <script>
-
-	export default ({
-		data() {
-			return {
-			}
-		},
-	})
-
+export default {
+  data() {
+    return {};
+  },
+};
 </script>
 
-<style lang="less">
-</style>
+<style lang="less"></style>
