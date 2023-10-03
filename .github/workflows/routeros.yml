@@ -1,0 +1,28 @@
+name: routeros
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+  schedule:
+    - cron: 0 0 * * 6
+
+env:
+  GIT_URL: https://gitee.com/callmer/routeros_toss_notes.git
+  GIT_REF: master
+  FORK_BRANCH: routeros
+  FORK_DIR: fork
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Fork "${{ env.FORK_BRANCH }}" repo
+        run: |
+          git clone ${{ env.GIT_URL }} -b ${{ env.GIT_REF }} ${{ env.FORK_DIR }}
+          cd ${{ env.FORK_DIR }}
+          git config user.name "${{ github.actor }}"
+          git config user.email "${{ github.actor }}@users.noreply.github.com"
+          git remote add github-fork "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}"
+          git push -f github-fork ${{ env.GIT_REF }}:${{ env.FORK_BRANCH }}
