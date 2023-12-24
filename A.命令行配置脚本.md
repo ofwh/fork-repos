@@ -15,31 +15,31 @@
 所有脚本文件放置路径为 [src目录](./src) ，具体说明如下：  
 
 |目录名称|文件名|说明|适用对象|
-|--|--|--|:--:|
-|[interfaces](./src/interfaces)|[ros_define_interfaces_pppoe.conf](./src/interfaces/ros_define_interfaces_pppoe.conf)|定义接口脚本，适用于 PPPoE 拨号场景|CHR / 官方硬件|
-||[ros_define_interfaces_dhcp.conf](./src/interfaces/ros_define_interfaces_dhcp.conf)|定义接口脚本，适用于光猫拨号场景|CHR / 官方硬件|
+|:--:|--|--|:--:|
+|[interfaces](./src/interfaces)|[ros_define_interfaces_pppoe.conf](./src/interfaces/ros_define_interfaces_pppoe.conf)|定义接口脚本，适用于 PPPoE 拨号场景|官方硬件 / CHR|
+||[ros_define_interfaces_dhcp.conf](./src/interfaces/ros_define_interfaces_dhcp.conf)|定义接口脚本，适用于光猫拨号场景|官方硬件 / CHR|
 |-|-|-|-|
-|[firewall](./src/firewall)|[ros_blackhole_ipv4.conf](./src/firewall/ros_blackhole_ipv4.conf)|IPv4 黑洞路由脚本|CHR / 官方硬件|
-||[ros_blackhole_ipv6.conf](./src/firewall/ros_blackhole_ipv6.conf)|IPv6 黑洞路由脚本|CHR / 官方硬件|
-||[ros_firewall_ipv4_ddos.conf](./src/firewall/ros_firewall_ipv4_ddos.conf)|IPv4 SYN-ACK Flood、DDoS 防御防火墙脚本|CHR / 官方硬件|
-||[ros_firewall_ipv4_dhcp.conf](./src/firewall/ros_firewall_ipv4_dhcp.conf)|DHCP 模式，IPv4 高级防火墙脚本|CHR / 官方硬件|
-||[ros_firewall_ipv4_dhcp_dns.conf](./src/firewall/ros_firewall_ipv4_dhcp_dns.conf)|DHCP 模式，IPv4 高级防火墙脚本，内网 DNS 服务器|CHR / 官方硬件|
-||[ros_firewall_ipv4_dhcp_simple.conf](./src/firewall/ros_firewall_ipv4_dhcp_simple.conf)|DHCP 模式，IPv4 精简防火墙脚本|CHR / 官方硬件|
-||[ros_firewall_ipv4_pppoe.conf](./src/firewall/ros_firewall_ipv4_pppoe.conf)|PPPoE 模式，IPv4 高级防火墙脚本，Fasttrack 关闭|CHR / 官方硬件|
-||[ros_firewall_ipv4_pppoe_dns.conf](./src/firewall/ros_firewall_ipv4_pppoe_dns.conf)|PPPoE 模式，IPv4 高级防火墙脚本，Fasttrack 关闭，内网 DNS 服务器|CHR / 官方硬件|
-||[ros_firewall_ipv4_pppoe_simple.conf](./src/firewall/ros_firewall_ipv4_pppoe_simple.conf)|PPPoE 模式，IPv4 精简防火墙脚本|CHR / 官方硬件|
-||[ros_firewall_ipv6_ddos.conf](./src/firewall/ros_firewall_ipv6_ddos.conf)|IPv6 SYN-ACK Flood、DDoS 防御防火墙脚本|CHR / 官方硬件|
-||[ros_firewall_ipv6_pppoe.conf](./src/firewall/ros_firewall_ipv6_pppoe.conf)|PPPoE 模式，IPv6 高级防火墙脚本|CHR / 官方硬件|
-||[ros_firewall_ipv6_pppoe_dns.conf](./src/firewall/ros_firewall_ipv6_pppoe_dns.conf)|PPPoE 模式，IPv6 高级防火墙脚本，内网 DNS 服务器|CHR / 官方硬件|
-||[ros_firewall_ipv6_pppoe_simple.conf](./src/firewall/ros_firewall_ipv6_pppoe_simple.conf)|PPPoE 模式，IPv6 精简防火墙脚本|CHR / 官方硬件|
+|[firewall](./src/firewall)|[ros_blackhole_ipv4.conf](./src/firewall/ros_blackhole_ipv4.conf)|IPv4 黑洞路由脚本|官方硬件 / CHR|
+||[ros_blackhole_ipv6.conf](./src/firewall/ros_blackhole_ipv6.conf)|IPv6 黑洞路由脚本|官方硬件 / CHR|
+||[ros_firewall_ipv4_ddos.conf](./src/firewall/ros_firewall_ipv4_ddos.conf)|IPv4 SYN-ACK Flood、DDoS 防御防火墙脚本|官方硬件 / CHR|
+||[ros_firewall_ipv4_dhcp.conf](./src/firewall/ros_firewall_ipv4_dhcp.conf)|DHCP 模式，IPv4 高级防火墙脚本|官方硬件 / CHR|
+||[ros_firewall_ipv4_dhcp_dns.conf](./src/firewall/ros_firewall_ipv4_dhcp_dns.conf)|DHCP 模式，IPv4 高级防火墙脚本，内网 DNS 服务器|官方硬件 / CHR|
+||[ros_firewall_ipv4_dhcp_simple.conf](./src/firewall/ros_firewall_ipv4_dhcp_simple.conf)|DHCP 模式，IPv4 精简防火墙脚本|官方硬件 / CHR|
+||[ros_firewall_ipv4_pppoe.conf](./src/firewall/ros_firewall_ipv4_pppoe.conf)|PPPoE 模式，IPv4 高级防火墙脚本，Fasttrack 关闭|官方硬件 / CHR|
+||[ros_firewall_ipv4_pppoe_dns.conf](./src/firewall/ros_firewall_ipv4_pppoe_dns.conf)|PPPoE 模式，IPv4 高级防火墙脚本，Fasttrack 关闭，内网 DNS 服务器|官方硬件 / CHR|
+||[ros_firewall_ipv4_pppoe_simple.conf](./src/firewall/ros_firewall_ipv4_pppoe_simple.conf)|PPPoE 模式，IPv4 精简防火墙脚本|官方硬件 / CHR|
+||[ros_firewall_ipv6_ddos.conf](./src/firewall/ros_firewall_ipv6_ddos.conf)|IPv6 SYN-ACK Flood、DDoS 防御防火墙脚本|官方硬件 / CHR|
+||[ros_firewall_ipv6_pppoe.conf](./src/firewall/ros_firewall_ipv6_pppoe.conf)|PPPoE 模式，IPv6 高级防火墙脚本|官方硬件 / CHR|
+||[ros_firewall_ipv6_pppoe_dns.conf](./src/firewall/ros_firewall_ipv6_pppoe_dns.conf)|PPPoE 模式，IPv6 高级防火墙脚本，内网 DNS 服务器|官方硬件 / CHR|
+||[ros_firewall_ipv6_pppoe_simple.conf](./src/firewall/ros_firewall_ipv6_pppoe_simple.conf)|PPPoE 模式，IPv6 精简防火墙脚本|官方硬件 / CHR|
 |-|-|-|-|
-|[qos](./src/qos)|[ros_qos_cake.conf](./src/qos/ros_qos_cake.conf)|CAKE 算法的 QoS 配置脚本|CHR / 官方硬件|
-||[ros_qos_fq_codel.conf](./src/qos/ros_qos_fq_codel.conf)|Fq-CoDel 算法的 QoS 配置脚本|CHR / 官方硬件|
+|[qos](./src/qos)|[ros_qos_cake.conf](./src/qos/ros_qos_cake.conf)|CAKE 算法的 QoS 配置脚本|官方硬件 / CHR|
+||[ros_qos_fq_codel.conf](./src/qos/ros_qos_fq_codel.conf)|Fq-CoDel 算法的 QoS 配置脚本|官方硬件 / CHR|
 |-|-|-|-|
-|[schedule](./src/schedule)|[ros_schedule_script_dhcp.conf](./src/schedule/ros_schedule_script_dhcp.conf)|定时任务配置脚本，定时邮件推送、DHCPv4 重播、系统自动升级|CHR / 官方硬件|
-||[ros_schedule_script_pppoe.conf](./src/schedule/ros_schedule_script_pppoe.conf)|定时任务配置脚本，定时邮件推送、PPPoE 重播、系统自动升级|CHR / 官方硬件|
+|[schedule](./src/schedule)|[ros_schedule_script_dhcp.conf](./src/schedule/ros_schedule_script_dhcp.conf)|定时任务配置脚本，定时邮件推送、DHCPv4 重播、系统自动升级|官方硬件 / CHR|
+||[ros_schedule_script_pppoe.conf](./src/schedule/ros_schedule_script_pppoe.conf)|定时任务配置脚本，定时邮件推送、PPPoE 重播、系统自动升级|官方硬件 / CHR|
 |-|-|-|-|
-|[email](./src/email)|[ros_email_log_worker.conf](./src/email/ros_email_log_worker.conf)|日志收集邮件 推送脚本|CHR / 官方硬件|
+|[email](./src/email)|[ros_email_log_worker.conf](./src/email/ros_email_log_worker.conf)|日志收集邮件 推送脚本|官方硬件 / CHR|
 ||[ros_email_res_worker_native.conf](./src/email/ros_email_res_worker_native.conf)|资源状态邮件 推送脚本|官方硬件|
 ||[ros_email_res_worker_chr.conf](./src/email/ros_email_res_worker_chr.conf)|资源状态邮件 推送脚本|CHR|
 |-|-|-|-|
