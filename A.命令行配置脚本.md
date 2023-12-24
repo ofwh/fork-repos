@@ -4,7 +4,7 @@
 
 因此我这里整理了一份纯命令行配置 RouterOS CHR 版本的脚本，请查阅文件 [ros_shortcut_chr_pppoe_dns.conf](./src/shortcut/ros_shortcut_chr_pppoe_dns.conf) 。  
 
-对于 RouterOS 原生硬件配置脚本，例如 RB750Gr3 ，请参考文件 [ros_shortcut_native_pppoe.conf](./src/shortcut/ros_shortcut_native_pppoe.conf) 。  
+对于 RouterOS 官方硬件配置脚本，例如 RB750Gr3 ，请参考文件 [ros_shortcut_native_pppoe.conf](./src/shortcut/ros_shortcut_native_pppoe.conf) 。  
 
 同时，基于 RB750Gr3 自带的初始化脚本（精简防火墙版本），请参考文件 [ros_shortcut_native_pppoe_simple.conf](./src/shortcut/ros_shortcut_native_pppoe_simple.conf) 。  
 
@@ -40,11 +40,11 @@
 ||[ros_schedule_script_pppoe.conf](./src/schedule/ros_schedule_script_pppoe.conf)|定时任务配置脚本，定时邮件推送、PPPoE 重播、系统自动升级|官方硬件 / CHR|
 |-|-|-|-|
 |[email](./src/email)|[ros_email_log_worker.conf](./src/email/ros_email_log_worker.conf)|日志收集邮件 推送脚本|官方硬件 / CHR|
-||[ros_email_res_worker_native.conf](./src/email/ros_email_res_worker_native.conf)|资源状态邮件 推送脚本|官方硬件|
-||[ros_email_res_worker_chr.conf](./src/email/ros_email_res_worker_chr.conf)|资源状态邮件 推送脚本|CHR|
+||[ros_email_native_res_worker.conf](./src/email/ros_email_native_res_worker.conf)|资源状态邮件 推送脚本|官方硬件|
+||[ros_email_chr_res_worker.conf](./src/email/ros_email_chr_res_worker.conf)|资源状态邮件 推送脚本|CHR|
 |-|-|-|-|
-|[upgrade](./src/upgrade)|[ros_sys_upgrade_worker_native.conf](./src/upgrade/ros_sys_upgrade_worker_native.conf)|系统自动更新脚本|官方硬件|
-||[ros_sys_upgrade_worker_chr.conf](./src/upgrade/ros_sys_upgrade_worker_chr.conf)|系统自动更新脚本|CHR|
+|[upgrade](./src/upgrade)|[ros_sys_native_upgrade_worker.conf](./src/upgrade/ros_sys_native_upgrade_worker.conf)|系统自动更新脚本|官方硬件|
+||[ros_sys_chr_upgrade_worker.conf](./src/upgrade/ros_sys_chr_upgrade_worker.conf)|系统自动更新脚本|CHR|
 |-|-|-|-|
 |[shortcut](./src/shortcut)|[ros_official_init_script.conf](./src/shortcut/ros_official_init_script.conf)|官方硬件自带的初始化脚本，仅供研究|官方硬件|
 ||[ros_shortcut_native_dhcp.conf](./src/shortcut/ros_shortcut_native_dhcp.conf)|使用 DHCP 模式联网，高级防火墙，暂不支持配置 IPv6 |官方硬件|
