@@ -16,8 +16,8 @@
 
 |目录名称|文件名|说明|适用对象|
 |:--:|--|--|:--:|
-|[interfaces](./src/interfaces)|[ros_define_interfaces_dhcp.conf](./src/interfaces/ros_define_interfaces_dhcp.conf)|定义接口脚本，适用于光猫拨号场景|官方硬件 / CHR|
-||[ros_define_interfaces_pppoe.conf](./src/interfaces/ros_define_interfaces_pppoe.conf)|定义接口脚本，适用于 PPPoE 拨号场景|官方硬件 / CHR|
+|[interfaces](./src/interfaces)|[ros_define_interfaces.dhcp.conf](./src/interfaces/ros_define_interfaces.dhcp.conf)|定义接口脚本，适用于光猫拨号场景|官方硬件 / CHR|
+||[ros_define_interfaces.pppoe.conf](./src/interfaces/ros_define_interfaces.pppoe.conf)|定义接口脚本，适用于 PPPoE 拨号场景|官方硬件 / CHR|
 |-|-|-|-|
 |[firewall](./src/firewall)|[ros_blackhole_ipv4.conf](./src/firewall/ros_blackhole_ipv4.conf)|IPv4 黑洞路由脚本|官方硬件 / CHR|
 ||[ros_blackhole_ipv6.conf](./src/firewall/ros_blackhole_ipv6.conf)|IPv6 黑洞路由脚本|官方硬件 / CHR|
