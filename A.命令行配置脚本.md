@@ -21,17 +21,15 @@
 |-|-|-|-|
 |[firewall](./src/firewall)|[ros_blackhole_ipv4.conf](./src/firewall/ros_blackhole_ipv4.conf)|IPv4 黑洞路由脚本|官方硬件 / CHR|
 ||[ros_blackhole_ipv6.conf](./src/firewall/ros_blackhole_ipv6.conf)|IPv6 黑洞路由脚本|官方硬件 / CHR|
-||[ros_firewall_ipv4_ddos.conf](./src/firewall/ros_firewall_ipv4_ddos.conf)|IPv4 SYN-ACK Flood、DDoS 防御防火墙脚本|官方硬件 / CHR|
-||[ros_firewall_ipv4_dhcp.conf](./src/firewall/ros_firewall_ipv4_dhcp.conf)|DHCP 模式，IPv4 高级防火墙脚本|官方硬件 / CHR|
-||[ros_firewall_ipv4_dhcp_dns.conf](./src/firewall/ros_firewall_ipv4_dhcp_dns.conf)|DHCP 模式，IPv4 高级防火墙脚本，内网 DNS 服务器|官方硬件 / CHR|
-||[ros_firewall_ipv4_dhcp_simple.conf](./src/firewall/ros_firewall_ipv4_dhcp_simple.conf)|DHCP 模式，IPv4 精简防火墙脚本|官方硬件 / CHR|
-||[ros_firewall_ipv4_pppoe.conf](./src/firewall/ros_firewall_ipv4_pppoe.conf)|PPPoE 模式，IPv4 高级防火墙脚本，Fasttrack 关闭|官方硬件 / CHR|
-||[ros_firewall_ipv4_pppoe_dns.conf](./src/firewall/ros_firewall_ipv4_pppoe_dns.conf)|PPPoE 模式，IPv4 高级防火墙脚本，Fasttrack 关闭，内网 DNS 服务器|官方硬件 / CHR|
-||[ros_firewall_ipv4_pppoe_simple.conf](./src/firewall/ros_firewall_ipv4_pppoe_simple.conf)|PPPoE 模式，IPv4 精简防火墙脚本|官方硬件 / CHR|
-||[ros_firewall_ipv6_ddos.conf](./src/firewall/ros_firewall_ipv6_ddos.conf)|IPv6 SYN-ACK Flood、DDoS 防御防火墙脚本|官方硬件 / CHR|
-||[ros_firewall_ipv6_pppoe.conf](./src/firewall/ros_firewall_ipv6_pppoe.conf)|PPPoE 模式，IPv6 高级防火墙脚本|官方硬件 / CHR|
-||[ros_firewall_ipv6_pppoe_dns.conf](./src/firewall/ros_firewall_ipv6_pppoe_dns.conf)|PPPoE 模式，IPv6 高级防火墙脚本，内网 DNS 服务器|官方硬件 / CHR|
-||[ros_firewall_ipv6_pppoe_simple.conf](./src/firewall/ros_firewall_ipv6_pppoe_simple.conf)|PPPoE 模式，IPv6 精简防火墙脚本|官方硬件 / CHR|
+||[ros_firewall_ipv4.dhcp.basic.conf](./src/firewall/ros_firewall_ipv4.dhcp.basic.conf)|DHCP 模式，IPv4 精简防火墙脚本|官方硬件 / CHR|
+||[ros_firewall_ipv4.dhcp.advanced.conf](./src/firewall/ros_firewall_ipv4.dhcp.advanced.conf)|DHCP 模式，IPv4 高级防火墙脚本|官方硬件 / CHR|
+||[ros_firewall_ipv4.dhcp.expert.conf](./src/firewall/ros_firewall_ipv4.dhcp.expert.conf)|DHCP 模式，IPv4 高级防火墙脚本，内网 DNS 服务器，DDoS 防御|官方硬件 / CHR|
+||[ros_firewall_ipv4.pppoe.basic.conf](./src/firewall/ros_firewall_ipv4.pppoe.basic.conf)|PPPoE 模式，IPv4 精简防火墙脚本|官方硬件 / CHR|
+||[ros_firewall_ipv4.pppoe.advanced.conf](./src/firewall/ros_firewall_ipv4.pppoe.advanced.conf)|PPPoE 模式，IPv4 高级防火墙脚本，Fasttrack 关闭|官方硬件 / CHR|
+||[ros_firewall_ipv4.pppoe.expert.conf](./src/firewall/ros_firewall_ipv4.pppoe.expert.conf)|PPPoE 模式，IPv4 高级防火墙脚本，Fasttrack 关闭，内网 DNS 服务器，DDoS 防御|官方硬件 / CHR|
+||[ros_firewall_ipv6.pppoe.basic.conf](./src/firewall/ros_firewall_ipv6.pppoe.basic.conf)|PPPoE 模式，IPv6 精简防火墙脚本|官方硬件 / CHR|
+||[ros_firewall_ipv6.pppoe.advanced.conf](./src/firewall/ros_firewall_ipv6.pppoe.advanced.conf)|PPPoE 模式，IPv6 高级防火墙脚本|官方硬件 / CHR|
+||[ros_firewall_ipv6.pppoe.expert.conf](./src/firewall/ros_firewall_ipv6.pppoe.expert.conf)|PPPoE 模式，IPv6 高级防火墙脚本，内网 DNS 服务器，DDoS 防御|官方硬件 / CHR|
 |-|-|-|-|
 |[qos](./src/qos)|[ros_qos_cake.conf](./src/qos/ros_qos_cake.conf)|CAKE 算法的 QoS 配置脚本|官方硬件 / CHR|
 ||[ros_qos_fq_codel.conf](./src/qos/ros_qos_fq_codel.conf)|Fq-CoDel 算法的 QoS 配置脚本|官方硬件 / CHR|
