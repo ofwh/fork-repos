@@ -41,8 +41,8 @@
 ||[ros_email_res_worker.native.conf](./src/email/ros_email_res_worker.native.conf)|资源状态邮件 推送脚本|官方硬件|
 ||[ros_email_res_worker.chr.conf](./src/email/ros_email_res_worker.chr.conf)|资源状态邮件 推送脚本|CHR|
 |-|-|-|-|
-|[upgrade](./src/upgrade)|[ros_sys_native_upgrade_worker.conf](./src/upgrade/ros_sys_native_upgrade_worker.conf)|系统自动更新脚本|官方硬件|
-||[ros_sys_chr_upgrade_worker.conf](./src/upgrade/ros_sys_chr_upgrade_worker.conf)|系统自动更新脚本|CHR|
+|[upgrade](./src/upgrade)|[ros_sys_upgrade_worker.native.conf](./src/upgrade/ros_sys_upgrade_worker.native.conf)|系统自动更新脚本|官方硬件|
+||[ros_sys_upgrade_worker.chr.conf](./src/upgrade/ros_sys_upgrade_worker.chr.conf)|系统自动更新脚本|CHR|
 |-|-|-|-|
 |[shortcut](./src/shortcut)|[ros_official_init_script.conf](./src/shortcut/ros_official_init_script.conf)|官方硬件自带的初始化脚本，仅供研究|官方硬件|
 ||[ros_shortcut_native_dhcp.conf](./src/shortcut/ros_shortcut_native_dhcp.conf)|使用 DHCP 模式联网，高级防火墙，暂不支持配置 IPv6 |官方硬件|
