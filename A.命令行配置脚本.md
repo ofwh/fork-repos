@@ -40,8 +40,8 @@
 ||[ros_schedule_script_pppoe.conf](./src/schedule/ros_schedule_script_pppoe.conf)|定时任务配置脚本，定时邮件推送、PPPoE 重播、系统自动升级|官方硬件 / CHR|
 |-|-|-|-|
 |[email](./src/email)|[ros_email_log_worker.conf](./src/email/ros_email_log_worker.conf)|日志收集邮件 推送脚本|官方硬件 / CHR|
-||[ros_email_native_res_worker.conf](./src/email/ros_email_native_res_worker.conf)|资源状态邮件 推送脚本|官方硬件|
-||[ros_email_chr_res_worker.conf](./src/email/ros_email_chr_res_worker.conf)|资源状态邮件 推送脚本|CHR|
+||[ros_email_res_worker.native.conf](./src/email/ros_email_res_worker.native.conf)|资源状态邮件 推送脚本|官方硬件|
+||[ros_email_res_worker.chr.conf](./src/email/ros_email_res_worker.chr.conf)|资源状态邮件 推送脚本|CHR|
 |-|-|-|-|
 |[upgrade](./src/upgrade)|[ros_sys_native_upgrade_worker.conf](./src/upgrade/ros_sys_native_upgrade_worker.conf)|系统自动更新脚本|官方硬件|
 ||[ros_sys_chr_upgrade_worker.conf](./src/upgrade/ros_sys_chr_upgrade_worker.conf)|系统自动更新脚本|CHR|
