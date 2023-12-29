@@ -2,11 +2,11 @@
 
 经过这段时间对 RouterOS 各类基础配置的整理，发现即使是熟练使用 Winbox 来配置，也需要消耗大量的时间。  
 
-因此我这里整理了一份纯命令行配置 RouterOS CHR 版本的脚本，请查阅文件 [ros_shortcut_chr_pppoe_dns.conf](./src/shortcut/ros_shortcut_chr_pppoe_dns.conf) 。  
+因此我这里整理了一份纯命令行配置 RouterOS CHR 版本的脚本，请查阅文件 [ros_shortcut.pppoe.expert.chr.conf](./src/shortcut/ros_shortcut.pppoe.expert.chr.conf) 。  
 
-对于 RouterOS 官方硬件配置脚本，例如 RB750Gr3 ，请参考文件 [ros_shortcut_native_pppoe.conf](./src/shortcut/ros_shortcut_native_pppoe.conf) 。  
+对于 RouterOS 官方硬件配置脚本，例如 RB750Gr3 ，请参考文件 [ros_shortcut.pppoe.advanced.native.conf](./src/shortcut/ros_shortcut.pppoe.advanced.native.conf) 。  
 
-同时，基于 RB750Gr3 自带的初始化脚本（精简防火墙版本），请参考文件 [ros_shortcut_native_pppoe_simple.conf](./src/shortcut/ros_shortcut_native_pppoe_simple.conf) 。  
+同时，基于 RB750Gr3 自带的初始化脚本（精简防火墙版本），请参考文件 [ros_shortcut.pppoe.basic.native.conf](./src/shortcut/ros_shortcut.pppoe.basic.native.conf) 。  
 
 脚本包含了配置 RouterOS 的必要内容，其余事项在文件中有额外说明，希望能够减少大家初始化配置 RouterOS 的时间 :) 。  
 
@@ -45,9 +45,9 @@
 ||[ros_sys_upgrade_worker.chr.conf](./src/upgrade/ros_sys_upgrade_worker.chr.conf)|系统自动更新脚本|CHR|
 |-|-|-|-|
 |[shortcut](./src/shortcut)|[ros_official_init_script.conf](./src/shortcut/ros_official_init_script.conf)|官方硬件自带的初始化脚本，仅供研究|官方硬件|
-||[ros_shortcut_native_dhcp.conf](./src/shortcut/ros_shortcut_native_dhcp.conf)|使用 DHCP 模式联网，高级防火墙，暂不支持配置 IPv6 |官方硬件|
-||[ros_shortcut_native_dhcp_simple.conf](./src/shortcut/ros_shortcut_native_dhcp_simple.conf)|与 DHCP 脚本类似，精简防火墙，移除了 QoS |官方硬件|
-||[ros_shortcut_native_pppoe.conf](./src/shortcut/ros_shortcut_native_pppoe.conf)|与 CHR 脚本类似，但根据官方硬件做了部分适配修改，使用 Fq_Codel QoS |官方硬件|
-||[ros_shortcut_native_pppoe_simple.conf](./src/shortcut/ros_shortcut_native_pppoe_simple.conf)|与官方硬件脚本类似，但根据硬件性能使用精简防火墙并移除了 QoS |官方硬件|
-||[ros_shortcut_chr_pppoe.conf](./src/shortcut/ros_shortcut_chr_pppoe.conf)| CHR 配置脚本，高级防火墙、CAKE QoS、邮件推送、额外日志存储等|CHR|
-||[ros_shortcut_chr_pppoe_dns.conf](./src/shortcut/ros_shortcut_chr_pppoe_dns.conf)|与 CHR 脚本类似，内网 DNS 服务器|CHR|
+||[ros_shortcut.dhcp.basic.native.conf](./src/shortcut/ros_shortcut.dhcp.basic.native.conf)|官方硬件配置脚本，DHCP 模式，精简防火墙|官方硬件|
+||[ros_shortcut.dhcp.advanced.native.conf](./src/shortcut/ros_shortcut.dhcp.advanced.native.conf)|与 DHCP 脚本类似，高级防火墙，Fq-CoDel QoS，暂不支持配置 IPv6 |官方硬件|
+||[ros_shortcut.pppoe.basic.native.conf](./src/shortcut/ros_shortcut.pppoe.basic.native.conf)|官方硬件配置脚本，PPPoE 模式，精简防火墙，支持配置 IPv6 |官方硬件|
+||[ros_shortcut.pppoe.advanced.native.conf](./src/shortcut/ros_shortcut.pppoe.advanced.native.conf)|与前者类似，高级防火墙，Fq-CoDel QoS|官方硬件|
+||[ros_shortcut.pppoe.advanced.chr.conf](./src/shortcut/ros_shortcut.pppoe.advanced.chr.conf)| CHR 配置脚本，高级防火墙、CAKE QoS、邮件推送、额外日志存储等|CHR|
+||[ros_shortcut.pppoe.expert.chr.conf](./src/shortcut/ros_shortcut.pppoe.expert.chr.conf)|与前者类似，内网 DNS 服务器，DDoS 防御|CHR|
