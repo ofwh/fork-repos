@@ -34,8 +34,8 @@
 |[qos](./src/qos)|[ros_qos_cake.conf](./src/qos/ros_qos_cake.conf)|CAKE 算法的 QoS 配置脚本|官方硬件 / CHR|
 ||[ros_qos_fq_codel.conf](./src/qos/ros_qos_fq_codel.conf)|Fq-CoDel 算法的 QoS 配置脚本|官方硬件 / CHR|
 |-|-|-|-|
-|[schedule](./src/schedule)|[ros_schedule_script.dhcp.conf](./src/schedule/ros_schedule_script.dhcp.conf)|定时任务配置脚本，定时邮件推送、DHCPv4 重播、系统自动升级|官方硬件 / CHR|
-||[ros_schedule_script.pppoe.conf](./src/schedule/ros_schedule_script.pppoe.conf)|定时任务配置脚本，定时邮件推送、PPPoE 重播、系统自动升级|官方硬件 / CHR|
+|[schedule](./src/schedule)|[ros_schedule_script.dhcp.conf](./src/schedule/ros_schedule_script.dhcp.conf)|定时任务配置脚本，定时邮件推送，DHCPv4 重播，系统自动升级|官方硬件 / CHR|
+||[ros_schedule_script.pppoe.conf](./src/schedule/ros_schedule_script.pppoe.conf)|定时任务配置脚本，定时邮件推送，PPPoE 重播，系统自动升级|官方硬件 / CHR|
 |-|-|-|-|
 |[email](./src/email)|[ros_email_log_worker.conf](./src/email/ros_email_log_worker.conf)|日志收集邮件 推送脚本|官方硬件 / CHR|
 ||[ros_email_res_worker.native.conf](./src/email/ros_email_res_worker.native.conf)|资源状态邮件 推送脚本|官方硬件|
@@ -49,5 +49,5 @@
 ||[ros_shortcut.dhcp.advanced.native.conf](./src/shortcut/ros_shortcut.dhcp.advanced.native.conf)|与前者类似，高级防火墙，Fq-CoDel QoS|官方硬件|
 ||[ros_shortcut.pppoe.basic.native.conf](./src/shortcut/ros_shortcut.pppoe.basic.native.conf)|官方硬件配置脚本，PPPoE 模式，精简防火墙，支持配置 IPv6 |官方硬件|
 ||[ros_shortcut.pppoe.advanced.native.conf](./src/shortcut/ros_shortcut.pppoe.advanced.native.conf)|与前者类似，高级防火墙，Fq-CoDel QoS|官方硬件|
-||[ros_shortcut.pppoe.advanced.chr.conf](./src/shortcut/ros_shortcut.pppoe.advanced.chr.conf)| CHR 配置脚本，高级防火墙、CAKE QoS、邮件推送、额外日志存储等|CHR|
+||[ros_shortcut.pppoe.advanced.chr.conf](./src/shortcut/ros_shortcut.pppoe.advanced.chr.conf)| CHR 配置脚本，高级防火墙，CAKE QoS，邮件推送，额外日志存储等|CHR|
 ||[ros_shortcut.pppoe.expert.chr.conf](./src/shortcut/ros_shortcut.pppoe.expert.chr.conf)|与前者类似，内网 DNS 服务器，DDoS 防御|CHR|
