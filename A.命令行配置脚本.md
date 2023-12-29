@@ -6,7 +6,7 @@
 
 对于 RouterOS 官方硬件配置脚本，例如 RB750Gr3 ，请参考文件 [ros_shortcut.pppoe.advanced.native.conf](./src/shortcut/ros_shortcut.pppoe.advanced.native.conf) 。  
 
-同时，基于 RB750Gr3 自带的初始化脚本（精简防火墙版本），请参考文件 [ros_shortcut.pppoe.basic.native.conf](./src/shortcut/ros_shortcut.pppoe.basic.native.conf) 。  
+同时，基于 RB750Gr3 自带的初始化脚本（初级防火墙版本），请参考文件 [ros_shortcut.pppoe.basic.native.conf](./src/shortcut/ros_shortcut.pppoe.basic.native.conf) 。  
 
 脚本包含了配置 RouterOS 的必要内容，其余事项在文件中有额外说明，希望能够减少大家初始化配置 RouterOS 的时间 :) 。  
 
@@ -21,13 +21,13 @@
 |-|-|-|-|
 |[firewall](./src/firewall)|[ros_blackhole_ipv4.conf](./src/firewall/ros_blackhole_ipv4.conf)|IPv4 黑洞路由脚本|官方硬件 / CHR|
 ||[ros_blackhole_ipv6.conf](./src/firewall/ros_blackhole_ipv6.conf)|IPv6 黑洞路由脚本|官方硬件 / CHR|
-||[ros_firewall_ipv4.dhcp.basic.conf](./src/firewall/ros_firewall_ipv4.dhcp.basic.conf)|DHCP 模式，IPv4 精简防火墙|官方硬件 / CHR|
+||[ros_firewall_ipv4.dhcp.basic.conf](./src/firewall/ros_firewall_ipv4.dhcp.basic.conf)|DHCP 模式，IPv4 初级防火墙|官方硬件 / CHR|
 ||[ros_firewall_ipv4.dhcp.advanced.conf](./src/firewall/ros_firewall_ipv4.dhcp.advanced.conf)|DHCP 模式，IPv4 高级防火墙|官方硬件 / CHR|
 ||[ros_firewall_ipv4.dhcp.expert.conf](./src/firewall/ros_firewall_ipv4.dhcp.expert.conf)|DHCP 模式，IPv4 高级防火墙，内网 DNS 服务器，DDoS 防御|官方硬件 / CHR|
-||[ros_firewall_ipv4.pppoe.basic.conf](./src/firewall/ros_firewall_ipv4.pppoe.basic.conf)|PPPoE 模式，IPv4 精简防火墙|官方硬件 / CHR|
+||[ros_firewall_ipv4.pppoe.basic.conf](./src/firewall/ros_firewall_ipv4.pppoe.basic.conf)|PPPoE 模式，IPv4 初级防火墙|官方硬件 / CHR|
 ||[ros_firewall_ipv4.pppoe.advanced.conf](./src/firewall/ros_firewall_ipv4.pppoe.advanced.conf)|PPPoE 模式，IPv4 高级防火墙，Fasttrack 关闭|官方硬件 / CHR|
 ||[ros_firewall_ipv4.pppoe.expert.conf](./src/firewall/ros_firewall_ipv4.pppoe.expert.conf)|PPPoE 模式，IPv4 高级防火墙，内网 DNS 服务器，DDoS 防御|官方硬件 / CHR|
-||[ros_firewall_ipv6.pppoe.basic.conf](./src/firewall/ros_firewall_ipv6.pppoe.basic.conf)|PPPoE 模式，IPv6 精简防火墙|官方硬件 / CHR|
+||[ros_firewall_ipv6.pppoe.basic.conf](./src/firewall/ros_firewall_ipv6.pppoe.basic.conf)|PPPoE 模式，IPv6 初级防火墙|官方硬件 / CHR|
 ||[ros_firewall_ipv6.pppoe.advanced.conf](./src/firewall/ros_firewall_ipv6.pppoe.advanced.conf)|PPPoE 模式，IPv6 高级防火墙|官方硬件 / CHR|
 ||[ros_firewall_ipv6.pppoe.expert.conf](./src/firewall/ros_firewall_ipv6.pppoe.expert.conf)|PPPoE 模式，IPv6 高级防火墙，内网 DNS 服务器，DDoS 防御|官方硬件 / CHR|
 |-|-|-|-|
@@ -45,9 +45,9 @@
 ||[ros_sys_upgrade_worker.chr.conf](./src/upgrade/ros_sys_upgrade_worker.chr.conf)|系统自动更新脚本|CHR|
 |-|-|-|-|
 |[shortcut](./src/shortcut)|[ros_official_init_script.conf](./src/shortcut/ros_official_init_script.conf)|官方硬件自带的初始化脚本，仅供研究|官方硬件|
-||[ros_shortcut.dhcp.basic.native.conf](./src/shortcut/ros_shortcut.dhcp.basic.native.conf)|官方硬件配置脚本，DHCP 模式，精简防火墙，暂不支持配置 IPv6 |官方硬件|
+||[ros_shortcut.dhcp.basic.native.conf](./src/shortcut/ros_shortcut.dhcp.basic.native.conf)|官方硬件配置脚本，DHCP 模式，初级防火墙，暂不支持配置 IPv6 |官方硬件|
 ||[ros_shortcut.dhcp.advanced.native.conf](./src/shortcut/ros_shortcut.dhcp.advanced.native.conf)|与前者类似，高级防火墙，Fq-CoDel QoS|官方硬件|
-||[ros_shortcut.pppoe.basic.native.conf](./src/shortcut/ros_shortcut.pppoe.basic.native.conf)|官方硬件配置脚本，PPPoE 模式，精简防火墙，支持配置 IPv6 |官方硬件|
+||[ros_shortcut.pppoe.basic.native.conf](./src/shortcut/ros_shortcut.pppoe.basic.native.conf)|官方硬件配置脚本，PPPoE 模式，初级防火墙，支持配置 IPv6 |官方硬件|
 ||[ros_shortcut.pppoe.advanced.native.conf](./src/shortcut/ros_shortcut.pppoe.advanced.native.conf)|与前者类似，高级防火墙，Fq-CoDel QoS|官方硬件|
 ||[ros_shortcut.pppoe.advanced.chr.conf](./src/shortcut/ros_shortcut.pppoe.advanced.chr.conf)| CHR 配置脚本，高级防火墙，CAKE QoS，邮件推送，额外日志存储等|CHR|
 ||[ros_shortcut.pppoe.expert.chr.conf](./src/shortcut/ros_shortcut.pppoe.expert.chr.conf)|与前者类似，内网 DNS 服务器，DDoS 防御|CHR|
