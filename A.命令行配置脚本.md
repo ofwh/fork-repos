@@ -26,7 +26,7 @@
 ||[ros_firewall_ipv4.dhcp.expert.conf](./src/firewall/ros_firewall_ipv4.dhcp.expert.conf)|DHCP 模式，IPv4 高级防火墙，内网 DNS 服务器，DDoS 防御|官方硬件 / CHR|
 ||[ros_firewall_ipv4.pppoe.basic.conf](./src/firewall/ros_firewall_ipv4.pppoe.basic.conf)|PPPoE 模式，IPv4 精简防火墙|官方硬件 / CHR|
 ||[ros_firewall_ipv4.pppoe.advanced.conf](./src/firewall/ros_firewall_ipv4.pppoe.advanced.conf)|PPPoE 模式，IPv4 高级防火墙，Fasttrack 关闭|官方硬件 / CHR|
-||[ros_firewall_ipv4.pppoe.expert.conf](./src/firewall/ros_firewall_ipv4.pppoe.expert.conf)|PPPoE 模式，IPv4 高级防火墙，Fasttrack 关闭，内网 DNS 服务器，DDoS 防御|官方硬件 / CHR|
+||[ros_firewall_ipv4.pppoe.expert.conf](./src/firewall/ros_firewall_ipv4.pppoe.expert.conf)|PPPoE 模式，IPv4 高级防火墙，内网 DNS 服务器，DDoS 防御|官方硬件 / CHR|
 ||[ros_firewall_ipv6.pppoe.basic.conf](./src/firewall/ros_firewall_ipv6.pppoe.basic.conf)|PPPoE 模式，IPv6 精简防火墙|官方硬件 / CHR|
 ||[ros_firewall_ipv6.pppoe.advanced.conf](./src/firewall/ros_firewall_ipv6.pppoe.advanced.conf)|PPPoE 模式，IPv6 高级防火墙|官方硬件 / CHR|
 ||[ros_firewall_ipv6.pppoe.expert.conf](./src/firewall/ros_firewall_ipv6.pppoe.expert.conf)|PPPoE 模式，IPv6 高级防火墙，内网 DNS 服务器，DDoS 防御|官方硬件 / CHR|
