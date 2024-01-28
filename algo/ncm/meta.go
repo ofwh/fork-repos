@@ -18,7 +18,7 @@ type ncmMeta interface {
 
 type ncmMetaMusic struct {
 	Format        string          `json:"format"`
-	MusicID       int             `json:"musicId"`
+	MusicID       interface{}     `json:"musicId"` // 可能是 int (旧) 也可能是 string (新)
 	MusicName     string          `json:"musicName"`
 	Artist        [][]interface{} `json:"artist"`
 	Album         string          `json:"album"`
