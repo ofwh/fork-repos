@@ -5,6 +5,9 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/fsnotify/fsnotify"
+	"github.com/urfave/cli/v2"
+	"go.uber.org/zap"
 	"io"
 	"os"
 	"os/signal"
@@ -14,10 +17,7 @@ import (
 	"sort"
 	"strings"
 	"time"
-
-	"github.com/fsnotify/fsnotify"
-	"github.com/urfave/cli/v2"
-	"go.uber.org/zap"
+	"unlock-music.dev/cli/algo/qmc"
 
 	"unlock-music.dev/cli/algo/common"
 	_ "unlock-music.dev/cli/algo/kgm"
@@ -50,6 +50,8 @@ func main() {
 		Flags: []cli.Flag{
 			&cli.StringFlag{Name: "input", Aliases: []string{"i"}, Usage: "path to input file or dir", Required: false},
 			&cli.StringFlag{Name: "output", Aliases: []string{"o"}, Usage: "path to output dir", Required: false},
+			&cli.StringFlag{Name: "vault-path", Aliases: []string{"db"}, Usage: "数据库文件位置 (请确保crc文件在同目录下)", Required: false},
+			&cli.StringFlag{Name: "vault-key", Aliases: []string{"key"}, Usage: "数据库密钥", Required: false},
 			&cli.BoolFlag{Name: "remove-source", Aliases: []string{"rs"}, Usage: "remove source file", Required: false, Value: false},
 			&cli.BoolFlag{Name: "skip-noop", Aliases: []string{"n"}, Usage: "skip noop decoder", Required: false, Value: true},
 			&cli.BoolFlag{Name: "update-metadata", Usage: "update metadata & album art from network", Required: false, Value: false},
@@ -86,6 +88,8 @@ func appMain(c *cli.Context) (err error) {
 		printSupportedExtensions()
 		return nil
 	}
+	qmc.VaultPath = c.String("vault-path") // TODO: 更改参数传递方式
+	qmc.VaultKey = c.String("vault-key")
 	input := c.String("input")
 	if input == "" {
 		switch c.Args().Len() {

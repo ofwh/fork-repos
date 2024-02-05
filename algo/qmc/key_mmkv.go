@@ -1,17 +1,20 @@
 package qmc
 
 import (
+	"bytes"
+	"encoding/base64"
 	"errors"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"runtime"
 
+	"git.unlock-music.dev/awalol/go-mmkv"
 	"github.com/samber/lo"
 	"go.uber.org/zap"
 	"golang.org/x/exp/slices"
 	"golang.org/x/text/unicode/norm"
-	"unlock-music.dev/mmkv"
 )
 
 var streamKeyVault mmkv.Vault
@@ -78,6 +81,45 @@ func readKeyFromMMKV(file string, logger *zap.Logger) ([]byte, error) {
 	}
 
 	return deriveKey(buf)
+}
+
+func readKeyFromMMKVCustom(d *Decoder) ([]byte, error) {
+	logger := d.logger
+	filePath, fileName := filepath.Split(VaultPath)
+
+	if streamKeyVault == nil {
+		mgr, err := mmkv.NewManager(filepath.Dir(filePath))
+		if err != nil {
+			return nil, fmt.Errorf("init mmkv manager: %w", err)
+		}
+
+		streamKeyVault, err = mgr.OpenVaultCrypto(fileName, VaultKey)
+		if err != nil {
+			return nil, fmt.Errorf("open mmkv vault: %w", err)
+		}
+
+		logger.Debug("mmkv vault opened", zap.Strings("keys", streamKeyVault.Keys()))
+	}
+
+	// 获取mid即数据库键值
+	_, err := d.raw.Seek(-128, io.SeekEnd)
+	if err != nil {
+		return nil, fmt.Errorf("get mid error: %w", err)
+	}
+	mid, err := io.ReadAll(io.LimitReader(d.raw, 64))   // 取64字节确保完全取完
+	mid = bytes.ReplaceAll(mid, []byte{0x00}, []byte{}) // clean NUL
+	mid = bytes.Trim(mid, "\0000")                      // maybe a little stupid
+
+	// 从数据库获取eKey
+	eKey, err := streamKeyVault.GetBytes(string(mid))
+	if err != nil {
+		return nil, fmt.Errorf("get eKey error: %w", err)
+	}
+	n, err := base64.StdEncoding.Decode(eKey, eKey)
+	if err != nil {
+		return nil, fmt.Errorf("base64 error: %w", err)
+	}
+	return deriveKeyV1(eKey[:n])
 }
 
 func getRelativeMMKVDir(file string) (string, error) {
