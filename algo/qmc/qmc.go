@@ -5,12 +5,11 @@ import (
 	"encoding/binary"
 	"errors"
 	"fmt"
+	"go.uber.org/zap"
 	"io"
 	"runtime"
 	"strconv"
 	"strings"
-
-	"go.uber.org/zap"
 
 	"unlock-music.dev/cli/algo/common"
 	"unlock-music.dev/cli/internal/sniff"
@@ -41,6 +40,8 @@ type Decoder struct {
 
 	// provider
 	logger *zap.Logger
+
+	footer qqMusicTagMusicEx
 }
 
 // Read implements io.Reader, offer the decrypted audio data.
@@ -146,27 +147,16 @@ func (d *Decoder) searchKey() (err error) {
 	case "STag":
 		return errors.New("qmc: file with 'STag' suffix doesn't contains media key")
 	case "cex\x00":
-		d.decodedKey, err = readKeyFromMMKVCustom(d)
-		if err == nil {
-			suffix := []byte{0x63, 0x65, 0x78, 0x00} // cex
-			for i := 0; i <= 3; i++ {
-				// 末尾的信息数据每192字节出现一次，故只要循环判断末尾不为musicex时即为歌曲数据
-				musicexLen, err := d.raw.Seek(int64(-(192*i)-4), io.SeekEnd)
-				if err != nil {
-					return fmt.Errorf("get musicexLen error: %w", err)
-				}
-				buf, err := io.ReadAll(io.LimitReader(d.raw, 4))
-				if err != nil {
-					return fmt.Errorf("get musicex error: %w", err)
-				}
-				if !bytes.Equal(buf, suffix) {
-					d.audioLen = int(musicexLen) + 4
-					return nil
-				}
-			}
-
+		audioLen, err := d.footer.Read(d.raw)
+		if err != nil {
+			return err
 		}
-		return err
+		d.audioLen = int(audioLen)
+		d.decodedKey, err = readKeyFromMMKVCustom(d.footer.mediafile)
+		if err != nil {
+			return err
+		}
+		return nil
 	default:
 		size := binary.LittleEndian.Uint32(suffixBuf)
 

@@ -1,11 +1,9 @@
 package qmc
 
 import (
-	"bytes"
 	"encoding/base64"
 	"errors"
 	"fmt"
-	"io"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -99,21 +97,13 @@ func OpenMMKV(vaultPath string, vaultKey string, logger *zap.Logger) error {
 	return nil
 }
 
-func readKeyFromMMKVCustom(d *Decoder) ([]byte, error) {
+func readKeyFromMMKVCustom(mid string) ([]byte, error) {
 	if streamKeyVault == nil {
 		return nil, fmt.Errorf("mmkv vault not loaded")
 	}
-	// 获取mid即数据库键值
-	_, err := d.raw.Seek(-128, io.SeekEnd)
-	if err != nil {
-		return nil, fmt.Errorf("get mid error: %w", err)
-	}
-	mid, err := io.ReadAll(io.LimitReader(d.raw, 64))   // 取64字节确保完全取完
-	mid = bytes.ReplaceAll(mid, []byte{0x00}, []byte{}) // clean NUL
-	mid = bytes.Trim(mid, "\0000")                      // maybe a little stupid
 
-	// 从数据库获取eKey
-	eKey, err := streamKeyVault.GetBytes(string(mid))
+	// get ekey from mmkv vault
+	eKey, err := streamKeyVault.GetBytes(mid)
 	if err != nil {
 		return nil, fmt.Errorf("get eKey error: %w", err)
 	}
