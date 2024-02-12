@@ -140,12 +140,12 @@ func (d *Decoder) searchKey() (err error) {
 		return err
 	}
 
-	switch string(bytes.ReplaceAll(suffixBuf, []byte{0x00}, []byte{})) {
+	switch string(suffixBuf) {
 	case "QTag":
 		return d.readRawMetaQTag()
 	case "STag":
 		return errors.New("qmc: file with 'STag' suffix doesn't contains media key")
-	case "cex":
+	case "cex\x00":
 		d.decodedKey, err = readKeyFromMMKVCustom(d)
 		if err == nil {
 			suffix := []byte{0x63, 0x65, 0x78, 0x00} // cex
@@ -164,6 +164,7 @@ func (d *Decoder) searchKey() (err error) {
 					return nil
 				}
 			}
+
 		}
 		return err
 	default:
