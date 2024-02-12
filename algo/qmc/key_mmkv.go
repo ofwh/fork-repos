@@ -83,24 +83,26 @@ func readKeyFromMMKV(file string, logger *zap.Logger) ([]byte, error) {
 	return deriveKey(buf)
 }
 
-func readKeyFromMMKVCustom(d *Decoder) ([]byte, error) {
-	logger := d.logger
-	filePath, fileName := filepath.Split(VaultPath)
-
-	if streamKeyVault == nil {
-		mgr, err := mmkv.NewManager(filepath.Dir(filePath))
-		if err != nil {
-			return nil, fmt.Errorf("init mmkv manager: %w", err)
-		}
-
-		streamKeyVault, err = mgr.OpenVaultCrypto(fileName, VaultKey)
-		if err != nil {
-			return nil, fmt.Errorf("open mmkv vault: %w", err)
-		}
-
-		logger.Debug("mmkv vault opened", zap.Strings("keys", streamKeyVault.Keys()))
+func OpenMMKV(vaultPath string, vaultKey string, logger *zap.Logger) error {
+	filePath, fileName := filepath.Split(vaultPath)
+	mgr, err := mmkv.NewManager(filepath.Dir(filePath))
+	if err != nil {
+		return fmt.Errorf("init mmkv manager: %w", err)
 	}
 
+	streamKeyVault, err = mgr.OpenVaultCrypto(fileName, vaultKey)
+	if err != nil {
+		return fmt.Errorf("open mmkv vault: %w", err)
+	}
+
+	logger.Debug("mmkv vault opened", zap.Strings("keys", streamKeyVault.Keys()))
+	return nil
+}
+
+func readKeyFromMMKVCustom(d *Decoder) ([]byte, error) {
+	if streamKeyVault == nil {
+		return nil, fmt.Errorf("mmkv vault not loaded")
+	}
 	// 获取mid即数据库键值
 	_, err := d.raw.Seek(-128, io.SeekEnd)
 	if err != nil {

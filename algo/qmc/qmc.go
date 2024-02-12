@@ -16,9 +16,6 @@ import (
 	"unlock-music.dev/cli/internal/sniff"
 )
 
-var VaultPath = ""
-var VaultKey = ""
-
 type Decoder struct {
 	raw    io.ReadSeeker // raw is the original file reader
 	params *common.DecoderParams
