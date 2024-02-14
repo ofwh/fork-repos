@@ -40,8 +40,6 @@ type Decoder struct {
 
 	// provider
 	logger *zap.Logger
-
-	footer qqMusicTagMusicEx
 }
 
 // Read implements io.Reader, offer the decrypted audio data.
@@ -147,12 +145,13 @@ func (d *Decoder) searchKey() (err error) {
 	case "STag":
 		return errors.New("qmc: file with 'STag' suffix doesn't contains media key")
 	case "cex\x00":
-		audioLen, err := d.footer.Read(d.raw)
+		footer := qqMusicTagMusicEx{}
+		audioLen, err := footer.Read(d.raw)
 		if err != nil {
 			return err
 		}
 		d.audioLen = int(audioLen)
-		d.decodedKey, err = readKeyFromMMKVCustom(d.footer.mediafile)
+		d.decodedKey, err = readKeyFromMMKVCustom(footer.mediafile)
 		if err != nil {
 			return err
 		}

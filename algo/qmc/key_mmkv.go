@@ -1,18 +1,17 @@
 package qmc
 
 import (
-	"encoding/base64"
 	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
 	"runtime"
 
-	"git.unlock-music.dev/awalol/go-mmkv"
 	"github.com/samber/lo"
 	"go.uber.org/zap"
 	"golang.org/x/exp/slices"
 	"golang.org/x/text/unicode/norm"
+	"unlock-music.dev/mmkv"
 )
 
 var streamKeyVault mmkv.Vault
@@ -107,11 +106,7 @@ func readKeyFromMMKVCustom(mid string) ([]byte, error) {
 	if err != nil {
 		return nil, fmt.Errorf("get eKey error: %w", err)
 	}
-	n, err := base64.StdEncoding.Decode(eKey, eKey)
-	if err != nil {
-		return nil, fmt.Errorf("base64 error: %w", err)
-	}
-	return deriveKeyV1(eKey[:n])
+	return deriveKey(eKey)
 }
 
 func getRelativeMMKVDir(file string) (string, error) {

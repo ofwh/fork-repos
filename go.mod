@@ -3,7 +3,6 @@ module unlock-music.dev/cli
 go 1.19
 
 require (
-	git.unlock-music.dev/awalol/go-mmkv v0.1.0
 	github.com/fsnotify/fsnotify v1.6.0
 	github.com/go-flac/flacpicture v0.2.0
 	github.com/go-flac/flacvorbis v0.1.0
@@ -14,7 +13,7 @@ require (
 	golang.org/x/crypto v0.3.0
 	golang.org/x/exp v0.0.0-20240119083558-1b970713d09a
 	golang.org/x/text v0.5.0
-//unlock-music.dev/mmkv v0.0.0-20221204231432-41a75bd29939
+	unlock-music.dev/mmkv v0.0.0-20240213204546-08c723fb2ed3
 )
 
 require (

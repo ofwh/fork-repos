@@ -43,15 +43,17 @@ func (tag *qqMusicTagMusicEx) Read(raw io.ReadSeeker) (int64, error) {
 
 	for i := 0; i < 30; i++ {
 		u := binary.LittleEndian.Uint16(buf[12+i*2 : 12+(i+1)*2])
-		if u != 0 {
-			tag.mid += string(u)
+		if u == 0 {
+			break
 		}
+		tag.mid += string(u)
 	}
 	for i := 0; i < 50; i++ {
 		u := binary.LittleEndian.Uint16(buf[72+i*2 : 72+(i+1)*2])
-		if u != 0 {
-			tag.mediafile += string(u)
+		if u == 0 {
+			break
 		}
+		tag.mediafile += string(u)
 	}
 
 	tag.unknown_3 = binary.LittleEndian.Uint32(buf[173:177])
