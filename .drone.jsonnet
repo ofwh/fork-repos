@@ -20,10 +20,11 @@ local StepGoBuild(GOOS, GOARCH) = {
   local filepath = 'dist/um-%s-%s.tar.gz' % [GOOS, GOARCH],
 
   name: 'go build %s/%s' % [GOOS, GOARCH],
-  image: 'golang:1.19',
+  image: 'golang:1.22',
   environment: {
     GOOS: GOOS,
     GOARCH: GOARCH,
+    GOPROXY: "https://proxy.golang.org,https://goproxy.io,direct",
   },
   commands: [
     'DIST_DIR=$(mktemp -d)',
@@ -39,7 +40,7 @@ local StepUploadArtifact(GOOS, GOARCH) = {
   local pkgname = '${DRONE_REPO_NAME}-build',
 
   name: 'upload artifact',
-  image: 'golang:1.19',  // reuse golang:1.19 for curl
+  image: 'golang:1.22',  // reuse golang:1.19 for curl
   environment: {
     DRONE_GITEA_SERVER: 'https://git.unlock-music.dev',
     GITEA_API_KEY: { from_secret: 'GITEA_API_KEY' },
@@ -68,7 +69,10 @@ local PipelineBuild(GOOS, GOARCH, RUN_TEST) = {
          (
            if RUN_TEST then [{
              name: 'go test',
-             image: 'golang:1.19',
+             image: 'golang:1.22',
+             environment: {
+               GOPROXY: "https://proxy.golang.org,https://goproxy.io,direct",
+             },
              commands: ['go test -v ./...'],
            }] else []
          )
@@ -94,7 +98,10 @@ local PipelineRelease() = {
     },
     {
       name: 'go test',
-      image: 'golang:1.19',
+      image: 'golang:1.22',
+      environment: {
+        GOPROXY: "https://proxy.golang.org,https://goproxy.io,direct",
+      },
       commands: ['go test -v ./...'],
     },
     StepGoBuild('linux', 'amd64'),
