@@ -13,7 +13,7 @@ require (
 	golang.org/x/crypto v0.22.0
 	golang.org/x/exp v0.0.0-20240416160154-fe59bbe5cc7f
 	golang.org/x/text v0.14.0
-	unlock-music.dev/mmkv v0.0.0-20240424085824-59457ccfa008
+	unlock-music.dev/mmkv v0.0.0-20240424090133-0953e6901f3a
 )
 
 require (
