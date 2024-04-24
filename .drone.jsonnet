@@ -24,7 +24,7 @@ local StepGoBuild(GOOS, GOARCH) = {
   environment: {
     GOOS: GOOS,
     GOARCH: GOARCH,
-    GOPROXY: "https://proxy.golang.org,https://goproxy.io,direct",
+    GOPROXY: "https://goproxy.io,direct",
   },
   commands: [
     'DIST_DIR=$(mktemp -d)',
@@ -71,7 +71,7 @@ local PipelineBuild(GOOS, GOARCH, RUN_TEST) = {
              name: 'go test',
              image: 'golang:1.22',
              environment: {
-               GOPROXY: "https://proxy.golang.org,https://goproxy.io,direct",
+               GOPROXY: "https://goproxy.io,direct",
              },
              commands: ['go test -v ./...'],
            }] else []
@@ -100,7 +100,7 @@ local PipelineRelease() = {
       name: 'go test',
       image: 'golang:1.22',
       environment: {
-        GOPROXY: "https://proxy.golang.org,https://goproxy.io,direct",
+        GOPROXY: "https://goproxy.io,direct",
       },
       commands: ['go test -v ./...'],
     },
