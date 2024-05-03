@@ -3,7 +3,7 @@ package sniff
 // ref: https://mimesniff.spec.whatwg.org
 var imageMIMEs = map[string]Sniffer{
 	"image/jpeg": prefixSniffer{0xFF, 0xD8, 0xFF},
-	"image/png":  prefixSniffer{'P', 'N', 'G', '\r', '\n', 0x1A, '\n'},
+	"image/png":  prefixSniffer{0x89, 'P', 'N', 'G', '\r', '\n', 0x1A, '\n'},
 	"image/bmp":  prefixSniffer("BM"),
 	"image/webp": prefixSniffer("RIFF"),
 	"image/gif":  prefixSniffer("GIF8"),
