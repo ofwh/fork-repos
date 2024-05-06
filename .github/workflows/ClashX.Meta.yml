@@ -11,7 +11,7 @@ on:
 env:
   GIT_URL: https://github.com/MetaCubeX/ClashX.Meta.git
   GIT_REF: meta-dev
-  FORK_BRANCH: ClahX.Meta
+  FORK_BRANCH: ClashX.Meta
   FORK_DIR: fork
 
 jobs:
