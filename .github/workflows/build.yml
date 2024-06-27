@@ -24,6 +24,10 @@ jobs:
             GOOS: "linux"
             GOARCH: "amd64"
             BIN_SUFFIX: ""
+          - target: "linux/arm64"
+            GOOS: "linux"
+            GOARCH: "arm64"
+            BIN_SUFFIX: ""
           - target: "windows/amd64"
             GOOS: "windows"
             GOARCH: "amd64"
@@ -31,6 +35,10 @@ jobs:
           - target: "darwin/amd64"
             GOOS: "darwin"
             GOARCH: "amd64"
+            BIN_SUFFIX: ""
+          - target: "darwin/arm64"
+            GOOS: "darwin"
+            GOARCH: "arm64"
             BIN_SUFFIX: ""
 
     steps:
