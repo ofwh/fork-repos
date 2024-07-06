@@ -80,6 +80,35 @@ func readKeyFromMMKV(file string, logger *zap.Logger) ([]byte, error) {
 	return deriveKey(buf)
 }
 
+func OpenMMKV(vaultPath string, vaultKey string, logger *zap.Logger) error {
+	filePath, fileName := filepath.Split(vaultPath)
+	mgr, err := mmkv.NewManager(filepath.Dir(filePath))
+	if err != nil {
+		return fmt.Errorf("init mmkv manager: %w", err)
+	}
+
+	streamKeyVault, err = mgr.OpenVaultCrypto(fileName, vaultKey)
+	if err != nil {
+		return fmt.Errorf("open mmkv vault: %w", err)
+	}
+
+	logger.Debug("mmkv vault opened", zap.Strings("keys", streamKeyVault.Keys()))
+	return nil
+}
+
+func readKeyFromMMKVCustom(mid string) ([]byte, error) {
+	if streamKeyVault == nil {
+		return nil, fmt.Errorf("mmkv vault not loaded")
+	}
+
+	// get ekey from mmkv vault
+	eKey, err := streamKeyVault.GetBytes(mid)
+	if err != nil {
+		return nil, fmt.Errorf("get eKey error: %w", err)
+	}
+	return deriveKey(eKey)
+}
+
 func getRelativeMMKVDir(file string) (string, error) {
 	mmkvDir := filepath.Join(filepath.Dir(file), "../mmkv")
 	if _, err := os.Stat(mmkvDir); err != nil {

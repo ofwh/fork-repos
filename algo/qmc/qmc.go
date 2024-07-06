@@ -5,12 +5,11 @@ import (
 	"encoding/binary"
 	"errors"
 	"fmt"
+	"go.uber.org/zap"
 	"io"
 	"runtime"
 	"strconv"
 	"strings"
-
-	"go.uber.org/zap"
 
 	"unlock-music.dev/cli/algo/common"
 	"unlock-music.dev/cli/internal/sniff"
@@ -145,6 +144,18 @@ func (d *Decoder) searchKey() (err error) {
 		return d.readRawMetaQTag()
 	case "STag":
 		return errors.New("qmc: file with 'STag' suffix doesn't contains media key")
+	case "cex\x00":
+		footer := qqMusicTagMusicEx{}
+		audioLen, err := footer.Read(d.raw)
+		if err != nil {
+			return err
+		}
+		d.audioLen = int(audioLen)
+		d.decodedKey, err = readKeyFromMMKVCustom(footer.mediafile)
+		if err != nil {
+			return err
+		}
+		return nil
 	default:
 		size := binary.LittleEndian.Uint32(suffixBuf)
 

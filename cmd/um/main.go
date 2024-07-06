@@ -5,6 +5,9 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/fsnotify/fsnotify"
+	"github.com/urfave/cli/v2"
+	"go.uber.org/zap"
 	"io"
 	"os"
 	"os/signal"
@@ -15,15 +18,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/fsnotify/fsnotify"
-	"github.com/urfave/cli/v2"
-	"go.uber.org/zap"
-
 	"unlock-music.dev/cli/algo/common"
 	_ "unlock-music.dev/cli/algo/kgm"
 	_ "unlock-music.dev/cli/algo/kwm"
 	_ "unlock-music.dev/cli/algo/ncm"
-	_ "unlock-music.dev/cli/algo/qmc"
+	"unlock-music.dev/cli/algo/qmc"
 	_ "unlock-music.dev/cli/algo/tm"
 	_ "unlock-music.dev/cli/algo/xiami"
 	_ "unlock-music.dev/cli/algo/ximalaya"
@@ -50,6 +49,8 @@ func main() {
 		Flags: []cli.Flag{
 			&cli.StringFlag{Name: "input", Aliases: []string{"i"}, Usage: "path to input file or dir", Required: false},
 			&cli.StringFlag{Name: "output", Aliases: []string{"o"}, Usage: "path to output dir", Required: false},
+			&cli.StringFlag{Name: "vault-file", Aliases: []string{"db"}, Usage: "数据库文件位置 (请确保crc文件在同目录下)", Required: false},
+			&cli.StringFlag{Name: "vault-key", Aliases: []string{"key"}, Usage: "数据库密钥 (length 32)", Required: false},
 			&cli.BoolFlag{Name: "remove-source", Aliases: []string{"rs"}, Usage: "remove source file", Required: false, Value: false},
 			&cli.BoolFlag{Name: "skip-noop", Aliases: []string{"n"}, Usage: "skip noop decoder", Required: false, Value: true},
 			&cli.BoolFlag{Name: "update-metadata", Usage: "update metadata & album art from network", Required: false, Value: false},
@@ -128,6 +129,15 @@ func appMain(c *cli.Context) (err error) {
 		}
 	} else if !outputStat.IsDir() {
 		return errors.New("output should be a writable directory")
+	}
+
+	vaultPath := c.String("vault-file")
+	vaultKey := c.String("vault-key")
+	if vaultPath != "" && vaultKey != "" {
+		err := qmc.OpenMMKV(vaultPath, vaultKey, logger)
+		if err != nil {
+			return err
+		}
 	}
 
 	proc := &processor{
