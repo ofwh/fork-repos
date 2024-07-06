@@ -98,6 +98,7 @@ func OpenMMKV(mmkvPath string, key string, logger *zap.Logger) error {
 	return nil
 }
 
+// /
 func readKeyFromMMKVCustom(mid string) ([]byte, error) {
 	if streamKeyVault == nil {
 		return nil, fmt.Errorf("mmkv vault not loaded")
