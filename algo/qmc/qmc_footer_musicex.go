@@ -1,65 +1,93 @@
 package qmc
 
 import (
+	bytes "bytes"
 	"encoding/binary"
+	"errors"
 	"fmt"
 	"io"
+	"strings"
 )
 
-type qqMusicTagMusicEx struct {
-	songid        uint32 // Song ID
-	unknown_1     uint32 // unused & unknown
-	unknown_2     uint32 // unused & unknown
-	mid           string // Media ID
-	mediafile     string // real file name
-	unknown_3     uint32 // unused; uninitialized memory?
-	sizeof_struct uint32 // 19.57: fixed value: 0xC0
-	version       uint32 // 19.57: fixed value: 0x01
-	tag_magic     []byte // fixed value "musicex\0" (8 bytes)
+type MusicExTagV1 struct {
+	SongID        uint32 // Song ID
+	Unknown1      uint32 // unused & unknown
+	Unknown2      uint32 // unused & unknown
+	MediaID       string // Media ID
+	MediaFileName string // real file name
+	Unknown3      uint32 // unused; uninitialized memory?
+
+	// 16 byte at the end of tag.
+	// TagSize should be respected when parsing.
+	TagSize    uint32 // 19.57: fixed value: 0xC0
+	TagVersion uint32 // 19.57: fixed value: 0x01
+	TagMagic   []byte // fixed value "musicex\0" (8 bytes)
 }
 
-func (tag *qqMusicTagMusicEx) Read(raw io.ReadSeeker) (int64, error) {
-	_, err := raw.Seek(-16, io.SeekEnd)
+func NewMusicExTag(f io.ReadSeeker) (*MusicExTagV1, error) {
+	_, err := f.Seek(-16, io.SeekEnd)
 	if err != nil {
-		return 0, fmt.Errorf("musicex seek error: %w", err)
+		return nil, fmt.Errorf("musicex seek error: %w", err)
 	}
 
-	footerBuf := make([]byte, 4)
-	footerBuf, err = io.ReadAll(io.LimitReader(raw, 4))
+	buffer := make([]byte, 16)
+	bytesRead, err := f.Read(buffer)
 	if err != nil {
-		return 0, fmt.Errorf("get musicex error: %w", err)
+		return nil, fmt.Errorf("get musicex error: %w", err)
 	}
-	footerLen := int64(binary.LittleEndian.Uint32(footerBuf))
-
-	audioLen, err := raw.Seek(-footerLen, io.SeekEnd)
-	buf, err := io.ReadAll(io.LimitReader(raw, audioLen))
-	if err != nil {
-		return 0, err
+	if bytesRead != 16 {
+		return nil, fmt.Errorf("MusicExV1: read %d bytes (expected %d)", bytesRead, 16)
 	}
 
-	tag.songid = binary.LittleEndian.Uint32(buf[0:4])
-	tag.unknown_1 = binary.LittleEndian.Uint32(buf[4:8])
-	tag.unknown_2 = binary.LittleEndian.Uint32(buf[8:12])
+	tag := &MusicExTagV1{
+		TagSize:    binary.LittleEndian.Uint32(buffer[0x00:0x04]),
+		TagVersion: binary.LittleEndian.Uint32(buffer[0x04:0x08]),
+		TagMagic:   buffer[0x04:0x0C],
+	}
 
-	for i := 0; i < 30; i++ {
-		u := binary.LittleEndian.Uint16(buf[12+i*2 : 12+(i+1)*2])
-		if u == 0 {
+	if !bytes.Equal(tag.TagMagic, []byte("musicex\x00")) {
+		return nil, errors.New("MusicEx magic mismatch")
+	}
+	if tag.TagVersion != 1 {
+		return nil, errors.New(fmt.Sprintf("unsupported musicex tag version. expecting 1, got %d", tag.TagVersion))
+	}
+
+	if tag.TagSize < 0xC0 {
+		return nil, errors.New(fmt.Sprintf("unsupported musicex tag size. expecting at least 0xC0, got 0x%02x", tag.TagSize))
+	}
+
+	buffer = make([]byte, tag.TagSize)
+	bytesRead, err = f.Read(buffer)
+	if err != nil {
+		return nil, err
+	}
+	if uint32(bytesRead) != tag.TagSize {
+		return nil, fmt.Errorf("MusicExV1: read %d bytes (expected %d)", bytesRead, tag.TagSize)
+	}
+
+	tag.SongID = binary.LittleEndian.Uint32(buffer[0x00:0x04])
+	tag.Unknown1 = binary.LittleEndian.Uint32(buffer[0x04:0x08])
+	tag.Unknown2 = binary.LittleEndian.Uint32(buffer[0x08:0x0C])
+	tag.MediaID = readUnicodeTagName(buffer[0x0C:], 30*2)
+	tag.MediaFileName = readUnicodeTagName(buffer[0x48:], 50*2)
+	tag.Unknown3 = binary.LittleEndian.Uint32(buffer[0xAC:0xB0])
+	return tag, nil
+}
+
+// readUnicodeTagName reads a buffer to maxLen.
+// reconstruct text by skipping alternate char (ascii chars encoded in UTF-16-LE),
+// until finding a zero or reaching maxLen.
+func readUnicodeTagName(buffer []byte, maxLen int) string {
+	builder := strings.Builder{}
+
+	for i := 0; i < maxLen; i += 2 {
+		chr := buffer[i]
+		if chr != 0 {
+			builder.WriteByte(chr)
+		} else {
 			break
 		}
-		tag.mid += string(u)
-	}
-	for i := 0; i < 50; i++ {
-		u := binary.LittleEndian.Uint16(buf[72+i*2 : 72+(i+1)*2])
-		if u == 0 {
-			break
-		}
-		tag.mediafile += string(u)
 	}
 
-	tag.unknown_3 = binary.LittleEndian.Uint32(buf[173:177])
-	tag.sizeof_struct = binary.LittleEndian.Uint32(buf[177:181])
-	tag.version = binary.LittleEndian.Uint32(buf[181:185])
-	tag.tag_magic = buf[185:193]
-
-	return audioLen, nil
+	return builder.String()
 }

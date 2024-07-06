@@ -145,13 +145,12 @@ func (d *Decoder) searchKey() (err error) {
 	case "STag":
 		return errors.New("qmc: file with 'STag' suffix doesn't contains media key")
 	case "cex\x00":
-		footer := qqMusicTagMusicEx{}
-		audioLen, err := footer.Read(d.raw)
+		footer, err := NewMusicExTag(d.raw)
 		if err != nil {
 			return err
 		}
-		d.audioLen = int(audioLen)
-		d.decodedKey, err = readKeyFromMMKVCustom(footer.mediafile)
+		d.audioLen = fileSize - int(footer.TagSize)
+		d.decodedKey, err = readKeyFromMMKVCustom(footer.MediaFileName)
 		if err != nil {
 			return err
 		}

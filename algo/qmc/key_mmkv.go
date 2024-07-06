@@ -80,14 +80,16 @@ func readKeyFromMMKV(file string, logger *zap.Logger) ([]byte, error) {
 	return deriveKey(buf)
 }
 
-func OpenMMKV(vaultPath string, vaultKey string, logger *zap.Logger) error {
-	filePath, fileName := filepath.Split(vaultPath)
+func OpenMMKV(mmkvPath string, key string, logger *zap.Logger) error {
+	filePath, fileName := filepath.Split(mmkvPath)
 	mgr, err := mmkv.NewManager(filepath.Dir(filePath))
 	if err != nil {
 		return fmt.Errorf("init mmkv manager: %w", err)
 	}
 
-	streamKeyVault, err = mgr.OpenVaultCrypto(fileName, vaultKey)
+	// If `vaultKey` is empty, the key is ignored.
+	streamKeyVault, err = mgr.OpenVaultCrypto(fileName, key)
+
 	if err != nil {
 		return fmt.Errorf("open mmkv vault: %w", err)
 	}
@@ -96,6 +98,7 @@ func OpenMMKV(vaultPath string, vaultKey string, logger *zap.Logger) error {
 	return nil
 }
 
+// /
 func readKeyFromMMKVCustom(mid string) ([]byte, error) {
 	if streamKeyVault == nil {
 		return nil, fmt.Errorf("mmkv vault not loaded")
@@ -109,6 +112,7 @@ func readKeyFromMMKVCustom(mid string) ([]byte, error) {
 	return deriveKey(eKey)
 }
 
+// / getRelativeMMKVDir get mmkv dir relative to file (legacy QQMusic for macOS behaviour)
 func getRelativeMMKVDir(file string) (string, error) {
 	mmkvDir := filepath.Join(filepath.Dir(file), "../mmkv")
 	if _, err := os.Stat(mmkvDir); err != nil {
@@ -131,7 +135,7 @@ func getDefaultMMKVDir() (string, error) {
 
 	mmkvDir := filepath.Join(
 		homeDir,
-		"Library/Containers/com.tencent.QQMusicMac/Data", // todo: make configurable
+		"Library/Containers/com.tencent.QQMusicMac/Data",
 		"Library/Application Support/QQMusicMac/mmkv",
 	)
 	if _, err := os.Stat(mmkvDir); err != nil {

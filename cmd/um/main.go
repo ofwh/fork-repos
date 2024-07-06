@@ -5,9 +5,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/fsnotify/fsnotify"
-	"github.com/urfave/cli/v2"
-	"go.uber.org/zap"
 	"io"
 	"os"
 	"os/signal"
@@ -17,6 +14,10 @@ import (
 	"sort"
 	"strings"
 	"time"
+
+	"github.com/fsnotify/fsnotify"
+	"github.com/urfave/cli/v2"
+	"go.uber.org/zap"
 
 	"unlock-music.dev/cli/algo/common"
 	_ "unlock-music.dev/cli/algo/kgm"
@@ -49,8 +50,8 @@ func main() {
 		Flags: []cli.Flag{
 			&cli.StringFlag{Name: "input", Aliases: []string{"i"}, Usage: "path to input file or dir", Required: false},
 			&cli.StringFlag{Name: "output", Aliases: []string{"o"}, Usage: "path to output dir", Required: false},
-			&cli.StringFlag{Name: "vault-file", Aliases: []string{"db"}, Usage: "数据库文件位置 (请确保crc文件在同目录下)", Required: false},
-			&cli.StringFlag{Name: "vault-key", Aliases: []string{"key"}, Usage: "数据库密钥 (length 32)", Required: false},
+			&cli.StringFlag{Name: "qmc-mmkv", Aliases: []string{"db"}, Usage: "path to qmc mmkv (`.crc` file also required)", Required: false},
+			&cli.StringFlag{Name: "qmc-mmkv-key", Aliases: []string{"key"}, Usage: "mmkv password (16 ascii chars)", Required: false},
 			&cli.BoolFlag{Name: "remove-source", Aliases: []string{"rs"}, Usage: "remove source file", Required: false, Value: false},
 			&cli.BoolFlag{Name: "skip-noop", Aliases: []string{"n"}, Usage: "skip noop decoder", Required: false, Value: true},
 			&cli.BoolFlag{Name: "update-metadata", Usage: "update metadata & album art from network", Required: false, Value: false},
@@ -131,10 +132,10 @@ func appMain(c *cli.Context) (err error) {
 		return errors.New("output should be a writable directory")
 	}
 
-	vaultPath := c.String("vault-file")
-	vaultKey := c.String("vault-key")
-	if vaultPath != "" && vaultKey != "" {
-		err := qmc.OpenMMKV(vaultPath, vaultKey, logger)
+	if mmkv := c.String("qmc-mmkv"); mmkv != "" {
+		// If key is not set, the mmkv vault will be treated as unencrypted.
+		key := c.String("qmc-mmkv-key")
+		err := qmc.OpenMMKV(mmkv, key, logger)
 		if err != nil {
 			return err
 		}
