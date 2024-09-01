@@ -37,3 +37,5 @@ google.golang.org/protobuf v1.33.0/go.mod h1:c6P6GXX6sHbq/GpV6MGZEdwhWPcYBgnhAHh
 gopkg.in/yaml.v3 v3.0.1 h1:fxVm/GzAzEWqLHuvctI91KS9hhNmmWOoWu0XTYJS7CA=
 unlock-music.dev/mmkv v0.0.0-20240424090133-0953e6901f3a h1:UW0sxgwsfGGC/SrKvvAbZ4HZyOQ3fqs8qr3lBxG6Fzo=
 unlock-music.dev/mmkv v0.0.0-20240424090133-0953e6901f3a/go.mod h1:qr34SM3x8xRxyUfGzefH/rSi+DUXkQZcSfXY/yfuTeo=
+unlock-music.dev/mmkv v0.0.0-20240424090133-31549c6a948b h1:VIJ0mDqj0OgX1ZvL9gbAH8kkqyrDlpVt5yUeGYSJ1/s=
+unlock-music.dev/mmkv v0.0.0-20240424090133-31549c6a948b/go.mod h1:qr34SM3x8xRxyUfGzefH/rSi+DUXkQZcSfXY/yfuTeo=
