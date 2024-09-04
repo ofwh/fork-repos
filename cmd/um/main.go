@@ -50,7 +50,7 @@ func main() {
 		Flags: []cli.Flag{
 			&cli.StringFlag{Name: "input", Aliases: []string{"i"}, Usage: "path to input file or dir", Required: false},
 			&cli.StringFlag{Name: "output", Aliases: []string{"o"}, Usage: "path to output dir", Required: false},
-			&cli.StringFlag{Name: "qmc-mmkv", Aliases: []string{"db"}, Usage: "path to qmc mmkv (`.crc` file also required)", Required: false},
+			&cli.StringFlag{Name: "qmc-mmkv", Aliases: []string{"db"}, Usage: "path to qmc mmkv (.crc file also required)", Required: false},
 			&cli.StringFlag{Name: "qmc-mmkv-key", Aliases: []string{"key"}, Usage: "mmkv password (16 ascii chars)", Required: false},
 			&cli.BoolFlag{Name: "remove-source", Aliases: []string{"rs"}, Usage: "remove source file", Required: false, Value: false},
 			&cli.BoolFlag{Name: "skip-noop", Aliases: []string{"n"}, Usage: "skip noop decoder", Required: false, Value: true},
