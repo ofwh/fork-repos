@@ -254,12 +254,20 @@ func init() {
 		"6d3461",   //QQ Music Weiyun M4a
 		"776176",   //QQ Music Weiyun Wav
 
-		"mgg", "mgg1", "mggl", //QQ Music New Ogg
-		"mflac", "mflac0", "mflach", //QQ Music New Flac
-
 		"mmp4", // QQ Music MP4 Container, tipically used for Dolby EAC3 stream
 	}
 	for _, ext := range supportedExts {
 		common.RegisterDecoder(ext, false, NewDecoder)
+	}
+
+	// New ogg/flac:
+	extraExtsCanHaveSuffix := []string{"mgg", "mflac"}
+	// Mac also adds some extra suffix to ext:
+	extraExtSuffix := []string{"0", "1", "a", "h", "l"}
+	for _, ext := range extraExtsCanHaveSuffix {
+		common.RegisterDecoder(ext, false, NewDecoder)
+		for _, suffix := range extraExtSuffix {
+			common.RegisterDecoder(ext+suffix, false, NewDecoder)
+		}
 	}
 }
