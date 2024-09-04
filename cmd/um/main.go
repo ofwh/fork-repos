@@ -254,7 +254,20 @@ func (p *processor) processFile(filePath string) error {
 	if len(allDec) == 0 {
 		logger.Fatal("skipping while no suitable decoder")
 	}
-	return p.process(filePath, allDec)
+
+	if err := p.process(filePath, allDec); err != nil {
+		return err
+	}
+
+	// if source file need to be removed
+	if p.removeSource {
+		err := os.RemoveAll(filePath)
+		if err != nil {
+			return err
+		}
+		logger.Info("source file removed after success conversion", zap.String("source", filePath))
+	}
+	return nil
 }
 
 func (p *processor) process(inputFile string, allDec []common.NewDecoderFunc) error {
@@ -363,8 +376,6 @@ func (p *processor) process(inputFile string, allDec []common.NewDecoderFunc) er
 		if _, err := io.Copy(outFile, audio); err != nil {
 			return err
 		}
-		outFile.Close()
-
 	} else {
 		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 		defer cancel()
@@ -374,16 +385,6 @@ func (p *processor) process(inputFile string, allDec []common.NewDecoderFunc) er
 		}
 	}
 
-	// if source file need to be removed
-	if p.removeSource {
-		err := os.RemoveAll(inputFile)
-		if err != nil {
-			return err
-		}
-		logger.Info("successfully converted, and source file is removed", zap.String("source", inputFile), zap.String("destination", outPath))
-	} else {
-		logger.Info("successfully converted", zap.String("source", inputFile), zap.String("destination", outPath))
-	}
-
+	logger.Info("successfully converted", zap.String("source", inputFile), zap.String("destination", outPath))
 	return nil
 }
