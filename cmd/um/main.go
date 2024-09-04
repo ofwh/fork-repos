@@ -33,7 +33,7 @@ import (
 	"unlock-music.dev/cli/internal/utils"
 )
 
-var AppVersion = "v0.0.6"
+var AppVersion = "v0.2.1"
 
 var logger, _ = logging.NewZapLogger() // TODO: inject logger to application, instead of using global logger
 
@@ -50,7 +50,7 @@ func main() {
 		Flags: []cli.Flag{
 			&cli.StringFlag{Name: "input", Aliases: []string{"i"}, Usage: "path to input file or dir", Required: false},
 			&cli.StringFlag{Name: "output", Aliases: []string{"o"}, Usage: "path to output dir", Required: false},
-			&cli.StringFlag{Name: "qmc-mmkv", Aliases: []string{"db"}, Usage: "path to qmc mmkv (`.crc` file also required)", Required: false},
+			&cli.StringFlag{Name: "qmc-mmkv", Aliases: []string{"db"}, Usage: "path to qmc mmkv (.crc file also required)", Required: false},
 			&cli.StringFlag{Name: "qmc-mmkv-key", Aliases: []string{"key"}, Usage: "mmkv password (16 ascii chars)", Required: false},
 			&cli.BoolFlag{Name: "remove-source", Aliases: []string{"rs"}, Usage: "remove source file", Required: false, Value: false},
 			&cli.BoolFlag{Name: "skip-noop", Aliases: []string{"n"}, Usage: "skip noop decoder", Required: false, Value: true},
@@ -254,7 +254,20 @@ func (p *processor) processFile(filePath string) error {
 	if len(allDec) == 0 {
 		logger.Fatal("skipping while no suitable decoder")
 	}
-	return p.process(filePath, allDec)
+
+	if err := p.process(filePath, allDec); err != nil {
+		return err
+	}
+
+	// if source file need to be removed
+	if p.removeSource {
+		err := os.RemoveAll(filePath)
+		if err != nil {
+			return err
+		}
+		logger.Info("source file removed after success conversion", zap.String("source", filePath))
+	}
+	return nil
 }
 
 func (p *processor) process(inputFile string, allDec []common.NewDecoderFunc) error {
@@ -363,8 +376,6 @@ func (p *processor) process(inputFile string, allDec []common.NewDecoderFunc) er
 		if _, err := io.Copy(outFile, audio); err != nil {
 			return err
 		}
-		outFile.Close()
-
 	} else {
 		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 		defer cancel()
@@ -374,16 +385,6 @@ func (p *processor) process(inputFile string, allDec []common.NewDecoderFunc) er
 		}
 	}
 
-	// if source file need to be removed
-	if p.removeSource {
-		err := os.RemoveAll(inputFile)
-		if err != nil {
-			return err
-		}
-		logger.Info("successfully converted, and source file is removed", zap.String("source", inputFile), zap.String("destination", outPath))
-	} else {
-		logger.Info("successfully converted", zap.String("source", inputFile), zap.String("destination", outPath))
-	}
-
+	logger.Info("successfully converted", zap.String("source", inputFile), zap.String("destination", outPath))
 	return nil
 }
