@@ -29,7 +29,7 @@ steps:
     commands:
       - |
         python3 -m zipfile -c um-react.zip dist/.
-        cp um-react.zip dist/release-"${DRONE_COMMIT_SHA}".zip
+        cp um-react.zip dist/"release-${DRONE_COMMIT_SHA}.zip"
         python3 -m zipfile -c um-react-site.zip dist/.
-      # - ./scripts/publish.sh
+      - ./scripts/publish.sh
       - ./scripts/deploy.sh
