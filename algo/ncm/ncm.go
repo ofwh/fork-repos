@@ -149,12 +149,18 @@ func (d *Decoder) readMetaData() error {
 }
 
 func (d *Decoder) readCoverData() error {
-	bCoverCRC := make([]byte, 4)
-	if _, err := io.ReadFull(d.rd, bCoverCRC); err != nil {
-		return fmt.Errorf("ncm read cover crc: %w", err)
+	bCoverFrameLen := make([]byte, 4)
+	if _, err := io.ReadFull(d.rd, bCoverFrameLen); err != nil {
+		return fmt.Errorf("ncm read cover length: %w", err)
 	}
 
-	bCoverLen := make([]byte, 4) //
+	coverFrameStartOffset, err := d.rd.Seek(0, io.SeekCurrent)
+	if err != nil {
+		return fmt.Errorf("ncm fetch cover frame start offset: %w", err)
+	}
+	coverFrameLen := binary.LittleEndian.Uint32(bCoverFrameLen)
+
+	bCoverLen := make([]byte, 4)
 	if _, err := io.ReadFull(d.rd, bCoverLen); err != nil {
 		return fmt.Errorf("ncm read cover length: %w", err)
 	}
@@ -166,7 +172,10 @@ func (d *Decoder) readCoverData() error {
 	}
 	d.cover = coverBuf
 
-	return nil
+	offsetAudioData := coverFrameStartOffset + int64(coverFrameLen) + 4
+	_, err = d.rd.Seek(offsetAudioData, io.SeekStart)
+
+	return err
 }
 
 func (d *Decoder) parseMeta() error {
