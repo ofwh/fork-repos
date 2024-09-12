@@ -13,7 +13,7 @@ import {
 } from '@chakra-ui/react';
 
 import { useAppDispatch, useAppSelector } from '~/hooks';
-import { fetchParakeet } from '@jixun/libparakeet';
+import { fetchParakeet } from '@um/libparakeet';
 import { ExtLink } from '~/components/ExtLink';
 import { ChangeEvent, ClipboardEvent } from 'react';
 import { VQuote } from '~/components/HelpText/VQuote';

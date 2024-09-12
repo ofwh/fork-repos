@@ -1,11 +1,11 @@
-import { Transformer, Parakeet, TransformResult, fetchParakeet } from '@jixun/libparakeet';
+import { Transformer, Parakeet, TransformResult, fetchParakeet } from '@um/libparakeet';
 import { toArrayBuffer } from './buffer';
 import { UnsupportedSourceFile } from './DecryptError';
 
 export async function transformBlob(
   blob: Blob | ArrayBuffer,
   transformerFactory: (p: Parakeet) => Transformer | Promise<Transformer>,
-  { cleanup, parakeet }: { cleanup?: () => void; parakeet?: Parakeet } = {}
+  { cleanup, parakeet }: { cleanup?: () => void; parakeet?: Parakeet } = {},
 ) {
   const registeredCleanupFns: (() => void)[] = [];
   if (cleanup) {

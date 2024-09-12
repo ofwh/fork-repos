@@ -1,7 +1,7 @@
 import { WorkerServerBus } from '~/util/WorkerEventBus';
 import { DECRYPTION_WORKER_ACTION_NAME } from './constants';
 
-import { getSDKVersion } from '@jixun/libparakeet';
+import { getSDKVersion } from '@um/libparakeet';
 
 import { workerDecryptHandler } from './worker/handler/decrypt';
 import { workerParseMusicExMediaName } from './worker/handler/qmcv2_parser';

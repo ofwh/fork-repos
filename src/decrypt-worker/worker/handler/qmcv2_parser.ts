@@ -1,4 +1,4 @@
-import { fetchParakeet, FooterParserState } from '@jixun/libparakeet';
+import { fetchParakeet, FooterParserState } from '@um/libparakeet';
 import type { FetchMusicExNamePayload } from '~/decrypt-worker/types';
 import { makeQMCv2FooterParser } from '~/decrypt-worker/util/qmc2KeyCrypto';
 import { timedLogger, withGroupedLogs as withTimeGroupedLogs } from '~/util/logUtils';

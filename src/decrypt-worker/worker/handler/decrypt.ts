@@ -1,4 +1,4 @@
-import { Parakeet, fetchParakeet } from '@jixun/libparakeet';
+import { Parakeet, fetchParakeet } from '@um/libparakeet';
 import { timedLogger, withGroupedLogs as withTimeGroupedLogs } from '~/util/logUtils';
 import type { DecryptCommandOptions, DecryptCommandPayload } from '~/decrypt-worker/types';
 import { allCryptoFactories } from '../../crypto/CryptoFactory';

@@ -1,7 +1,7 @@
 import { transformBlob } from '~/decrypt-worker/util/transformBlob';
 import type { CryptoBase } from '../CryptoBase';
 import type { DecryptCommandOptions } from '~/decrypt-worker/types.ts';
-import { fetchParakeet } from '@jixun/libparakeet';
+import { fetchParakeet } from '@um/libparakeet';
 import { stringToUTF8Bytes } from '~/decrypt-worker/util/utf8Encoder.ts';
 import { makeQMCv2FooterParser, makeQMCv2KeyCrypto } from '~/decrypt-worker/util/qmc2KeyCrypto.ts';
 

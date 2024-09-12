@@ -3,7 +3,7 @@ import type { CryptoBase } from '../CryptoBase';
 import { KWM_KEY } from './kwm.key';
 import { DecryptCommandOptions } from '~/decrypt-worker/types';
 import { makeQMCv2KeyCrypto } from '~/decrypt-worker/util/qmc2KeyCrypto';
-import { fetchParakeet } from '@jixun/libparakeet';
+import { fetchParakeet } from '@um/libparakeet';
 import { stringToUTF8Bytes } from '~/decrypt-worker/util/utf8Encoder';
 
 // v1 only
