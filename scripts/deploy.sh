@@ -96,7 +96,7 @@ deploy_netlify() {
             echo "  * ${error_message}"
             return 1
         else
-            echo 'Deoployed to main url.'
+            echo 'Deployed to main url.'
         fi
     fi
 }
