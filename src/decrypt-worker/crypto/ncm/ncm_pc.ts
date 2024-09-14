@@ -8,8 +8,13 @@ export class NCMCrypto implements CryptoBase {
   ncm = new NCMFile();
 
   async checkBySignature(buffer: ArrayBuffer) {
+    const data = new Uint8Array(buffer);
+    let len = 1024;
     try {
-      this.ncm.open(new Uint8Array(buffer));
+      while (len !== 0) {
+        console.debug('NCM/open: read %d bytes', len);
+        len = this.ncm.open(data.subarray(0, len));
+      }
     } catch (error) {
       return false;
     }
