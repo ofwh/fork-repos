@@ -1,18 +1,27 @@
-import { transformBlob } from '~/decrypt-worker/util/transformBlob';
 import type { CryptoBase } from '../CryptoBase';
-import { NCM_KEY, NCM_MAGIC_HEADER } from './ncm_pc.key';
+import { NCMFile } from '@unlock-music/crypto';
+import { chunkBuffer } from '~/decrypt-worker/util/buffer.ts';
 
 export class NCMCrypto implements CryptoBase {
   cryptoName = 'NCM/PC';
   checkByDecryptHeader = false;
+  ncm = new NCMFile();
 
   async checkBySignature(buffer: ArrayBuffer) {
-    const view = new DataView(buffer, 0, NCM_MAGIC_HEADER.byteLength);
-    return NCM_MAGIC_HEADER.every((value, i) => value === view.getUint8(i));
+    try {
+      this.ncm.open(new Uint8Array(buffer));
+    } catch (error) {
+      return false;
+    }
+    return true;
   }
 
   async decrypt(buffer: ArrayBuffer): Promise<Blob> {
-    return transformBlob(buffer, (p) => p.make.NeteaseNCM(NCM_KEY));
+    const audioBuffer = new Uint8Array(buffer.slice(this.ncm.audioOffset));
+    for (const [block, offset] of chunkBuffer(audioBuffer)) {
+      this.ncm.decrypt(block, offset);
+    }
+    return new Blob([audioBuffer]);
   }
 
   public static make() {

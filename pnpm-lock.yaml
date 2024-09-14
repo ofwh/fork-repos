@@ -41,6 +41,9 @@ importers:
       '@um/libparakeet':
         specifier: 0.4.5
         version: 0.4.5
+      '@unlock-music/crypto':
+        specifier: 0.0.0-alpha.6
+        version: 0.0.0-alpha.6
       framer-motion:
         specifier: ^10.16.16
         version: 10.16.16(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
@@ -1923,6 +1926,9 @@ packages:
 
   '@ungap/structured-clone@1.2.0':
     resolution: {integrity: sha512-zuVdFrMJiuCDQUMCzQaD6KL28MjnqqN8XnAqiEq9PNm/hCPTSGfrXCOfwj1ow4LFb/tNymJPwsNbVePc1xFqrQ==}
+
+  '@unlock-music/crypto@0.0.0-alpha.6':
+    resolution: {integrity: sha512-hv1oTXPzsNmqrP5dmjkLa4rfZtd4U/Cu1Bake71QEZhbY1WCbgEX4haCAcXXd6DMGNg/Hv1JXL2TcXNUaqIiFA==, tarball: https://git.unlock-music.dev/api/packages/um/npm/%40unlock-music%2Fcrypto/-/0.0.0-alpha.6/crypto-0.0.0-alpha.6.tgz}
 
   '@vitejs/plugin-react@4.2.1':
     resolution: {integrity: sha512-oojO9IDc4nCUUi8qIR11KoQm0XFFLIwsRBwHRR4d/88IWghn1y6ckz/bJ8GHDCsYEJee8mDzqtJxh15/cisJNQ==}
@@ -6111,6 +6117,8 @@ snapshots:
   '@um/libparakeet@0.4.5': {}
 
   '@ungap/structured-clone@1.2.0': {}
+
+  '@unlock-music/crypto@0.0.0-alpha.6': {}
 
   '@vitejs/plugin-react@4.2.1(vite@5.0.10(@types/node@20.10.5)(sass@1.69.5)(terser@5.27.0))':
     dependencies:

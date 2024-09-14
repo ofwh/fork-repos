@@ -40,7 +40,7 @@ export default defineConfig({
   },
   base: './',
   optimizeDeps: {
-    exclude: ['@um/libparakeet', 'sql.js'],
+    exclude: ['@um/libparakeet', '@unlock-music/crypto', 'sql.js'],
   },
   plugins: [
     replace({

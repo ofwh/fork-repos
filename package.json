@@ -24,6 +24,7 @@
     "@emotion/styled": "^11.11.0",
     "@reduxjs/toolkit": "^2.0.1",
     "@um/libparakeet": "0.4.5",
+    "@unlock-music/crypto": "0.0.0-alpha.6",
     "framer-motion": "^10.16.16",
     "nanoid": "^5.0.4",
     "radash": "^11.0.0",

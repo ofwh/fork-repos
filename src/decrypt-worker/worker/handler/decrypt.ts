@@ -5,6 +5,7 @@ import { allCryptoFactories } from '../../crypto/CryptoFactory';
 import { toArrayBuffer, toBlob } from '~/decrypt-worker/util/buffer';
 import { CryptoBase, CryptoFactory } from '~/decrypt-worker/crypto/CryptoBase';
 import { UnsupportedSourceFile } from '~/decrypt-worker/util/DecryptError';
+import { ready as umCryptoReady } from '@unlock-music/crypto';
 
 // Use first 4MiB of the file to perform check.
 const TEST_FILE_HEADER_LEN = 4 * 1024 * 1024;
@@ -30,7 +31,7 @@ class DecryptCommandHandler {
       const decryptor = factory();
 
       try {
-        const result = await this.decryptFile(decryptor);
+        const result = await this.tryDecryptFile(decryptor);
         if (result === null) {
           continue;
         }
@@ -47,7 +48,7 @@ class DecryptCommandHandler {
     throw new UnsupportedSourceFile('could not decrypt file: no working decryptor found');
   }
 
-  async decryptFile(crypto: CryptoBase) {
+  async tryDecryptFile(crypto: CryptoBase) {
     if (crypto.checkBySignature && !(await crypto.checkBySignature(this.buffer, this.options))) {
       return null;
     }
@@ -95,6 +96,7 @@ class DecryptCommandHandler {
 export const workerDecryptHandler = async ({ id, blobURI, options }: DecryptCommandPayload) => {
   const label = `decrypt(${id})`;
   return withTimeGroupedLogs(label, async () => {
+    await umCryptoReady;
     const parakeet = await timedLogger(`${label}/init`, fetchParakeet);
     const blob = await timedLogger(`${label}/fetch-src`, async () => fetch(blobURI).then((r) => r.blob()));
     const buffer = await timedLogger(`${label}/read-src`, async () => blob.arrayBuffer());
