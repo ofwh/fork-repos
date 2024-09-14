@@ -12,12 +12,7 @@ import { TransparentCrypto } from './transparent/transparent';
 import { QingTingFM$Device } from './qtfm/qtfm_device';
 
 export const allCryptoFactories: CryptoFactory[] = [
-  // Xiami (*.xm)
-  XiamiCrypto.make,
-
-  // QMCv2 (*.mflac)
-  QMC2CryptoWithKey.make,
-  QMC2Crypto.make,
+  /// File with fixed headers goes first.
 
   // NCM (*.ncm)
   NCMCrypto.make,
@@ -27,6 +22,17 @@ export const allCryptoFactories: CryptoFactory[] = [
 
   // KWMv1 (*.kwm)
   KWMCrypto.make,
+
+  // Xiami (*.xm)
+  XiamiCrypto.make,
+
+  /// File with a fixed footer goes second
+
+  // QMCv2 (*.mflac)
+  QMC2CryptoWithKey.make,
+  QMC2Crypto.make,
+
+  /// File without an obvious header or footer goes last.
 
   // Migu3D/Keyless (*.wav; *.m4a)
   MiguCrypto.make,
