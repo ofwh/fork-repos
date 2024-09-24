@@ -13,12 +13,14 @@ import {
 } from '@chakra-ui/react';
 
 import { useAppDispatch, useAppSelector } from '~/hooks';
-import { fetchParakeet } from '@um/libparakeet';
 import { ExtLink } from '~/components/ExtLink';
 import { ChangeEvent, ClipboardEvent } from 'react';
 import { VQuote } from '~/components/HelpText/VQuote';
 import { selectStagingQtfmAndroidKey } from '../settingsSelector';
 import { qtfmAndroidUpdateKey } from '../settingsSlice';
+import { workerClientBus } from '~/decrypt-worker/client.ts';
+import { GetQingTingFMDeviceKeyPayload } from '~/decrypt-worker/types.ts';
+import { DECRYPTION_WORKER_ACTION_NAME } from '~/decrypt-worker/constants.ts';
 
 const QTFM_DEVICE_ID_URL = 'https://github.com/parakeet-rs/qtfm-device-id/releases/latest';
 
@@ -38,31 +40,23 @@ export function PanelQingTing() {
       return;
     }
 
-    const dataMap = new Map();
-    for (const [_unused, key, value] of plainText.matchAll(
-      /^(PRODUCT|DEVICE|MANUFACTURER|BRAND|BOARD|MODEL): (.+)/gim,
-    )) {
-      dataMap.set(key.toLowerCase(), value);
+    const dataMap = Object.create(null);
+    for (const [, key, value] of plainText.matchAll(/^(PRODUCT|DEVICE|MANUFACTURER|BRAND|BOARD|MODEL): (.+)/gim)) {
+      dataMap[key.toLowerCase()] = value;
     }
+    const { product, device, manufacturer, brand, board, model } = dataMap;
 
-    const product = dataMap.get('product') ?? null;
-    const device = dataMap.get('device') ?? null;
-    const manufacturer = dataMap.get('manufacturer') ?? null;
-    const brand = dataMap.get('brand') ?? null;
-    const board = dataMap.get('board') ?? null;
-    const model = dataMap.get('model') ?? null;
-    if (
-      product !== null &&
-      device !== null &&
-      manufacturer !== null &&
-      brand !== null &&
-      board !== null &&
-      model !== null
-    ) {
+    if (product && device && manufacturer && brand && board && model) {
       e.preventDefault();
-      fetchParakeet().then((parakeet) => {
-        setSecretKey(parakeet.qtfm.createDeviceKey(product, device, manufacturer, brand, board, model));
-      });
+      workerClientBus
+        .request<string, GetQingTingFMDeviceKeyPayload>(
+          DECRYPTION_WORKER_ACTION_NAME.QINGTING_FM_GET_DEVICE_KEY,
+          dataMap,
+        )
+        .then(setSecretKey)
+        .catch((err) => {
+          alert(`生成设备密钥时发生错误: ${err}`);
+        });
     }
   };
 

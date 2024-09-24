@@ -34,13 +34,13 @@ export default defineConfig({
         'node_modules',
 
         // Allow pnpm to link.
-        process.env.LIB_PARAKEET_JS_DIR || '../libparakeet-js',
+        process.env.LIB_UM_WASM_LOADER_DIR || '../lib_um_crypto_rust/um_wasm_loader',
       ],
     },
   },
   base: './',
   optimizeDeps: {
-    exclude: ['@um/libparakeet', '@unlock-music/crypto', 'sql.js'],
+    exclude: ['@unlock-music/crypto', 'sql.js'],
   },
   plugins: [
     replace({
@@ -87,7 +87,7 @@ export default defineConfig({
       '~': path.resolve(__dirname, 'src'),
       '@nm': path.resolve(__dirname, 'node_modules'),
 
-      // workaround for vite, workbox (PWA) and Emscripten transpiled parakeet lib (use of `import("module")`)
+      // workaround for vite, workbox (PWA)
       module: path.resolve(__dirname, 'src', 'dummy.mjs'),
     },
   },

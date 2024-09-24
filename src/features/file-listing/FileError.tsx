@@ -1,4 +1,4 @@
-import { chakra, Box, Button, Collapse, Text, useDisclosure } from '@chakra-ui/react';
+import { Box, Button, chakra, Collapse, Text, useDisclosure } from '@chakra-ui/react';
 import { DecryptErrorType } from '~/decrypt-worker/util/DecryptError';
 
 export interface FileErrorProps {
@@ -18,11 +18,12 @@ export function FileError({ error, code }: FileErrorProps) {
     <Box>
       <Text>
         <chakra.span>
-          解密错误：<chakra.span color="red.700">{errorSummary}</chakra.span>
+          解密错误：
+          <chakra.span color="red.700">{errorSummary}</chakra.span>
         </chakra.span>
         {error && (
           <Button ml="2" onClick={onToggle} type="button">
-            详细
+            诊断信息
           </Button>
         )}
       </Text>

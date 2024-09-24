@@ -1,12 +1,17 @@
-import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import type { PayloadAction } from '@reduxjs/toolkit';
+import { createAsyncThunk, createSlice } from '@reduxjs/toolkit';
 import type { RootState } from '~/store';
 
 import { DECRYPTION_WORKER_ACTION_NAME, type DecryptionResult } from '~/decrypt-worker/constants';
-import type { DecryptCommandOptions, FetchMusicExNamePayload } from '~/decrypt-worker/types';
+import type {
+  DecryptCommandOptions,
+  FetchMusicExNamePayload,
+  ParseKuwoHeaderPayload,
+  ParseKuwoHeaderResponse,
+} from '~/decrypt-worker/types';
 import { decryptionQueue, workerClientBus } from '~/decrypt-worker/client';
 import { DecryptErrorType } from '~/decrypt-worker/util/DecryptError';
-import { selectQMCv2KeyByFileName, selectKWMv2Key, selectQtfmAndroidKey } from '../settings/settingsSelector';
+import { selectKWMv2Key, selectQMCv2KeyByFileName, selectQtfmAndroidKey } from '../settings/settingsSelector';
 
 export enum ProcessState {
   QUEUED = 'QUEUED',
@@ -43,6 +48,7 @@ export interface FileListingState {
   files: Record<string, DecryptedAudioFile>;
   displayMode: ListingMode;
 }
+
 const initialState: FileListingState = {
   files: {},
   displayMode: ListingMode.LIST,
@@ -64,28 +70,20 @@ export const processFile = createAsyncThunk<
     thunkAPI.dispatch(setFileAsProcessing({ id: fileId }));
   };
 
-  const fileHeader = await fetch(file.raw, { headers: { Range: 'bytes=0-1023' } })
-    .then((r) => r.blob())
-    .then((r) => r.arrayBuffer())
-    .then((r) => {
-      if (r.byteLength > 1024) {
-        return r.slice(0, 1024);
-      }
-      return r;
-    });
-
-  const qmcv2MusicExMediaFile = await workerClientBus.request<string, FetchMusicExNamePayload>(
-    DECRYPTION_WORKER_ACTION_NAME.FIND_QMC_MUSICEX_NAME,
-    {
-      id: fileId,
+  const [qmcv2MusicExMediaFile, kuwoHdr] = await Promise.all([
+    workerClientBus.request<string, FetchMusicExNamePayload>(DECRYPTION_WORKER_ACTION_NAME.FIND_QMC_MUSICEX_NAME, {
       blobURI: file.raw,
-    },
-  );
+    }),
+    workerClientBus.request<ParseKuwoHeaderResponse, ParseKuwoHeaderPayload>(
+      DECRYPTION_WORKER_ACTION_NAME.KUWO_PARSE_HEADER,
+      { blobURI: file.raw },
+    ),
+  ]);
 
   const options: DecryptCommandOptions = {
     fileName: file.fileName,
     qmc2Key: selectQMCv2KeyByFileName(state, qmcv2MusicExMediaFile || file.fileName),
-    kwm2key: selectKWMv2Key(state, new DataView(fileHeader)),
+    kwm2key: selectKWMv2Key(state, kuwoHdr),
     qingTingAndroidKey: selectQtfmAndroidKey(state),
   };
   return decryptionQueue.add({ id: fileId, blobURI: file.raw, options }, onPreProcess);

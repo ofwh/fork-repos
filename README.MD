@@ -40,7 +40,8 @@
 [^qm-key-ios]: 需要越狱获取密钥数据库，或对设备进行完整备份后提取密钥数据库，并导入后使用。
 [^qm-key-mac]: 需要导入密钥数据库。
 
-不支持的格式？请提交样本（加密文件）与客户端信息（或一并上传其安装包）到[仓库的问题追踪区][project-issues]。如果文件太大，请上传到不需要登入下载的网盘，如 [mega.nz](https://mega.nz)、[OneDrive](https://www.onedrive.com/) 等。
+不支持的格式？请提交样本（加密文件）与客户端信息（或一并上传其安装包）到[仓库的问题追踪区][project-issues]
+。如果文件太大，请上传到不需要登入下载的网盘，如 [mega.nz](https://mega.nz)、[OneDrive](https://www.onedrive.com/) 等。
 
 如果遇到解密出错的情况，请一并携带错误信息并简单描述错误的重现过程。
 
@@ -50,11 +51,11 @@
 
 从源码运行或编译生产版本，请参考文档「[新手上路](./docs/getting-started.zh.md)」。
 
-### 面向 libparakeet SDK 开发
+### 解密库开发
 
 ⚠️ 如果只是进行前端方面的更改，你可以跳过该节。
 
-请参考文档「[面向 `libparakeet-js` 开发](./docs/develop-with-libparakeet.zh.md)」。
+请参考文档「[面向 `@unlock-music/crypto` 开发](./docs/develop-with-um_crypto.zh)」。
 
 ### 架构
 
@@ -79,7 +80,8 @@
 - [Unlock Music (Cli)](https://git.unlock-music.dev/um/cli) - 命令行批量处理版
 - [um-react (Electron 前端)](https://github.com/CarlGao4/um-react-electron) - 使用 Electron 框架封装的本地可执行文件。
   - [GitHub 下载](https://github.com/CarlGao4/um-react-electron/releases/latest) | [仓库镜像](https://git.unlock-music.dev/CarlGao4/um-react-electron)
-- [um-react-wry](https://git.unlock-music.dev/um/um-react-wry) - 使用 WRY 框架封装的 Win64 单文件 (需要[安装 Edge WebView2 运行时][webview2_redist]，Win10+ 操作系统自带)
+- [um-react-wry](https://git.unlock-music.dev/um/um-react-wry) - 使用 WRY 框架封装的 Win64 单文件 (
+  需要[安装 Edge WebView2 运行时][webview2_redist]，Win10+ 操作系统自带)
   - [本地下载](https://git.unlock-music.dev/um/um-react/releases/latest) | 寻找文件名为 `um-react-win64-` 开头的附件
 
 [webview2_redist]: https://go.microsoft.com/fwlink/p/?LinkId=2124703

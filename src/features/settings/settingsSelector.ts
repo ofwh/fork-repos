@@ -1,8 +1,8 @@
-import { parseKuwoHeader } from '~/crypto/parseKuwo';
 import type { RootState } from '~/store';
 import { closestByLevenshtein } from '~/util/levenshtein';
 import { hasOwn } from '~/util/objects';
 import { kwm2StagingToProductionKey } from './keyFormats';
+import type { ParseKuwoHeaderResponse } from '~/decrypt-worker/types.ts';
 
 export const selectIsSettingsNotSaved = (state: RootState) => state.settings.dirty;
 
@@ -31,14 +31,16 @@ export const selectQMCv2KeyByFileName = (state: RootState, name: string): string
   return ekey;
 };
 
-export const selectKWMv2Key = (state: RootState, headerView: DataView): string | undefined => {
-  const hdr = parseKuwoHeader(headerView);
+export const selectKWMv2Key = (state: RootState, hdr: ParseKuwoHeaderResponse): string | undefined => {
   if (!hdr) {
     return;
   }
 
+  const quality = String(hdr.qualityId);
+  const rid = String(hdr.resourceId);
+
   const keys = selectFinalKWMv2Keys(state);
-  const lookupKey = kwm2StagingToProductionKey({ id: '', ekey: '', quality: hdr.quality, rid: hdr.rid });
+  const lookupKey = kwm2StagingToProductionKey({ id: '', ekey: '', quality, rid });
 
   let ekey: string | undefined;
   if (hasOwn(keys, lookupKey)) {

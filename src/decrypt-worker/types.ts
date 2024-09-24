@@ -12,6 +12,23 @@ export interface DecryptCommandPayload {
 }
 
 export interface FetchMusicExNamePayload {
-  id: string;
   blobURI: string;
+}
+
+export interface ParseKuwoHeaderPayload {
+  blobURI: string;
+}
+
+export type ParseKuwoHeaderResponse = null | {
+  resourceId: number;
+  qualityId: number;
+};
+
+export interface GetQingTingFMDeviceKeyPayload {
+  product: string;
+  device: string;
+  manufacturer: string;
+  brand: string;
+  board: string;
+  model: string;
 }

@@ -1,5 +1,5 @@
 import { bytesToUTF8String } from '~/decrypt-worker/util/utf8Encoder';
-import { formatHex } from './formatHex';
+import { formatHex } from './hex.ts';
 
 export class MMKVParser {
   private offset = 4;

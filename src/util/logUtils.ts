@@ -1,6 +1,6 @@
 import { wrapFunctionCall } from './fnWrapper';
 
-export function timedLogger<R = unknown>(label: string, fn: () => R): R {
+export async function timedLogger<R = unknown>(label: string, fn: () => Promise<R>): Promise<R> {
   if (import.meta.env.VITE_ENABLE_PERF_LOG !== '1') {
     return fn();
   } else {
@@ -12,13 +12,13 @@ export function timedLogger<R = unknown>(label: string, fn: () => R): R {
   }
 }
 
-export function withGroupedLogs<R = unknown>(label: string, fn: () => R): R {
+export async function withGroupedLogs<R = unknown>(label: string, fn: () => Promise<R>): Promise<R> {
   if (import.meta.env.VITE_ENABLE_PERF_LOG !== '1') {
     return fn();
   } else {
     return wrapFunctionCall(
       () => console.group(label),
-      () => (console.groupEnd as (label: string) => void)(label),
+      () => console.groupEnd(),
       () => timedLogger(`${label}/total`, fn),
     );
   }
