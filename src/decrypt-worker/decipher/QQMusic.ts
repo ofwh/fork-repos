@@ -38,20 +38,32 @@ export class QQMusicV2Decipher implements DecipherInstance {
     this.cipherName = `QQMusic/QMC2(user_key=${+useUserKey})`;
   }
 
-  async decrypt(buffer: Uint8Array, options: DecryptCommandOptions): Promise<DecipherResult | DecipherOK> {
+  parseFooter(buffer: Uint8Array): { size: number; ekey?: undefined | string } {
     const footer = QMCFooter.parse(buffer.subarray(buffer.byteLength - 1024));
-    if (!footer) {
+
+    if (footer) {
+      const { size, ekey } = footer;
+      footer.free();
+      return { size, ekey };
+    }
+
+    // No footer, and we don't accept user key:
+    if (!this.useUserKey) {
       throw new UnsupportedSourceFile('Not QMC2 File');
     }
 
-    const audioBuffer = buffer.slice(0, buffer.byteLength - footer.size);
+    return { size: 0 };
+  }
+
+  async decrypt(buffer: Uint8Array, options: DecryptCommandOptions): Promise<DecipherResult | DecipherOK> {
+    const footer = this.parseFooter(buffer.subarray(buffer.byteLength - 1024));
     const ekey = this.useUserKey ? options.qmc2Key : footer.ekey;
-    footer.free();
     if (!ekey) {
-      throw new Error('EKey missing');
+      throw new Error('EKey required');
     }
 
     const qmc2 = new QMC2(ekey);
+    const audioBuffer = buffer.slice(0, buffer.byteLength - footer.size);
     for (const [block, offset] of chunkBuffer(audioBuffer)) {
       qmc2.decrypt(block, offset);
     }
