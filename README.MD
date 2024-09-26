@@ -30,20 +30,26 @@
 - [x] 虾米音乐 (`.xm`)
 - [x] 酷我音乐 (`.kwm`)
 - [x] 酷狗音乐 (`.kgm` / `.vpr`)
-- [x] 喜马拉雅 Android 端 (`.x2m` / `.x3m`)
+- [x] 喜马拉雅 (`.x2m` / `.x3m` / `.xm`)
 - [x] 咪咕音乐格式 (`.mg3d`)
 - [x] 蜻蜓 FM (`.qta`)
 - [ ] ~~<ruby>QQ 音乐海外版<rt>JOOX Music</rt></ruby> (`.ofl_en`)~~
 
 [^qm-key-pc]: PC 客户端仅支持 v19.43 或更低版本。
+
 [^qm-key-android]: 需要获取超级管理员权限后提取密钥数据库，并导入后使用。
+
 [^qm-key-ios]: 需要越狱获取密钥数据库，或对设备进行完整备份后提取密钥数据库，并导入后使用。
+
 [^qm-key-mac]: 需要导入密钥数据库。
 
-不支持的格式？请提交样本（加密文件）与客户端信息（或一并上传其安装包）到[仓库的问题追踪区][project-issues]
-。如果文件太大，请上传到不需要登入下载的网盘，如 [mega.nz](https://mega.nz)、[OneDrive](https://www.onedrive.com/) 等。
+## 错误报告
 
-如果遇到解密出错的情况，请一并携带错误信息并简单描述错误的重现过程。
+有不支持的格式？请提交样本（加密文件）与客户端信息版本信息（如系统版本、下载渠道），或一并上传其安装包到[仓库的问题追踪区][project-issues]。
+
+⚠️ 如果文件太大，请上传到不需要登入下载的网盘，如 [mega.nz](https://mega.nz)、[OneDrive](https://www.onedrive.com/) 等。
+
+遇到解密出错的情况，请一并携带错误信息（诊断信息）并简单描述错误的重现过程。
 
 [project-issues]: https://git.unlock-music.dev/um/um-react/issues/new
 
