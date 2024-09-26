@@ -1,8 +1,8 @@
 import {
-  chakra,
   Box,
   Button,
   Center,
+  chakra,
   Flex,
   HStack,
   Icon,
@@ -19,9 +19,9 @@ import {
   TabPanels,
   Tabs,
   Text,
-  VStack,
   useBreakpointValue,
   useToast,
+  VStack,
 } from '@chakra-ui/react';
 import { PanelQMCv2Key } from './panels/PanelQMCv2Key';
 import { useState } from 'react';
@@ -145,7 +145,7 @@ export function Settings() {
                       onClick={handleResetSettings}
                       colorScheme="red"
                       variant="ghost"
-                      title="放弃未储存的更改，将设定还原为储存前的状态。"
+                      title="放弃未储存的更改，将设定还原未储存前的状态。"
                       aria-label="放弃未储存的更改"
                     />
                     <Button onClick={handleApplySettings}>保存</Button>
