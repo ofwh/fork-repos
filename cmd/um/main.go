@@ -231,6 +231,8 @@ func (p *processor) processDir(inputDir string) error {
 	if err != nil {
 		return err
 	}
+
+	var lastError error = nil
 	for _, item := range items {
 		if item.IsDir() {
 			continue
@@ -238,8 +240,12 @@ func (p *processor) processDir(inputDir string) error {
 
 		filePath := filepath.Join(inputDir, item.Name())
 		if err := p.processFile(filePath); err != nil {
+			lastError = err
 			logger.Error("conversion failed", zap.String("source", item.Name()), zap.Error(err))
 		}
+	}
+	if lastError != nil {
+		return fmt.Errorf("last error: %w", lastError)
 	}
 	return nil
 }
