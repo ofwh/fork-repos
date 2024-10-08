@@ -247,7 +247,7 @@ func (p *processor) processDir(inputDir string) error {
 func (p *processor) processFile(filePath string) error {
 	allDec := common.GetDecoder(filePath, p.skipNoopDecoder)
 	if len(allDec) == 0 {
-		logger.Fatal("skipping while no suitable decoder")
+		return errors.New("skipping while no suitable decoder")
 	}
 
 	if err := p.process(filePath, allDec); err != nil {
