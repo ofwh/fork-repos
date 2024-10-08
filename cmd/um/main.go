@@ -34,7 +34,7 @@ import (
 	"unlock-music.dev/cli/internal/utils"
 )
 
-var AppVersion = "v0.2.2"
+var AppVersion = "v0.2.3"
 
 var logger, _ = logging.NewZapLogger() // TODO: inject logger to application, instead of using global logger
 
