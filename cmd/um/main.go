@@ -151,8 +151,8 @@ func appMain(c *cli.Context) (err error) {
 	}
 
 	if inputStat.IsDir() {
-		wacthDir := c.Bool("watch")
-		if !wacthDir {
+		watchDir := c.Bool("watch")
+		if !watchDir {
 			return proc.processDir(input)
 		} else {
 			return proc.watchDir(input)
