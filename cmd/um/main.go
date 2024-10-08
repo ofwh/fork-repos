@@ -8,6 +8,7 @@ import (
 	"io"
 	"os"
 	"os/signal"
+	"path"
 	"path/filepath"
 	"runtime"
 	"runtime/debug"
@@ -84,6 +85,11 @@ func printSupportedExtensions() {
 }
 
 func appMain(c *cli.Context) (err error) {
+	cwd, err := os.Getwd()
+	if err != nil {
+		return err
+	}
+
 	if c.Bool("supported-ext") {
 		printSupportedExtensions()
 		return nil
@@ -92,10 +98,7 @@ func appMain(c *cli.Context) (err error) {
 	if input == "" {
 		switch c.Args().Len() {
 		case 0:
-			input, err = os.Getwd()
-			if err != nil {
-				return err
-			}
+			input = cwd
 		case 1:
 			input = c.Args().Get(0)
 		default:
@@ -104,20 +107,18 @@ func appMain(c *cli.Context) (err error) {
 	}
 
 	output := c.String("output")
-	if output == "" {
-		var err error
-		output, err = os.Getwd()
-		if err != nil {
-			return err
-		}
-		if input == output {
-			return errors.New("input and output path are same")
-		}
-	}
-
 	inputStat, err := os.Stat(input)
 	if err != nil {
 		return err
+	}
+
+	if output == "" {
+		// Default to where the input is
+		if inputStat.IsDir() {
+			output = input
+		} else {
+			output = path.Dir(input)
+		}
 	}
 
 	outputStat, err := os.Stat(output)
@@ -150,8 +151,8 @@ func appMain(c *cli.Context) (err error) {
 	}
 
 	if inputStat.IsDir() {
-		wacthDir := c.Bool("watch")
-		if !wacthDir {
+		watchDir := c.Bool("watch")
+		if !watchDir {
 			return proc.processDir(input)
 		} else {
 			return proc.watchDir(input)
@@ -230,21 +231,21 @@ func (p *processor) processDir(inputDir string) error {
 	if err != nil {
 		return err
 	}
+
+	var lastError error = nil
 	for _, item := range items {
 		if item.IsDir() {
 			continue
 		}
 
 		filePath := filepath.Join(inputDir, item.Name())
-		allDec := common.GetDecoder(filePath, p.skipNoopDecoder)
-		if len(allDec) == 0 {
-			logger.Info("skipping while no suitable decoder", zap.String("source", item.Name()))
-			continue
-		}
-
-		if err := p.process(filePath, allDec); err != nil {
+		if err := p.processFile(filePath); err != nil {
+			lastError = err
 			logger.Error("conversion failed", zap.String("source", item.Name()), zap.Error(err))
 		}
+	}
+	if lastError != nil {
+		return fmt.Errorf("last error: %w", lastError)
 	}
 	return nil
 }
@@ -252,7 +253,7 @@ func (p *processor) processDir(inputDir string) error {
 func (p *processor) processFile(filePath string) error {
 	allDec := common.GetDecoder(filePath, p.skipNoopDecoder)
 	if len(allDec) == 0 {
-		logger.Fatal("skipping while no suitable decoder")
+		return errors.New("skipping while no suitable decoder")
 	}
 
 	if err := p.process(filePath, allDec); err != nil {
