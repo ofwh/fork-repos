@@ -143,6 +143,7 @@ func appMain(c *cli.Context) (err error) {
 	}
 
 	proc := &processor{
+		inputDir:        input,
 		outputDir:       output,
 		skipNoopDecoder: c.Bool("skip-noop"),
 		removeSource:    c.Bool("remove-source"),
@@ -164,6 +165,7 @@ func appMain(c *cli.Context) (err error) {
 }
 
 type processor struct {
+	inputDir  string
 	outputDir string
 
 	skipNoopDecoder bool
@@ -234,11 +236,14 @@ func (p *processor) processDir(inputDir string) error {
 
 	var lastError error = nil
 	for _, item := range items {
+		filePath := filepath.Join(inputDir, item.Name())
 		if item.IsDir() {
+			if err = p.processDir(filePath); err != nil {
+				lastError = err
+			}
 			continue
 		}
 
-		filePath := filepath.Join(inputDir, item.Name())
 		if err := p.processFile(filePath); err != nil {
 			lastError = err
 			logger.Error("conversion failed", zap.String("source", item.Name()), zap.Error(err))
@@ -355,8 +360,13 @@ func (p *processor) process(inputFile string, allDec []common.NewDecoderFunc) er
 		}
 	}
 
+	inputRelDir, err := filepath.Rel(p.inputDir, filepath.Dir(inputFile))
+	if err != nil {
+		return fmt.Errorf("get relative dir failed: %w", err)
+	}
+
 	inFilename := strings.TrimSuffix(filepath.Base(inputFile), filepath.Ext(inputFile))
-	outPath := filepath.Join(p.outputDir, inFilename+params.AudioExt)
+	outPath := filepath.Join(p.outputDir, inputRelDir, inFilename+params.AudioExt)
 
 	if !p.overwriteOutput {
 		_, err := os.Stat(outPath)
