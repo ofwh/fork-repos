@@ -61,7 +61,7 @@
 
 ⚠️ 如果只是进行前端方面的更改，你可以跳过该节。
 
-请参考文档「[面向 `@unlock-music/crypto` 开发](./docs/develop-with-um_crypto.zh)」。
+请参考文档「[面向 `@unlock-music/crypto` 开发](./docs/develop-with-um_crypto.zh.md)」。
 
 ### 架构
 
