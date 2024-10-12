@@ -51,6 +51,8 @@
 
 遇到解密出错的情况，请一并携带错误信息（诊断信息）并简单描述错误的重现过程。
 
+待实现的算法支持可[追踪 `crypto` 标签](https://git.unlock-music.dev/um/um-react/issues?labels=67)。
+
 [project-issues]: https://git.unlock-music.dev/um/um-react/issues/new
 
 ## 开发相关
@@ -93,13 +95,3 @@
 [webview2_redist]: https://go.microsoft.com/fwlink/p/?LinkId=2124703
 
 有新的项目提交？欢迎[提交 issue][project-issues]，请带上项目名称和链接。
-
-## TODO
-
-- 待定
-  - [ ] 各类算法 [追踪 `crypto` 标签](https://git.unlock-music.dev/um/um-react/issues?labels=67)
-- 完成
-  - [x] #7 ~~简易元数据编辑器~~ 放弃
-  - [x] #8 ~~添加单元测试~~ 框架加上了，以后慢慢添加更多测试即可。
-  - [x] #2 解密内容探测 (解密过程)
-  - [x] #6 文件拖放 (利用 `react-dropzone`?)
