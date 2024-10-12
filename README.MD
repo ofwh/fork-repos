@@ -10,6 +10,9 @@
 - CI 自动构建已经部署，可以在 [Packages][um-react-packages] 下载。
 - [常见问题参考](./docs/faq_zh-hans.md)
 
+> **WARNING**
+> 在本站 fork 不会起到备份的作用，只会浪费服务器储存空间。如无必要请勿 fork 该仓库。
+
 [授权协议]: https://git.unlock-music.dev/um/um-react/src/branch/main/LICENSE
 [um-vue]: https://git.unlock-music.dev/um/web
 [unlock-music/cli]: https://git.unlock-music.dev/um/cli
