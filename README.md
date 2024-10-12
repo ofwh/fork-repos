@@ -6,6 +6,9 @@ Original: Web Edition https://git.unlock-music.dev/um/web
 - [Release Download](https://git.unlock-music.dev/um/cli/releases/latest)
 - [Latest Build](https://git.unlock-music.dev/um/-/packages/generic/cli-build/)
 
+> **WARNING**
+> 在本站 fork 不会起到备份的作用，只会浪费服务器储存空间。如无必要请勿 fork 该仓库。
+
 ## Features
 
 - [x] All Algorithm Supported By `unlock-music/web`
