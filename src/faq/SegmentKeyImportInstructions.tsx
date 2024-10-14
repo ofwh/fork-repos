@@ -8,9 +8,14 @@ import { MdFileUpload } from 'react-icons/md';
 export interface SegmentKeyImportInstructionsProps {
   clientInstructions: React.ReactNode;
   tab: string;
+  keyInstructionText?: React.ReactNode;
 }
 
-export function SegmentKeyImportInstructions({ clientInstructions, tab }: SegmentKeyImportInstructionsProps) {
+export function SegmentKeyImportInstructions({
+  clientInstructions,
+  tab,
+  keyInstructionText = '选择你的客户端平台来查看密钥提取说明：',
+}: SegmentKeyImportInstructionsProps) {
   return (
     <>
       <Text>导入密钥可以参考下面的步骤：</Text>
@@ -33,7 +38,7 @@ export function SegmentKeyImportInstructions({ clientInstructions, tab }: Segmen
           </Flex>
         </ListItem>
         <ListItem>
-          <Text>选择你的客户端平台来查看密钥提取说明：</Text>
+          <Text>{keyInstructionText}</Text>
           <Tabs display="flex" flexDir="column" border="1px solid" borderColor="gray.300" borderRadius={5}>
             {clientInstructions}
           </Tabs>

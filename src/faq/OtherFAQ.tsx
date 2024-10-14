@@ -1,6 +1,6 @@
 import { Alert, AlertIcon, Code, Container, Flex, Img, ListItem, Text, UnorderedList } from '@chakra-ui/react';
 import { ExtLink } from '~/components/ExtLink';
-import { Header4 } from '~/components/HelpText/Header4';
+import { Header4 } from '~/components/HelpText/Headers';
 import { VQuote } from '~/components/HelpText/VQuote';
 import { ProjectIssue } from '~/components/ProjectIssue';
 import LdPlayerSettingsScreen from './assets/ld_settings_misc.webp';
@@ -63,7 +63,7 @@ export function OtherFAQ() {
           <AlertIcon />
           <Flex flexDir="column">
             <Text>
-              <strong>注意</strong>：根据应用厂商的风控策略，使用模拟器登录的账号<strong>有可能会被封锁</strong>
+              <strong>注意</strong>：根据应用的风控策略，使用模拟器登录的账号<strong>有可能会导致账号被封锁</strong>
               {'；使用前请自行评估风险。'}
             </Text>
           </Flex>
