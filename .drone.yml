@@ -182,6 +182,19 @@ steps:
     --always)" -o $DIST_DIR ./cmd/um
   - mkdir -p dist
   - command -v zip >/dev/null || (apt update && apt install -y zip)
+  - zip -9 -j -r "dist/um-windows-arm64.zip" $DIST_DIR
+  environment:
+    GOARCH: arm64
+    GOOS: windows
+    GOPROXY: https://goproxy.io,direct
+  image: golang:1.22
+  name: go build windows/arm64
+- commands:
+  - DIST_DIR=$(mktemp -d)
+  - go build -v -trimpath -ldflags="-w -s -X main.AppVersion=$(git describe --tags
+    --always)" -o $DIST_DIR ./cmd/um
+  - mkdir -p dist
+  - command -v zip >/dev/null || (apt update && apt install -y zip)
   - zip -9 -j -r "dist/um-windows-386.zip" $DIST_DIR
   environment:
     GOARCH: "386"

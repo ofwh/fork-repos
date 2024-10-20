@@ -119,6 +119,7 @@ local PipelineRelease() = {
     StepGoBuild('linux', 'arm64'),
     StepGoBuild('linux', '386'),
     StepGoBuild('windows', 'amd64'),
+    StepGoBuild('windows', 'arm64'),
     StepGoBuild('windows', '386'),
     StepGoBuild('darwin', 'amd64'),
     StepGoBuild('darwin', 'arm64'),
