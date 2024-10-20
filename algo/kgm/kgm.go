@@ -61,4 +61,7 @@ func init() {
 	common.RegisterDecoder("kgma", false, NewDecoder)
 	// Viper
 	common.RegisterDecoder("vpr", false, NewDecoder)
+	// Kugou Android
+	common.RegisterDecoder("kgm.flac", false, NewDecoder)
+	common.RegisterDecoder("vpr.flac", false, NewDecoder)
 }
