@@ -17,7 +17,7 @@ steps:
   - go build -v -trimpath -ldflags="-w -s -X main.AppVersion=$(git describe --tags
     --always)" -o $DIST_DIR ./cmd/um
   - mkdir -p dist
-  - tar cz -f dist/um-linux-amd64.tar.gz -C $DIST_DIR .
+  - tar -zc -C $DIST_DIR um | gzip -9 > "dist/um-linux-amd64.tar.gz"
   environment:
     GOARCH: amd64
     GOOS: linux
@@ -53,7 +53,8 @@ steps:
   - go build -v -trimpath -ldflags="-w -s -X main.AppVersion=$(git describe --tags
     --always)" -o $DIST_DIR ./cmd/um
   - mkdir -p dist
-  - tar cz -f dist/um-windows-amd64.tar.gz -C $DIST_DIR .
+  - command -v zip >/dev/null || (apt update && apt install -y zip)
+  - zip -9 -j -r "dist/um-windows-amd64.zip" $DIST_DIR
   environment:
     GOARCH: amd64
     GOOS: windows
@@ -89,7 +90,7 @@ steps:
   - go build -v -trimpath -ldflags="-w -s -X main.AppVersion=$(git describe --tags
     --always)" -o $DIST_DIR ./cmd/um
   - mkdir -p dist
-  - tar cz -f dist/um-darwin-amd64.tar.gz -C $DIST_DIR .
+  - tar -zc -C $DIST_DIR um | gzip -9 > "dist/um-darwin-amd64.tar.gz"
   environment:
     GOARCH: amd64
     GOOS: darwin
@@ -131,7 +132,7 @@ steps:
   - go build -v -trimpath -ldflags="-w -s -X main.AppVersion=$(git describe --tags
     --always)" -o $DIST_DIR ./cmd/um
   - mkdir -p dist
-  - tar cz -f dist/um-linux-amd64.tar.gz -C $DIST_DIR .
+  - tar -zc -C $DIST_DIR um | gzip -9 > "dist/um-linux-amd64.tar.gz"
   environment:
     GOARCH: amd64
     GOOS: linux
@@ -143,7 +144,7 @@ steps:
   - go build -v -trimpath -ldflags="-w -s -X main.AppVersion=$(git describe --tags
     --always)" -o $DIST_DIR ./cmd/um
   - mkdir -p dist
-  - tar cz -f dist/um-linux-arm64.tar.gz -C $DIST_DIR .
+  - tar -zc -C $DIST_DIR um | gzip -9 > "dist/um-linux-arm64.tar.gz"
   environment:
     GOARCH: arm64
     GOOS: linux
@@ -155,7 +156,7 @@ steps:
   - go build -v -trimpath -ldflags="-w -s -X main.AppVersion=$(git describe --tags
     --always)" -o $DIST_DIR ./cmd/um
   - mkdir -p dist
-  - tar cz -f dist/um-linux-386.tar.gz -C $DIST_DIR .
+  - tar -zc -C $DIST_DIR um | gzip -9 > "dist/um-linux-386.tar.gz"
   environment:
     GOARCH: "386"
     GOOS: linux
@@ -167,7 +168,8 @@ steps:
   - go build -v -trimpath -ldflags="-w -s -X main.AppVersion=$(git describe --tags
     --always)" -o $DIST_DIR ./cmd/um
   - mkdir -p dist
-  - tar cz -f dist/um-windows-amd64.tar.gz -C $DIST_DIR .
+  - command -v zip >/dev/null || (apt update && apt install -y zip)
+  - zip -9 -j -r "dist/um-windows-amd64.zip" $DIST_DIR
   environment:
     GOARCH: amd64
     GOOS: windows
@@ -179,7 +181,8 @@ steps:
   - go build -v -trimpath -ldflags="-w -s -X main.AppVersion=$(git describe --tags
     --always)" -o $DIST_DIR ./cmd/um
   - mkdir -p dist
-  - tar cz -f dist/um-windows-386.tar.gz -C $DIST_DIR .
+  - command -v zip >/dev/null || (apt update && apt install -y zip)
+  - zip -9 -j -r "dist/um-windows-386.zip" $DIST_DIR
   environment:
     GOARCH: "386"
     GOOS: windows
@@ -191,7 +194,7 @@ steps:
   - go build -v -trimpath -ldflags="-w -s -X main.AppVersion=$(git describe --tags
     --always)" -o $DIST_DIR ./cmd/um
   - mkdir -p dist
-  - tar cz -f dist/um-darwin-amd64.tar.gz -C $DIST_DIR .
+  - tar -zc -C $DIST_DIR um | gzip -9 > "dist/um-darwin-amd64.tar.gz"
   environment:
     GOARCH: amd64
     GOOS: darwin
@@ -203,7 +206,7 @@ steps:
   - go build -v -trimpath -ldflags="-w -s -X main.AppVersion=$(git describe --tags
     --always)" -o $DIST_DIR ./cmd/um
   - mkdir -p dist
-  - tar cz -f dist/um-darwin-arm64.tar.gz -C $DIST_DIR .
+  - tar -zc -C $DIST_DIR um | gzip -9 > "dist/um-darwin-arm64.tar.gz"
   environment:
     GOARCH: arm64
     GOOS: darwin

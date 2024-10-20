@@ -17,21 +17,30 @@ local CreateRelease() = {
 
 
 local StepGoBuild(GOOS, GOARCH) = {
-  local filepath = 'dist/um-%s-%s.tar.gz' % [GOOS, GOARCH],
+  local windows = GOOS == 'windows',
+  local archiveExt = if windows then 'zip' else 'tar.gz',
+  local filepath = 'dist/um-%s-%s.%s' % [GOOS, GOARCH, archiveExt],
+
+  local archive = if windows then [
+    // Ensure zip is installed
+    'command -v zip >/dev/null || (apt update && apt install -y zip)',
+    'zip -9 -j -r "%s" $DIST_DIR' % filepath,
+  ] else [
+    'tar -zc -C $DIST_DIR um | gzip -9 > "%s"' % filepath,
+  ],
 
   name: 'go build %s/%s' % [GOOS, GOARCH],
   image: 'golang:1.22',
   environment: {
     GOOS: GOOS,
     GOARCH: GOARCH,
-    GOPROXY: "https://goproxy.io,direct",
+    GOPROXY: 'https://goproxy.io,direct',
   },
   commands: [
     'DIST_DIR=$(mktemp -d)',
     'go build -v -trimpath -ldflags="-w -s -X main.AppVersion=$(git describe --tags --always)" -o $DIST_DIR ./cmd/um',
     'mkdir -p dist',
-    'tar cz -f %s -C $DIST_DIR .' % filepath,
-  ],
+  ] + archive,
 };
 
 local StepUploadArtifact(GOOS, GOARCH) = {
@@ -71,7 +80,7 @@ local PipelineBuild(GOOS, GOARCH, RUN_TEST) = {
              name: 'go test',
              image: 'golang:1.22',
              environment: {
-               GOPROXY: "https://goproxy.io,direct",
+               GOPROXY: 'https://goproxy.io,direct',
              },
              commands: ['go test -v ./...'],
            }] else []
@@ -100,7 +109,7 @@ local PipelineRelease() = {
       name: 'go test',
       image: 'golang:1.22',
       environment: {
-        GOPROXY: "https://goproxy.io,direct",
+        GOPROXY: 'https://goproxy.io,direct',
       },
       commands: ['go test -v ./...'],
     },
