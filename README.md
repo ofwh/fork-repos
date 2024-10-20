@@ -25,3 +25,13 @@ Original: Web Edition https://git.unlock-music.dev/um/web
 - Drag the encrypted file to `um.exe` (Tested on Windows)
 - Run: `./um [-o <output dir>] [-i] <input dir/file>`
 - Use `./um -h` to show help menu
+
+## Update CI pipeline
+
+1. Install [Drone CI binary](https://docs.drone.io/cli/install/)
+2. Edit `.drone.jsonnet`
+3. Update drone CI pipeline:
+
+   ```sh
+   drone jsonnet --format --stream
+   ```
