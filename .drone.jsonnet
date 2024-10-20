@@ -44,7 +44,9 @@ local StepGoBuild(GOOS, GOARCH) = {
 };
 
 local StepUploadArtifact(GOOS, GOARCH) = {
-  local filename = 'um-%s-%s.tar.gz' % [GOOS, GOARCH],
+  local windows = GOOS == 'windows',
+  local archiveExt = if windows then 'zip' else 'tar.gz',
+  local filename = 'um-%s-%s.%s' % [GOOS, GOARCH, archiveExt],
   local filepath = 'dist/%s' % filename,
   local pkgname = '${DRONE_REPO_NAME}-build',
 

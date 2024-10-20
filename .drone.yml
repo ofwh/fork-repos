@@ -62,9 +62,9 @@ steps:
   image: golang:1.22
   name: go build windows/amd64
 - commands:
-  - curl --fail --include --user "um-release-bot:$GITEA_API_KEY" --upload-file "dist/um-windows-amd64.tar.gz"
-    "$DRONE_GITEA_SERVER/api/packages/${DRONE_REPO_NAMESPACE}/generic/${DRONE_REPO_NAME}-build/${DRONE_BUILD_NUMBER}/um-windows-amd64.tar.gz"
-  - sha256sum dist/um-windows-amd64.tar.gz
+  - curl --fail --include --user "um-release-bot:$GITEA_API_KEY" --upload-file "dist/um-windows-amd64.zip"
+    "$DRONE_GITEA_SERVER/api/packages/${DRONE_REPO_NAMESPACE}/generic/${DRONE_REPO_NAME}-build/${DRONE_BUILD_NUMBER}/um-windows-amd64.zip"
+  - sha256sum dist/um-windows-amd64.zip
   - echo $DRONE_GITEA_SERVER/${DRONE_REPO_NAMESPACE}/-/packages/generic/${DRONE_REPO_NAME}-build/${DRONE_BUILD_NUMBER}
   environment:
     DRONE_GITEA_SERVER: https://git.unlock-music.dev
