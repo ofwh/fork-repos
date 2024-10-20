@@ -2,3 +2,6 @@
 
 /dist
 *.exe
+
+/um-*.tar.gz
+/um-*.zip

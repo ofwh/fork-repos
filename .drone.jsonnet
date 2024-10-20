@@ -8,7 +8,10 @@ local CreateRelease() = {
   settings: {
     api_key: { from_secret: 'GITEA_API_KEY' },
     base_url: 'https://git.unlock-music.dev',
-    files: 'dist/*',
+    files: [
+      'um-*.tar.gz',
+      'um-*.zip',
+    ],
     checksum: 'sha256',
     draft: true,
     title: '${DRONE_TAG}',
@@ -19,14 +22,14 @@ local CreateRelease() = {
 local StepGoBuild(GOOS, GOARCH) = {
   local windows = GOOS == 'windows',
   local archiveExt = if windows then 'zip' else 'tar.gz',
-  local filepath = 'dist/um-%s-%s.%s' % [GOOS, GOARCH, archiveExt],
+  local filepath = 'dist/um-%s-%s-%s.%s' % [GOOS, GOARCH, '$(git describe --tags --always)', archiveExt],
 
   local archive = if windows then [
     // Ensure zip is installed
     'command -v zip >/dev/null || (apt update && apt install -y zip)',
     'zip -9 -j -r "%s" $DIST_DIR' % filepath,
   ] else [
-    'tar -zc -C $DIST_DIR um | gzip -9 > "%s"' % filepath,
+    'tar -c -C $DIST_DIR um | gzip -9 > "%s"' % filepath,
   ],
 
   name: 'go build %s/%s' % [GOOS, GOARCH],
@@ -46,7 +49,7 @@ local StepGoBuild(GOOS, GOARCH) = {
 local StepUploadArtifact(GOOS, GOARCH) = {
   local windows = GOOS == 'windows',
   local archiveExt = if windows then 'zip' else 'tar.gz',
-  local filename = 'um-%s-%s.%s' % [GOOS, GOARCH, archiveExt],
+  local filename = 'um-%s-%s-%s.%s' % [GOOS, GOARCH, '$(git describe --tags --always)', archiveExt],
   local filepath = 'dist/%s' % filename,
   local pkgname = '${DRONE_REPO_NAME}-build',
 
@@ -123,6 +126,13 @@ local PipelineRelease() = {
     StepGoBuild('windows', '386'),
     StepGoBuild('darwin', 'amd64'),
     StepGoBuild('darwin', 'arm64'),
+    {
+      name: 'prepare root',
+      image: 'golang:1.22',
+      commands: [
+        'mv dist/*.tar.gz dist/*.zip ./',
+      ],
+    },
     CreateRelease(),
   ],
   trigger: {
