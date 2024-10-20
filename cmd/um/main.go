@@ -75,12 +75,21 @@ func main() {
 
 func printSupportedExtensions() {
 	var exts []string
-	for ext := range common.DecoderRegistry {
+	extSet := make(map[string]int)
+	for _, factory := range common.DecoderRegistry {
+		ext := strings.TrimPrefix(factory.Suffix, ".")
+		if n, ok := extSet[ext]; ok {
+			extSet[ext] = n + 1
+		} else {
+			extSet[ext] = 1
+		}
+	}
+	for ext := range extSet {
 		exts = append(exts, ext)
 	}
 	sort.Strings(exts)
 	for _, ext := range exts {
-		fmt.Printf("%s: %d\n", ext, len(common.DecoderRegistry[ext]))
+		fmt.Printf("%s: %d\n", ext, extSet[ext])
 	}
 }
 
@@ -276,7 +285,19 @@ func (p *processor) processFile(filePath string) error {
 	return nil
 }
 
-func (p *processor) process(inputFile string, allDec []common.NewDecoderFunc) error {
+func (p *processor) findDecoder(decoders []common.DecoderFactory, params *common.DecoderParams) (*common.Decoder, *common.DecoderFactory, error) {
+	for _, factory := range decoders {
+		dec := factory.Create(params)
+		err := dec.Validate()
+		if err == nil {
+			return &dec, &factory, nil
+		}
+		logger.Warn("try decode failed", zap.Error(err))
+	}
+	return nil, nil, errors.New("no any decoder can resolve the file")
+}
+
+func (p *processor) process(inputFile string, allDec []common.DecoderFactory) error {
 	file, err := os.Open(inputFile)
 	if err != nil {
 		return err
@@ -284,26 +305,16 @@ func (p *processor) process(inputFile string, allDec []common.NewDecoderFunc) er
 	defer file.Close()
 	logger := logger.With(zap.String("source", inputFile))
 
-	decParams := &common.DecoderParams{
+	pDec, decoderFactory, err := p.findDecoder(allDec, &common.DecoderParams{
 		Reader:    file,
 		Extension: filepath.Ext(inputFile),
 		FilePath:  inputFile,
 		Logger:    logger,
+	})
+	if err != nil {
+		return err
 	}
-
-	var dec common.Decoder
-	for _, decFunc := range allDec {
-		dec = decFunc(decParams)
-		if err := dec.Validate(); err == nil {
-			break
-		} else {
-			logger.Warn("try decode failed", zap.Error(err))
-			dec = nil
-		}
-	}
-	if dec == nil {
-		return errors.New("no any decoder can resolve the file")
-	}
+	dec := *pDec
 
 	params := &ffmpeg.UpdateMetadataParams{}
 
@@ -365,7 +376,7 @@ func (p *processor) process(inputFile string, allDec []common.NewDecoderFunc) er
 		return fmt.Errorf("get relative dir failed: %w", err)
 	}
 
-	inFilename := strings.TrimSuffix(filepath.Base(inputFile), filepath.Ext(inputFile))
+	inFilename := strings.TrimSuffix(filepath.Base(inputFile), decoderFactory.Suffix)
 	outPath := filepath.Join(p.outputDir, inputRelDir, inFilename+params.AudioExt)
 
 	if !p.overwriteOutput {

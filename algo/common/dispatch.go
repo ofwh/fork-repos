@@ -18,25 +18,32 @@ type DecoderParams struct {
 }
 type NewDecoderFunc func(p *DecoderParams) Decoder
 
-type decoderItem struct {
-	noop    bool
-	decoder NewDecoderFunc
+type DecoderFactory struct {
+	noop   bool
+	Suffix string
+	Create NewDecoderFunc
 }
 
-var DecoderRegistry = make(map[string][]decoderItem)
+var DecoderRegistry []DecoderFactory
 
 func RegisterDecoder(ext string, noop bool, dispatchFunc NewDecoderFunc) {
-	DecoderRegistry[ext] = append(DecoderRegistry[ext],
-		decoderItem{noop: noop, decoder: dispatchFunc})
+	DecoderRegistry = append(DecoderRegistry,
+		DecoderFactory{noop: noop, Create: dispatchFunc, Suffix: "." + strings.TrimPrefix(ext, ".")})
 }
 
-func GetDecoder(filename string, skipNoop bool) (rs []NewDecoderFunc) {
-	ext := strings.ToLower(strings.TrimLeft(filepath.Ext(filename), "."))
-	for _, dec := range DecoderRegistry[ext] {
+func GetDecoder(filename string, skipNoop bool) []DecoderFactory {
+	var result []DecoderFactory
+	// Some extensions contains multiple dots, e.g. ".kgm.flac", hence iterate
+	//   all decoders for each extension.
+	name := strings.ToLower(filepath.Base(filename))
+	for _, dec := range DecoderRegistry {
+		if !strings.HasSuffix(name, dec.Suffix) {
+			continue
+		}
 		if skipNoop && dec.noop {
 			continue
 		}
-		rs = append(rs, dec.decoder)
+		result = append(result, dec)
 	}
-	return
+	return result
 }
