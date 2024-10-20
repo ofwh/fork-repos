@@ -371,7 +371,8 @@ func (p *processor) process(inputFile string, allDec []common.NewDecoderFunc) er
 	if !p.overwriteOutput {
 		_, err := os.Stat(outPath)
 		if err == nil {
-			return fmt.Errorf("output file %s is already exist", outPath)
+			logger.Warn("output file already exist, skip", zap.String("destination", outPath))
+			return nil
 		} else if !errors.Is(err, os.ErrNotExist) {
 			return fmt.Errorf("stat output file failed: %w", err)
 		}
