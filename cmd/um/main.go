@@ -121,13 +121,16 @@ func appMain(c *cli.Context) (err error) {
 		return err
 	}
 
+	var inputDir string
+	if inputStat.IsDir() {
+		inputDir = input
+	} else {
+		inputDir = path.Dir(input)
+	}
+
 	if output == "" {
-		// Default to where the input is
-		if inputStat.IsDir() {
-			output = input
-		} else {
-			output = path.Dir(input)
-		}
+		// Default to where the input dir is
+		output = inputDir
 	}
 
 	outputStat, err := os.Stat(output)
@@ -152,7 +155,7 @@ func appMain(c *cli.Context) (err error) {
 	}
 
 	proc := &processor{
-		inputDir:        input,
+		inputDir:        inputDir,
 		outputDir:       output,
 		skipNoopDecoder: c.Bool("skip-noop"),
 		removeSource:    c.Bool("remove-source"),
