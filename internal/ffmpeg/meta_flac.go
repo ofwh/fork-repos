@@ -2,6 +2,7 @@ package ffmpeg
 
 import (
 	"context"
+	"go.uber.org/zap"
 	"mime"
 	"strings"
 
@@ -11,7 +12,7 @@ import (
 	"golang.org/x/exp/slices"
 )
 
-func updateMetaFlac(_ context.Context, outPath string, m *UpdateMetadataParams) error {
+func updateMetaFlac(_ context.Context, outPath string, m *UpdateMetadataParams, logger *zap.Logger) error {
 	f, err := flac.ParseFile(m.Audio)
 	if err != nil {
 		return err
@@ -62,27 +63,30 @@ func updateMetaFlac(_ context.Context, outPath string, m *UpdateMetadataParams) 
 	}
 
 	if m.AlbumArt != nil {
-
+		coverMime := mime.TypeByExtension(m.AlbumArtExt)
+		logger.Debug("cover image mime detect", zap.String("mime", coverMime))
 		cover, err := flacpicture.NewFromImageData(
 			flacpicture.PictureTypeFrontCover,
 			"Front cover",
 			m.AlbumArt,
-			mime.TypeByExtension(m.AlbumArtExt),
+			coverMime,
 		)
-		if err != nil {
-			return err
-		}
-		coverBlock := cover.Marshal()
-		f.Meta = append(f.Meta, &coverBlock)
 
-		// add / replace flac cover
-		coverIdx := slices.IndexFunc(f.Meta, func(b *flac.MetaDataBlock) bool {
-			return b.Type == flac.Picture
-		})
-		if coverIdx < 0 {
-			f.Meta = append(f.Meta, &coverBlock)
+		if err != nil {
+			logger.Warn("failed to create flac cover", zap.Error(err))
 		} else {
-			f.Meta[coverIdx] = &coverBlock
+			coverBlock := cover.Marshal()
+			f.Meta = append(f.Meta, &coverBlock)
+
+			// add / replace flac cover
+			coverIdx := slices.IndexFunc(f.Meta, func(b *flac.MetaDataBlock) bool {
+				return b.Type == flac.Picture
+			})
+			if coverIdx < 0 {
+				f.Meta = append(f.Meta, &coverBlock)
+			} else {
+				f.Meta[coverIdx] = &coverBlock
+			}
 		}
 	}
 

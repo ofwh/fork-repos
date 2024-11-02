@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"go.uber.org/zap"
 	"io"
 	"os"
 	"os/exec"
@@ -43,9 +44,9 @@ type UpdateMetadataParams struct {
 	AlbumArtExt string // required if AlbumArt is not nil
 }
 
-func UpdateMeta(ctx context.Context, outPath string, params *UpdateMetadataParams) error {
+func UpdateMeta(ctx context.Context, outPath string, params *UpdateMetadataParams, logger *zap.Logger) error {
 	if params.AudioExt == ".flac" {
-		return updateMetaFlac(ctx, outPath, params)
+		return updateMetaFlac(ctx, outPath, params, logger.With(zap.String("module", "updateMetaFlac")))
 	} else {
 		return updateMetaFFmpeg(ctx, outPath, params)
 	}

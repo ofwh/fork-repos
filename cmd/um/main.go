@@ -428,7 +428,7 @@ func (p *processor) process(inputFile string, allDec []common.DecoderFactory) er
 		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 		defer cancel()
 
-		if err := ffmpeg.UpdateMeta(ctx, outPath, params); err != nil {
+		if err := ffmpeg.UpdateMeta(ctx, outPath, params, logger); err != nil {
 			return err
 		}
 	}
