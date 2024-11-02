@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"go.uber.org/zap"
 	"io"
 	"net/http"
 	"strings"
@@ -30,11 +31,12 @@ var (
 )
 
 func NewDecoder(p *common.DecoderParams) common.Decoder {
-	return &Decoder{rd: p.Reader}
+	return &Decoder{rd: p.Reader, logger: p.Logger.With(zap.String("module", "ncm"))}
 }
 
 type Decoder struct {
-	rd io.ReadSeeker // rd is the original file reader
+	logger *zap.Logger
+	rd     io.ReadSeeker // rd is the original file reader
 
 	offset int
 	cipher common.StreamDecoder
@@ -74,7 +76,7 @@ func (d *Decoder) Validate() error {
 	}
 
 	if err := d.parseMeta(); err != nil {
-		return fmt.Errorf("parse meta failed: %w", err)
+		return fmt.Errorf("parse meta failed: %w (raw json=%s)", err, string(d.metaRaw))
 	}
 
 	d.cipher = newNcmCipher(keyData)
@@ -181,7 +183,7 @@ func (d *Decoder) readCoverData() error {
 func (d *Decoder) parseMeta() error {
 	switch d.metaType {
 	case "music":
-		d.meta = new(ncmMetaMusic)
+		d.meta = newNcmMetaMusic(d.logger)
 		return json.Unmarshal(d.metaRaw, d.meta)
 	case "dj":
 		d.meta = new(ncmMetaDJ)

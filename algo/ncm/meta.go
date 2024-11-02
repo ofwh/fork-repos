@@ -1,6 +1,7 @@
 package ncm
 
 import (
+	"go.uber.org/zap"
 	"strings"
 
 	"unlock-music.dev/cli/algo/common"
@@ -17,33 +18,49 @@ type ncmMeta interface {
 }
 
 type ncmMetaMusic struct {
-	Format        string          `json:"format"`
-	MusicName     string          `json:"musicName"`
-	Artist        [][]interface{} `json:"artist"`
-	Album         string          `json:"album"`
-	AlbumPicDocID interface{}     `json:"albumPicDocId"`
-	AlbumPic      string          `json:"albumPic"`
-	Flag          int             `json:"flag"`
-	Bitrate       int             `json:"bitrate"`
-	Duration      int             `json:"duration"`
-	Alias         []interface{}   `json:"alias"`
-	TransNames    []interface{}   `json:"transNames"`
+	logger *zap.Logger
+
+	Format        string        `json:"format"`
+	MusicName     string        `json:"musicName"`
+	Artist        interface{}   `json:"artist"`
+	Album         string        `json:"album"`
+	AlbumPicDocID interface{}   `json:"albumPicDocId"`
+	AlbumPic      string        `json:"albumPic"`
+	Flag          int           `json:"flag"`
+	Bitrate       int           `json:"bitrate"`
+	Duration      int           `json:"duration"`
+	Alias         []interface{} `json:"alias"`
+	TransNames    []interface{} `json:"transNames"`
+}
+
+func newNcmMetaMusic(logger *zap.Logger) *ncmMetaMusic {
+	ncm := new(ncmMetaMusic)
+	ncm.logger = logger.With(zap.String("module", "ncmMetaMusic"))
+	return ncm
 }
 
 func (m *ncmMetaMusic) GetAlbumImageURL() string {
 	return m.AlbumPic
 }
 
-func (m *ncmMetaMusic) GetArtists() (artists []string) {
-	for _, artist := range m.Artist {
-		for _, item := range artist {
-			name, ok := item.(string)
-			if ok {
+func (m *ncmMetaMusic) GetArtists() []string {
+	m.logger.Debug("ncm artists", zap.Any("artists", m.Artist))
+
+	var artists []string = nil
+	if jsonArtists, ok := m.Artist.([][]string); ok {
+		for _, artist := range jsonArtists {
+			for _, name := range artist {
 				artists = append(artists, name)
 			}
 		}
+	} else if artist, ok := m.Artist.(string); ok {
+		// #78: artist is a string type.
+		// https://git.unlock-music.dev/um/cli/issues/78
+		artists = []string{artist}
+	} else {
+		m.logger.Warn("unexpected artist type", zap.Any("artists", m.Artist))
 	}
-	return
+	return artists
 }
 
 func (m *ncmMetaMusic) GetTitle() string {
