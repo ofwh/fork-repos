@@ -5,6 +5,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/fsnotify/fsnotify"
+	"github.com/urfave/cli/v2"
+	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 	"io"
 	"os"
 	"os/signal"
@@ -15,11 +19,6 @@ import (
 	"sort"
 	"strings"
 	"time"
-
-	"github.com/fsnotify/fsnotify"
-	"github.com/urfave/cli/v2"
-	"go.uber.org/zap"
-
 	"unlock-music.dev/cli/algo/common"
 	_ "unlock-music.dev/cli/algo/kgm"
 	_ "unlock-music.dev/cli/algo/kwm"
@@ -29,14 +28,13 @@ import (
 	_ "unlock-music.dev/cli/algo/xiami"
 	_ "unlock-music.dev/cli/algo/ximalaya"
 	"unlock-music.dev/cli/internal/ffmpeg"
-	"unlock-music.dev/cli/internal/logging"
 	"unlock-music.dev/cli/internal/sniff"
 	"unlock-music.dev/cli/internal/utils"
 )
 
 var AppVersion = "v0.2.8"
 
-var logger, _ = logging.NewZapLogger() // TODO: inject logger to application, instead of using global logger
+var logger = setupLogger(false) // TODO: inject logger to application, instead of using global logger
 
 func main() {
 	module, ok := debug.ReadBuildInfo()
@@ -55,6 +53,7 @@ func main() {
 			&cli.StringFlag{Name: "qmc-mmkv-key", Aliases: []string{"key"}, Usage: "mmkv password (16 ascii chars)", Required: false},
 			&cli.BoolFlag{Name: "remove-source", Aliases: []string{"rs"}, Usage: "remove source file", Required: false, Value: false},
 			&cli.BoolFlag{Name: "skip-noop", Aliases: []string{"n"}, Usage: "skip noop decoder", Required: false, Value: true},
+			&cli.BoolFlag{Name: "verbose", Aliases: []string{"V"}, Usage: "verbose logging", Required: false, Value: false},
 			&cli.BoolFlag{Name: "update-metadata", Usage: "update metadata & album art from network", Required: false, Value: false},
 			&cli.BoolFlag{Name: "overwrite", Usage: "overwrite output file without asking", Required: false, Value: false},
 			&cli.BoolFlag{Name: "watch", Usage: "watch the input dir and process new files", Required: false, Value: false},
@@ -67,6 +66,7 @@ func main() {
 		HideHelpCommand: true,
 		UsageText:       "um [-o /path/to/output/dir] [--extra-flags] [-i] /path/to/input",
 	}
+
 	err := app.Run(os.Args)
 	if err != nil {
 		logger.Fatal("run app failed", zap.Error(err))
@@ -93,7 +93,27 @@ func printSupportedExtensions() {
 	}
 }
 
+func setupLogger(verbose bool) *zap.Logger {
+	logConfig := zap.NewProductionEncoderConfig()
+	logConfig.EncodeLevel = zapcore.CapitalColorLevelEncoder
+	logConfig.EncodeTime = zapcore.RFC3339TimeEncoder
+	enabler := zap.LevelEnablerFunc(func(level zapcore.Level) bool {
+		if verbose {
+			return true
+		}
+		return level >= zapcore.InfoLevel
+	})
+
+	return zap.New(zapcore.NewCore(
+		zapcore.NewConsoleEncoder(logConfig),
+		os.Stdout,
+		enabler,
+	))
+}
+
 func appMain(c *cli.Context) (err error) {
+	logger = setupLogger(c.Bool("verbose"))
+
 	cwd, err := os.Getwd()
 	if err != nil {
 		return err
@@ -155,6 +175,7 @@ func appMain(c *cli.Context) (err error) {
 	}
 
 	proc := &processor{
+		logger:          logger,
 		inputDir:        inputDir,
 		outputDir:       output,
 		skipNoopDecoder: c.Bool("skip-noop"),
@@ -177,6 +198,7 @@ func appMain(c *cli.Context) (err error) {
 }
 
 type processor struct {
+	logger    *zap.Logger
 	inputDir  string
 	outputDir string
 
