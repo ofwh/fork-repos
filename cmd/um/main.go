@@ -135,6 +135,11 @@ func appMain(c *cli.Context) (err error) {
 		}
 	}
 
+	input, absErr := filepath.Abs(input)
+	if absErr != nil {
+		return fmt.Errorf("get abs path failed: %w", absErr)
+	}
+
 	output := c.String("output")
 	inputStat, err := os.Stat(input)
 	if err != nil {
@@ -146,6 +151,10 @@ func appMain(c *cli.Context) (err error) {
 		inputDir = input
 	} else {
 		inputDir = path.Dir(input)
+	}
+	inputDir, absErr = filepath.Abs(inputDir)
+	if absErr != nil {
+		return fmt.Errorf("get abs path (inputDir) failed: %w", absErr)
 	}
 
 	if output == "" {
