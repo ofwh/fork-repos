@@ -32,7 +32,7 @@ import (
 	"unlock-music.dev/cli/internal/utils"
 )
 
-var AppVersion = "v0.2.9"
+var AppVersion = "v0.2.10"
 
 var logger = setupLogger(false) // TODO: inject logger to application, instead of using global logger
 
