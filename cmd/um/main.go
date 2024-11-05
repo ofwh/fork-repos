@@ -12,7 +12,6 @@ import (
 	"io"
 	"os"
 	"os/signal"
-	"path"
 	"path/filepath"
 	"runtime"
 	"runtime/debug"
@@ -150,7 +149,7 @@ func appMain(c *cli.Context) (err error) {
 	if inputStat.IsDir() {
 		inputDir = input
 	} else {
-		inputDir = path.Dir(input)
+		inputDir = filepath.Dir(input)
 	}
 	inputDir, absErr = filepath.Abs(inputDir)
 	if absErr != nil {
@@ -161,6 +160,7 @@ func appMain(c *cli.Context) (err error) {
 		// Default to where the input dir is
 		output = inputDir
 	}
+	logger.Debug("resolve input/output path", zap.String("inputDir", inputDir), zap.String("input", input), zap.String("output", output))
 
 	outputStat, err := os.Stat(output)
 	if err != nil {
@@ -299,6 +299,8 @@ func (p *processor) processDir(inputDir string) error {
 }
 
 func (p *processor) processFile(filePath string) error {
+	p.logger.Debug("processFile", zap.String("file", filePath), zap.String("inputDir", p.inputDir))
+
 	allDec := common.GetDecoder(filePath, p.skipNoopDecoder)
 	if len(allDec) == 0 {
 		return errors.New("skipping while no suitable decoder")
