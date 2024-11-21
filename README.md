@@ -14,11 +14,22 @@ Original: Web Edition https://git.unlock-music.dev/um/web
 - [x] All Algorithm Supported By `unlock-music/web`
 - [x] Complete Metadata & Cover Image
 
-## Hou to Build
+## Release
 
-- Requirements: **Golang 1.19**
+[Latest release](https://git.unlock-music.dev/um/cli/releases/latest).
+
+## Install from source
+
+- Requirements: **Golang 1.23.3**
 
 1. run `go install unlock-music.dev/cli/cmd/um@master`
+
+### Build from repo source
+
+1. Pull repo source.
+2. Build with `go build ./cmd/um`.
+
+It will produce `um` or `um.exe` (Windows).
 
 ## How to use
 
