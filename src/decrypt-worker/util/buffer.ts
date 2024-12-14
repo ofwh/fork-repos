@@ -1,5 +1,7 @@
-export const toArrayBuffer = async (src: Blob | ArrayBuffer) => (src instanceof Blob ? await src.arrayBuffer() : src);
-export const toBlob = (src: Blob | ArrayBuffer) => (src instanceof Blob ? src : new Blob([src]));
+export const toArrayBuffer = async (src: Blob | ArrayBuffer | Uint8Array<ArrayBufferLike>) =>
+  src instanceof Blob ? await src.arrayBuffer() : src;
+export const toBlob = (src: Blob | ArrayBuffer | Uint8Array<ArrayBufferLike>) =>
+  src instanceof Blob ? src : new Blob([src]);
 
 export function* chunkBuffer(buffer: Uint8Array, blockLen = 4096): Generator<[Uint8Array, number], void> {
   const len = buffer.byteLength;
