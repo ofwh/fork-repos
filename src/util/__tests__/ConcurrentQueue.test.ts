@@ -101,7 +101,7 @@ test('it should move on to the next item in the queue once failed', async () => 
     await expect(badPromise).rejects.toThrowError('dummy error');
 
     queuedResolver.forEach((resolve) => resolve());
-    expect(Promise.all(promises)).resolves.toEqual([1, 2, 4, 5]);
+    await expect(Promise.all(promises)).resolves.toEqual([1, 2, 4, 5]);
   } finally {
     vi.spyOn(queue, 'handler').mockRejectedValue(new Error('handler ran too late'));
     queuedResolver.forEach((resolve) => resolve());
