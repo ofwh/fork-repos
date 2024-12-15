@@ -11,5 +11,5 @@ charset = utf-8
 trim_trailing_whitespace = true
 insert_final_newline = true
 
-[*.{{c,m,}js{x,on,},ts{x,}}]
+[*.{{c,m,}js{x,on,},ts{x,},y{,a}ml}]
 indent_size = 2

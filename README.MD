@@ -7,7 +7,7 @@
 - Unlock Music 项目是以学习和技术研究的初衷创建的，修改、再分发时请遵循[授权协议]。
 - Unlock Music 的 CLI 版本可以在 [unlock-music/cli] 找到，大批量转换建议使用 CLI 版本。
 - 我们新建了 Telegram 群组 [`@unlock_music_chat`] ，欢迎加入！
-- CI 自动构建已经部署，可以在 [Packages][um-react-packages] 下载。
+- CI 自动构建已经部署，可以在 [Actions][um-react-actions] 下载。
 - [常见问题参考](./docs/faq_zh-hans.md)
 
 > **WARNING**
@@ -17,7 +17,7 @@
 [um-vue]: https://git.unlock-music.dev/um/web
 [unlock-music/cli]: https://git.unlock-music.dev/um/cli
 [`@unlock_music_chat`]: https://t.me/unlock_music_chat
-[um-react-packages]: https://git.unlock-music.dev/um/-/packages/generic/um-react/
+[um-react-actions]: https://git.unlock-music.dev/um/um-react/actions
 
 ⚠️ 手机端浏览器支持有限，请使用最新版本的 Chrome 或 Firefox 官方浏览器。
 
@@ -39,8 +39,11 @@
 - [ ] ~~<ruby>QQ 音乐海外版<rt>JOOX Music</rt></ruby> (`.ofl_en`)~~
 
 [^qm-key-pc]: PC 客户端仅支持 v19.43 或更低版本。
+
 [^qm-key-android]: 需要获取超级管理员权限后提取密钥数据库，并导入后使用。
+
 [^qm-key-ios]: 需要越狱获取密钥数据库，或对设备进行完整备份后提取密钥数据库，并导入后使用。
+
 [^qm-key-mac]: 需要导入密钥数据库。
 
 ## 错误报告

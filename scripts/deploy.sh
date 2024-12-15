@@ -103,7 +103,7 @@ deploy_netlify() {
 
 # For deployment, we care a bit less
 if [[ -n "${NETLIFY_API_KEY}" && -n "${NETLIFY_SITE_ID}" ]]; then
-    echo "Deploy to netlify..."
+    echo "Deploy to netlify (branch: ${BRANCH_NAME})..."
     deploy_netlify um-react-site.zip
 else
     echo "skip netlify deployment."
