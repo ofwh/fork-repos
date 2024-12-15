@@ -7,7 +7,7 @@
 - Unlock Music 项目是以学习和技术研究的初衷创建的，修改、再分发时请遵循[授权协议]。
 - Unlock Music 的 CLI 版本可以在 [unlock-music/cli] 找到，大批量转换建议使用 CLI 版本。
 - 我们新建了 Telegram 群组 [`@unlock_music_chat`] ，欢迎加入！
-- CI 自动构建已经部署，可以在 [Actions][um-react-actions] 下载。
+- CI 自动构建已经部署，可以在 [Actions][um-react-actions] 寻找对应的<ruby>构建产物<rp>(</rp><rt>Artifact</rt><rp>)</rp> </ruby>下载。
 - [常见问题参考](./docs/faq_zh-hans.md)
 
 > **WARNING**
