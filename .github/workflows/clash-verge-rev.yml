@@ -10,7 +10,7 @@ on:
 
 env:
   GIT_URL: https://github.com/clash-verge-rev/clash-verge-rev.git
-  GIT_REF: main
+  GIT_REF: dev
   FORK_BRANCH: clash-verge-rev
   FORK_DIR: fork
 
