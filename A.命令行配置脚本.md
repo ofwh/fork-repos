@@ -54,4 +54,4 @@
 ||[ros_shortcut.native.pppoe.basic.conf](./src/shortcut/ros_shortcut.native.pppoe.basic.conf)|官方硬件配置脚本，PPPoE 模式，初级防火墙，支持配置 IPv6 |官方硬件|
 ||[ros_shortcut.native.pppoe.advanced.conf](./src/shortcut/ros_shortcut.native.pppoe.advanced.conf)|与前者类似，高级防火墙，Fq-CoDel QoS|官方硬件|
 ||[ros_shortcut.chr.pppoe.advanced.conf](./src/shortcut/ros_shortcut.chr.pppoe.advanced.conf)| CHR 配置脚本，高级防火墙，CAKE QoS，邮件推送，额外日志存储等|CHR|
-||[ros_shortcut.chr.pppoe.expert.conf](./src/shortcut/ros_shortcut.chr.pppoe.expert.conf)|与前者类似，扩展 IPv6 ULA 地址，内网 DNS ，Fasttrack 关闭，DDoS 防御等|CHR|
+||[ros_shortcut.chr.pppoe.expert.conf](./src/shortcut/ros_shortcut.chr.pppoe.expert.conf)|与前者类似，扩展 IPv6 ULA ，内网 DNS ，Fasttrack 关闭，DDoS 防御等|CHR|
