@@ -14,6 +14,7 @@ export function productionKeyToStaging<S, P extends Record<string, unknown>>(
   }
   return result;
 }
+
 export function stagingKeyToProduction<S, P>(src: S[], toKey: (s: S) => keyof P, toValue: (s: S) => P[keyof P]): P {
   return objectify(src, toKey, toValue) as P;
 }
@@ -41,7 +42,6 @@ export const qmc2ProductionToStaging = (
 };
 
 // KWMv2 (KuWo)
-
 export interface StagingKWMv2Key {
   id: string;
   /**
@@ -64,7 +64,7 @@ export const parseKwm2ProductionKey = (key: string): null | { rid: string; quali
 
   return { rid, quality };
 };
-export const kwm2StagingToProductionKey = (key: StagingKWMv2Key) => `${key.rid}-${key.quality.replace(/[\D]/g, '')}`;
+export const kwm2StagingToProductionKey = (key: StagingKWMv2Key) => `${key.rid}-${key.quality.replace(/\D/g, '')}`;
 export const kwm2StagingToProductionValue = (key: StagingKWMv2Key) => key.ekey;
 export const kwm2ProductionToStaging = (
   key: keyof ProductionKWMv2Keys,
@@ -77,4 +77,22 @@ export const kwm2ProductionToStaging = (
   const { quality, rid } = parsed;
 
   return { id: nanoid(), rid, quality, ekey: value };
+};
+
+// KuGou (kgg, kgm v5)
+export interface StagingKugouKey {
+  id: string;
+  audioHash: string;
+  ekey: string;
+}
+
+export type ProductionKugouKey = Record<string /* audioHash */, string /* ekey */>;
+export const kugouStagingToProductionKey = (key: StagingKugouKey) => key.audioHash.normalize();
+export const kugouStagingToProductionValue = (key: StagingKugouKey) => key.ekey.normalize();
+export const kugouProductionToStaging = (
+  key: keyof ProductionKugouKey,
+  value: ProductionKugouKey[keyof ProductionKugouKey],
+): null | StagingKugouKey => {
+  if (typeof value !== 'string') return null;
+  return { id: nanoid(), audioHash: key.normalize(), ekey: value };
 };

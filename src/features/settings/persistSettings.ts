@@ -34,6 +34,16 @@ function mergeSettings(settings: ProductionSettings): ProductionSettings {
     }
   }
 
+  if (settings?.kugou) {
+    const { keys } = settings.kugou;
+
+    for (const [k, v] of enumObject(keys)) {
+      if (typeof v === 'string') {
+        draft.kugou.keys[k] = v;
+      }
+    }
+  }
+
   if (typeof settings?.qtfm?.android === 'string') {
     draft.qtfm.android = settings.qtfm.android.replace(/[^0-9a-fA-F]/g, '');
   }

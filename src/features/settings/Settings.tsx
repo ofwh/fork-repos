@@ -31,10 +31,12 @@ import { commitStagingChange, discardStagingChanges } from './settingsSlice';
 import { PanelKWMv2Key } from './panels/PanelKWMv2Key';
 import { selectIsSettingsNotSaved } from './settingsSelector';
 import { PanelQingTing } from './panels/PanelQingTing';
+import { PanelKGGKey } from '~/features/settings/panels/PanelKGGKey.tsx';
 
 const TABS: { name: string; Tab: () => JSX.Element }[] = [
   { name: 'QMCv2 密钥', Tab: PanelQMCv2Key },
   { name: 'KWMv2 密钥', Tab: PanelKWMv2Key },
+  { name: 'KGG 密钥', Tab: PanelKGGKey },
   { name: '蜻蜓 FM', Tab: PanelQingTing },
   {
     name: '其它／待定',

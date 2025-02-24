@@ -2,6 +2,7 @@ export interface DecryptCommandOptions {
   fileName: string;
   qmc2Key?: string;
   kwm2key?: string;
+  kugouKey?: string;
   qingTingAndroidKey?: string;
 }
 
@@ -22,6 +23,15 @@ export interface ParseKuwoHeaderPayload {
 export type ParseKuwoHeaderResponse = null | {
   resourceId: number;
   qualityId: number;
+};
+
+export interface ParseKugouHeaderPayload {
+  blobURI: string;
+}
+
+export type ParseKugouHeaderResponse = null | {
+  version: number;
+  audioHash: string;
 };
 
 export interface GetQingTingFMDeviceKeyPayload {

@@ -1,7 +1,7 @@
-import { FetchMusicExNamePayload, ParseKuwoHeaderResponse } from '~/decrypt-worker/types.ts';
+import {  ParseKuwoHeaderPayload, ParseKuwoHeaderResponse } from '~/decrypt-worker/types.ts';
 import { KuwoHeader } from '@unlock-music/crypto';
 
-export const workerParseKuwoHeader = async ({ blobURI }: FetchMusicExNamePayload): Promise<ParseKuwoHeaderResponse> => {
+export const workerParseKuwoHeader = async ({ blobURI }: ParseKuwoHeaderPayload): Promise<ParseKuwoHeaderResponse> => {
   const blob = await fetch(blobURI, { headers: { Range: 'bytes=0-1023' } }).then((r) => r.blob());
   const arrayBuffer = await blob.arrayBuffer();
 

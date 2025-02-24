@@ -1,10 +1,16 @@
 import { getFileName } from './pathHelper';
 import { SQLDatabase, SQLStatic, loadSQL } from './sqlite';
+import { KuGou } from '@unlock-music/crypto';
 
 export interface QMAndroidKeyEntry {
   name: string;
   ekey: string;
 }
+
+export type KugouKeyEntry = {
+  audioHash: string;
+  ekey: string;
+};
 
 export class DatabaseKeyExtractor {
   private static _instance: DatabaseKeyExtractor;
@@ -47,6 +53,36 @@ export class DatabaseKeyExtractor {
         // strip dir name
         name: getFileName(String(path)),
         ekey: String(ekey),
+      }));
+    } finally {
+      db?.close();
+    }
+  }
+
+  extractKugouKeyFromEncryptedDb(buffer: ArrayBuffer): null | KugouKeyEntry[] {
+    const dbBuffer = new Uint8Array(buffer);
+    let db: SQLDatabase | null = null;
+
+    try {
+      KuGou.decryptDatabase(dbBuffer);
+      db = new this.SQL.Database(dbBuffer);
+
+      let sql: undefined | string;
+      if (this.hasTable(db, 'ShareFileItems')) {
+        sql = `select EncryptionKeyId, EncryptionKey from ShareFileItems where EncryptionKey != '' group by EncryptionKeyId`;
+      }
+      if (!sql) return null;
+
+      const result = db.exec(sql);
+      if (result.length === 0) {
+        return [];
+      }
+
+      const keys = result[0].values;
+      return keys.map(([audioHash, ekey]) => ({
+        // strip dir name
+        audioHash: String(audioHash).normalize(),
+        ekey: String(ekey).normalize(),
       }));
     } finally {
       db?.close();

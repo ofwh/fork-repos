@@ -5,13 +5,18 @@ import type { RootState } from '~/store';
 import { DECRYPTION_WORKER_ACTION_NAME, type DecryptionResult } from '~/decrypt-worker/constants';
 import type {
   DecryptCommandOptions,
-  FetchMusicExNamePayload,
+  FetchMusicExNamePayload, ParseKugouHeaderPayload, ParseKugouHeaderResponse,
   ParseKuwoHeaderPayload,
-  ParseKuwoHeaderResponse,
+  ParseKuwoHeaderResponse
 } from '~/decrypt-worker/types';
 import { decryptionQueue, workerClientBus } from '~/decrypt-worker/client';
 import { DecryptErrorType } from '~/decrypt-worker/util/DecryptError';
-import { selectKWMv2Key, selectQMCv2KeyByFileName, selectQtfmAndroidKey } from '../settings/settingsSelector';
+import {
+  selectKugouKey,
+  selectKWMv2Key,
+  selectQMCv2KeyByFileName,
+  selectQtfmAndroidKey
+} from '../settings/settingsSelector';
 
 export enum ProcessState {
   QUEUED = 'QUEUED',
@@ -70,12 +75,16 @@ export const processFile = createAsyncThunk<
     thunkAPI.dispatch(setFileAsProcessing({ id: fileId }));
   };
 
-  const [qmcv2MusicExMediaFile, kuwoHdr] = await Promise.all([
+  const [qmcv2MusicExMediaFile, kuwoHdr, kugouHdr] = await Promise.all([
     workerClientBus.request<string, FetchMusicExNamePayload>(DECRYPTION_WORKER_ACTION_NAME.FIND_QMC_MUSICEX_NAME, {
       blobURI: file.raw,
     }),
     workerClientBus.request<ParseKuwoHeaderResponse, ParseKuwoHeaderPayload>(
       DECRYPTION_WORKER_ACTION_NAME.KUWO_PARSE_HEADER,
+      { blobURI: file.raw },
+    ),
+    workerClientBus.request<ParseKugouHeaderResponse, ParseKugouHeaderPayload>(
+      DECRYPTION_WORKER_ACTION_NAME.KUGOU_PARSE_HEADER,
       { blobURI: file.raw },
     ),
   ]);
@@ -84,6 +93,7 @@ export const processFile = createAsyncThunk<
     fileName: file.fileName,
     qmc2Key: selectQMCv2KeyByFileName(state, qmcv2MusicExMediaFile || file.fileName),
     kwm2key: selectKWMv2Key(state, kuwoHdr),
+    kugouKey: selectKugouKey(state, kugouHdr),
     qingTingAndroidKey: selectQtfmAndroidKey(state),
   };
   return decryptionQueue.add({ id: fileId, blobURI: file.raw, options }, onPreProcess);

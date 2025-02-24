@@ -14,6 +14,11 @@ import {
   qmc2StagingToProductionKey,
   qmc2StagingToProductionValue,
   stagingKeyToProduction,
+  ProductionKugouKey,
+  kugouProductionToStaging,
+  kugouStagingToProductionKey,
+  kugouStagingToProductionValue,
+  StagingKugouKey,
 } from './keyFormats';
 
 export interface StagingSettings {
@@ -23,6 +28,9 @@ export interface StagingSettings {
   };
   kwm2: {
     keys: StagingKWMv2Key[];
+  };
+  kugou: {
+    keys: StagingKugouKey[];
   };
   qtfm: {
     android: string;
@@ -37,6 +45,9 @@ export interface ProductionSettings {
   kwm2: {
     keys: ProductionKWMv2Keys; // { [`${rid}-${quality}`]: ekey }
   };
+  kugou: {
+    keys: ProductionKugouKey; // {  [fileName]: ekey  }
+  };
   qtfm: {
     android: string;
   };
@@ -47,16 +58,19 @@ export interface SettingsState {
   staging: StagingSettings;
   production: ProductionSettings;
 }
+
 const initialState: SettingsState = {
   dirty: false,
   staging: {
     qmc2: { allowFuzzyNameSearch: true, keys: [] },
     kwm2: { keys: [] },
     qtfm: { android: '' },
+    kugou: { keys: [] },
   },
   production: {
     qmc2: { allowFuzzyNameSearch: true, keys: {} },
     kwm2: { keys: {} },
+    kugou: { keys: {} },
     qtfm: { android: '' },
   },
 };
@@ -69,6 +83,9 @@ const stagingToProduction = (staging: StagingSettings): ProductionSettings => ({
   kwm2: {
     keys: stagingKeyToProduction(staging.kwm2.keys, kwm2StagingToProductionKey, kwm2StagingToProductionValue),
   },
+  kugou: {
+    keys: stagingKeyToProduction(staging.kugou.keys, kugouStagingToProductionKey, kugouStagingToProductionValue),
+  },
   qtfm: staging.qtfm,
 });
 
@@ -79,6 +96,9 @@ const productionToStaging = (production: ProductionSettings): StagingSettings =>
   },
   kwm2: {
     keys: productionKeyToStaging(production.kwm2.keys, kwm2ProductionToStaging),
+  },
+  kugou: {
+    keys: productionKeyToStaging(production.kugou.keys, kugouProductionToStaging),
   },
   qtfm: production.qtfm,
 });
@@ -152,12 +172,40 @@ export const settingsSlice = createSlice({
         state.dirty = true;
       }
     },
-    qtfmAndroidUpdateKey(state, { payload: { deviceKey } }: PayloadAction<{ deviceKey: string }>) {
-      state.staging.qtfm.android = deviceKey;
-      state.dirty = true;
-    },
     kwm2ClearKeys(state) {
       state.staging.kwm2.keys = [];
+      state.dirty = true;
+    },
+    kugouAddKey(state) {
+      state.staging.kugou.keys.push({ id: nanoid(), audioHash: '', ekey: '' });
+      state.dirty = true;
+    },
+    kugouImportKeys(state, { payload }: PayloadAction<Omit<StagingKugouKey, 'id'>[]>) {
+      const newItems = payload.map((item) => ({ id: nanoid(), ...item }));
+      state.staging.kugou.keys.push(...newItems);
+      state.dirty = true;
+    },
+    kugouDeleteKey(state, { payload: { id } }: PayloadAction<{ id: string }>) {
+      const kugou = state.staging.kugou;
+      kugou.keys = kugou.keys.filter((item) => item.id !== id);
+      state.dirty = true;
+    },
+    kugouUpdateKey(
+      state,
+      { payload: { id, field, value } }: PayloadAction<{ id: string; field: keyof StagingKugouKey; value: string }>,
+    ) {
+      const keyItem = state.staging.kugou.keys.find((item) => item.id === id);
+      if (keyItem) {
+        keyItem[field] = value;
+        state.dirty = true;
+      }
+    },
+    kugouClearKeys(state) {
+      state.staging.kugou.keys = [];
+      state.dirty = true;
+    },
+    qtfmAndroidUpdateKey(state, { payload: { deviceKey } }: PayloadAction<{ deviceKey: string }>) {
+      state.staging.qtfm.android = deviceKey;
       state.dirty = true;
     },
     //
@@ -196,6 +244,12 @@ export const {
   kwm2DeleteKey,
   kwm2ClearKeys,
   kwm2ImportKeys,
+
+  kugouAddKey,
+  kugouUpdateKey,
+  kugouDeleteKey,
+  kugouClearKeys,
+  kugouImportKeys,
 
   qtfmAndroidUpdateKey,
 

@@ -39,8 +39,8 @@ importers:
         specifier: ^2.5.0
         version: 2.5.0(react-redux@9.2.0(@types/react@18.3.16)(react@18.3.1)(redux@5.0.1))(react@18.3.1)
       '@unlock-music/crypto':
-        specifier: 0.1.2
-        version: 0.1.2
+        specifier: 0.1.6
+        version: 0.1.6
       framer-motion:
         specifier: ^11.14.4
         version: 11.14.4(@emotion/is-prop-valid@1.3.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -1491,8 +1491,8 @@ packages:
   '@ungap/structured-clone@1.2.1':
     resolution: {integrity: sha512-fEzPV3hSkSMltkw152tJKNARhOupqbH96MZWyRjNaYZOMIzbrTeQDG+MTc6Mr2pgzFQzFxAfmhGDNP5QK++2ZA==}
 
-  '@unlock-music/crypto@0.1.2':
-    resolution: {integrity: sha512-Ed72WZuQsuBvs3Cmo0fdlV1BllG81WK5wyDTFA5QThIZ2OkJVixi6jde6wbFJQZ6KBimC/e0Qk0ST1G8pyJcTg==, tarball: https://git.unlock-music.dev/api/packages/um/npm/%40unlock-music%2Fcrypto/-/0.1.2/crypto-0.1.2.tgz}
+  '@unlock-music/crypto@0.1.6':
+    resolution: {integrity: sha512-dFIL+25H0lrloGYZzm2ICNar0oGPCzwHDosK54au3rdbFI4XpD0wizOLs9K+huqspnnsXAxeaOQkamtd27fI2Q==, tarball: https://git.unlock-music.dev/api/packages/um/npm/%40unlock-music%2Fcrypto/-/0.1.6/crypto-0.1.6.tgz}
 
   '@vitejs/plugin-react@4.3.4':
     resolution: {integrity: sha512-SCCPBJtYLdE8PX/7ZQAs1QAZ8Jqwih+0VBLum1EGqmCCQal+MIUqLCzj3ZUy8ufbC0cAM4LRlSTm7IQJwWT4ug==}
@@ -5156,7 +5156,7 @@ snapshots:
 
   '@ungap/structured-clone@1.2.1': {}
 
-  '@unlock-music/crypto@0.1.2': {}
+  '@unlock-music/crypto@0.1.6': {}
 
   '@vitejs/plugin-react@4.3.4(vite@5.4.11(@types/node@22.10.2)(sass@1.83.0)(terser@5.37.0))':
     dependencies:

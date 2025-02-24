@@ -18,11 +18,19 @@ export interface ImportSecretModalProps {
   children: React.ReactNode;
   show: boolean;
   onClose: () => void;
-  onImport: (file: File) => void;
+  onImport: (file: File) => void|Promise<void>;
 }
 
 export function ImportSecretModal({ clientName, children, show, onClose, onImport }: ImportSecretModalProps) {
-  const handleFileReceived = (files: File[]) => onImport(files[0]);
+  const handleFileReceived = (files: File[]) => {
+    const promise = onImport(files[0]);
+    if (promise instanceof Promise) {
+      promise.catch(err => {
+        console.error('could not import: ', err);
+      });
+    }
+    return promise;
+  };
 
   return (
     <Modal isOpen={show} onClose={onClose} closeOnOverlayClick={false} scrollBehavior="inside" size="xl">
