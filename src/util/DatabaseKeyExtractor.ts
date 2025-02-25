@@ -69,7 +69,17 @@ export class DatabaseKeyExtractor {
 
       let sql: undefined | string;
       if (this.hasTable(db, 'ShareFileItems')) {
-        sql = `select EncryptionKeyId, EncryptionKey from ShareFileItems where EncryptionKey != '' group by EncryptionKeyId`;
+        sql = `
+          select H, K from (
+            select EncryptionKeyId as H, EncryptionKey as K from ShareFileItems
+            union all
+            select EnHash as H, EnKey as K from DownloadItem
+          ) t
+          where
+                  t.H is not null and t.H != ''
+              and t.K is not null and t.K != ''
+          group by t.H
+        `;
       }
       if (!sql) return null;
 
