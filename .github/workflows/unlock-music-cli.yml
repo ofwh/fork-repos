@@ -10,7 +10,7 @@ on:
 
 env:
   GIT_URL: https://git.unlock-music.dev/um/cli.git
-  GIT_REF: master
+  GIT_REF: main
   FORK_BRANCH: um/cli
   FORK_DIR: fork
 
