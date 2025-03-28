@@ -15,7 +15,7 @@ const projectRoot = url.fileURLToPath(new URL('.', import.meta.url));
 const pkg = JSON.parse(fs.readFileSync(projectRoot + '/package.json', 'utf-8'));
 
 const COMMAND_GIT_VERSION = 'git describe --long --dirty --tags --always';
-const shortCommit = tryCommand(COMMAND_GIT_VERSION, __dirname, 'unknown');
+const shortCommit = process.env.GIT_COMMIT_FULL || tryCommand(COMMAND_GIT_VERSION, __dirname, 'unknown');
 const version = `${pkg.version}-${shortCommit}`;
 
 // https://vitejs.dev/config/

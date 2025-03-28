@@ -59,6 +59,33 @@
 
 [project-issues]: https://git.unlock-music.dev/um/um-react/issues/new
 
+## 使用 Docker 构建、部署 (Linux)
+
+首先克隆仓库并进入目录：
+
+```sh
+git clone https://git.unlock-music.dev/um/um-react.git
+cd um-react
+```
+
+构建 Docker 镜像：
+
+```sh
+docker build \
+  -t um-react \
+  --build-arg GIT_COMMIT_FULL="$(git describe --long --dirty --tags --always)" \
+  --build-arg GIT_COMMIT="$(git rev-parse --short HEAD)" \
+  .
+```
+
+在后台运行 Docker 容器：
+
+```sh
+docker run -d -p 8080:80 --name um-react um-react
+```
+
+然后访问 `http://localhost:8080` 即可。
+
 ## 开发相关
 
 从源码运行或编译生产版本，请参考文档「[新手上路](./docs/getting-started.zh.md)」。
