@@ -3,9 +3,6 @@
     "editorconfig.editorconfig",
     "dbaeumer.vscode-eslint",
     "esbenp.prettier-vscode",
-    "christian-kohler.path-intellisense",
-    "txava.region-marker",
-    "foxundermoon.shell-format",
-    "jock.svg"
+    "foxundermoon.shell-format"
   ]
 }
