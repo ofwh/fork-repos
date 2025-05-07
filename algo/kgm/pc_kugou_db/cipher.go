@@ -28,7 +28,7 @@ var DEFAULT_MASTER_KEY = []byte{
 	0x73, 0x41, 0x6C, 0x54, // fixed value
 }
 
-func next_page_iv(seed uint32) uint32 {
+func deriveIvSeed(seed uint32) uint32 {
 	var left uint32 = seed * 0x9EF4
 	var right uint32 = seed / 0xce26 * 0x7FFFFF07
 	var value uint32 = left - right
@@ -38,25 +38,28 @@ func next_page_iv(seed uint32) uint32 {
 	return value + 0x7FFF_FF07
 }
 
-func derive_page_aes_key(seed uint32) []byte {
-	master_key := make([]byte, len(DEFAULT_MASTER_KEY))
-	copy(master_key, DEFAULT_MASTER_KEY)
-	binary.LittleEndian.PutUint32(master_key[0x10:0x14], seed)
-	digest := md5.Sum(master_key)
-	return digest[:]
-}
-
-func derive_page_aes_iv(seed uint32) []byte {
+// derivePageIv generates a 16-byte IV for database page.
+func derivePageIv(page uint32) []byte {
 	iv := make([]byte, 0x10)
-	seed = seed + 1
+	page = page + 1
 	for i := 0; i < 0x10; i += 4 {
-		seed = next_page_iv(seed)
-		binary.LittleEndian.PutUint32(iv[i:i+4], seed)
+		page = deriveIvSeed(page)
+		binary.LittleEndian.PutUint32(iv[i:i+4], page)
 	}
 	digest := md5.Sum(iv)
 	return digest[:]
 }
 
+// derivePageKey generates a 16-byte AES key for database page.
+func derivePageKey(page uint32) []byte {
+	masterKey := make([]byte, len(DEFAULT_MASTER_KEY))
+	copy(masterKey, DEFAULT_MASTER_KEY)
+	binary.LittleEndian.PutUint32(masterKey[0x10:0x14], page)
+	digest := md5.Sum(masterKey)
+	return digest[:]
+}
+
+// aes128cbcDecryptNoPadding decrypts the given buffer using AES-128-CBC with no padding.
 func aes128cbcDecryptNoPadding(buffer, key, iv []byte) error {
 	if len(key) != 16 {
 		return fmt.Errorf("invalid key size: %d (must be 16 bytes for AES-128)", len(key))
@@ -78,43 +81,40 @@ func aes128cbcDecryptNoPadding(buffer, key, iv []byte) error {
 	return nil
 }
 
-func decrypt_db_page(buffer []byte, page_number uint32) error {
-	key := derive_page_aes_key(page_number)
-	iv := derive_page_aes_iv(page_number)
+// decryptPage decrypts a single database page using AES-128-CBC (no padding).
+// page start from 1.
+func decryptPage(buffer []byte, page uint32) error {
+	key := derivePageKey(page)
+	iv := derivePageIv(page)
 
 	return aes128cbcDecryptNoPadding(buffer, key, iv)
 }
 
-func decrypt_page_1(page []byte) error {
-	if err := validate_page_1_header(page); err != nil {
+func decryptPage1(buffer []byte) error {
+	if err := validateFirstPageHeader(buffer); err != nil {
 		return err
 	}
 
-	// Backup expected hdr value
-
-	expected_hdr_value := make([]byte, 8)
-	copy(expected_hdr_value, page[0x10:0x18])
-
-	// Copy encrypted hdr over
-	hdr := page[:0x10]
-	copy(page[0x10:0x18], hdr[0x08:0x10])
-
-	if err := decrypt_db_page(page[0x10:], 1); err != nil {
+	// Backup expected header, swap cipher text
+	expectedHeader := make([]byte, 8)
+	copy(expectedHeader, buffer[0x10:0x18])
+	copy(buffer[0x10:0x18], buffer[0x08:0x10])
+	if err := decryptPage(buffer[0x10:], 1); err != nil {
 		return err
 	}
 
 	// Validate header
-	if !bytes.Equal(page[0x10:0x18], expected_hdr_value[:8]) {
+	if !bytes.Equal(buffer[0x10:0x18], expectedHeader) {
 		return fmt.Errorf("decrypt page 1 failed")
 	}
 
-	// Apply SQLite header
-	copy(hdr, SQLITE_HEADER)
+	// Restore SQLite file header
+	copy(buffer[:0x10], SQLITE_HEADER)
 
 	return nil
 }
 
-func validate_page_1_header(header []byte) error {
+func validateFirstPageHeader(header []byte) error {
 	o10 := binary.LittleEndian.Uint32(header[0x10:0x14])
 	o14 := binary.LittleEndian.Uint32(header[0x14:0x18])
 
@@ -126,28 +126,28 @@ func validate_page_1_header(header []byte) error {
 	return nil
 }
 
-func decryptPcDatabase(buffer []byte) error {
-	db_size := len(buffer)
+func decryptDatabase(buffer []byte) error {
+	dbSize := len(buffer)
 
 	// not encrypted
 	if bytes.Equal(buffer[:len(SQLITE_HEADER)], SQLITE_HEADER) {
 		return nil
 	}
 
-	if db_size%PAGE_SIZE != 0 || db_size == 0 {
-		return fmt.Errorf("invalid database size: %d", db_size)
+	if dbSize%PAGE_SIZE != 0 || dbSize == 0 {
+		return fmt.Errorf("invalid database size: %d", dbSize)
 	}
 
-	last_page := db_size / PAGE_SIZE
-
-	// page 1 is the header
-	if err := decrypt_page_1(buffer[:PAGE_SIZE]); err != nil {
+	if err := decryptPage1(buffer[:PAGE_SIZE]); err != nil {
 		return err
 	}
 
 	offset := PAGE_SIZE
-	for page_no := 2; page_no <= last_page; page_no++ {
-		if err := decrypt_db_page(buffer[offset:offset+PAGE_SIZE], uint32(page_no)); err != nil {
+	lastPage := uint32(dbSize / PAGE_SIZE)
+
+	var pageNumber uint32
+	for pageNumber = 2; pageNumber <= lastPage; pageNumber++ {
+		if err := decryptPage(buffer[offset:offset+PAGE_SIZE], uint32(pageNumber)); err != nil {
 			return err
 		}
 		offset += PAGE_SIZE
@@ -223,7 +223,7 @@ func CachedDumpEKey(dbPath string) (map[string]string, error) {
 			if err != nil {
 				return nil, err
 			}
-			if err = decryptPcDatabase(buffer); err != nil {
+			if err = decryptDatabase(buffer); err != nil {
 				return nil, err
 			}
 			dump, err = extractKeyMapping(buffer)
