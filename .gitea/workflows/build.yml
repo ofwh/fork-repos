@@ -90,7 +90,10 @@ jobs:
           path: prepare
           pattern: um-*
       - name: repack archive
-        run: ./misc/repack.sh "${{ steps.vars.outputs.git_tag }}"
+        run: |
+          apt-get update
+          apt-get install -y strip-nondeterminism
+          ./misc/repack.sh "${{ steps.vars.outputs.git_tag }}"
       - name: Publish all-in-one archive
         uses: christopherhx/gitea-upload-artifact@v4
         with:
