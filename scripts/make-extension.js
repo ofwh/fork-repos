@@ -2,8 +2,10 @@
 
 const fs = require('fs')
 const path = require('path')
-const src = __dirname + "/src/extension/"
-const dst = __dirname + "/dist"
+
+const DIR_ROOT = path.resolve(__dirname, "..")
+const src = DIR_ROOT + "/src/extension/"
+const dst = DIR_ROOT + "/dist"
 fs.readdirSync(src).forEach(file => {
     let srcPath = path.join(src, file)
     let dstPath = path.join(dst, file)
@@ -11,10 +13,10 @@ fs.readdirSync(src).forEach(file => {
     console.log(`Copy: ${srcPath} => ${dstPath}`)
 })
 
-const manifestRaw = fs.readFileSync(__dirname + "/extension-manifest.json", "utf-8")
+const manifestRaw = fs.readFileSync(DIR_ROOT + "/extension-manifest.json", "utf-8")
 const manifest = JSON.parse(manifestRaw)
 
-const pkgRaw = fs.readFileSync(__dirname + "/package.json", "utf-8")
+const pkgRaw = fs.readFileSync(DIR_ROOT + "/package.json", "utf-8")
 const pkg = JSON.parse(pkgRaw)
 
 verExt = pkg["version"]
@@ -23,5 +25,5 @@ if (verExt.includes("-")) verExt = verExt.split("-")[0]
 manifest["version"] = `${verExt}.${pkg["ext_build"]}`
 manifest["version_name"] = pkg["version"]
 
-fs.writeFileSync(__dirname + "/dist/manifest.json", JSON.stringify(manifest), "utf-8")
+fs.writeFileSync(DIR_ROOT + "/dist/manifest.json", JSON.stringify(manifest), "utf-8")
 console.log("Write: manifest.json")
