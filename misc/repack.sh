@@ -19,7 +19,7 @@ pack() {
 
     mv "$1" "${exe_name}"
     if [[ "$is_windows" == 1 ]]; then
-        echo zip -Xqj9 "dist/${archive_name}.zip" -- "${exe_name}" README.md LICENSE
+        echo zip -Xqj9 "dist/${archive_name}.zip" "${exe_name}" README.md LICENSE
         exit 1
     else
         tar \
@@ -28,7 +28,7 @@ pack() {
             --pax-option=delete=atime,delete=ctime \
             --clamp-mtime --mtime='1970-01-01T00:00:00Z' \
             --numeric-owner --owner=0 --group=0 \
-            --mode=0755 -c -- \
+            --mode=0755 -c \
             "${exe_name}" README.md LICENSE |
             gzip -9 >"dist/${archive_name}.tar.gz"
     fi
