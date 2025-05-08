@@ -32,14 +32,8 @@ jobs:
       - name: Test
         run: npm test
 
-      - name: Build legacy
-        run: ./scripts/build-and-package.sh legacy
-
-      - name: Build extension
-        run: ./scripts/build-and-package.sh extension
-
-      - name: Build modern
-        run: ./scripts/build-and-package.sh modern
+      - name: Build all variants
+        run: npm run build:all
 
       - name: Publish artifact
         uses: christopherhx/gitea-upload-artifact@v4

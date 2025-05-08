@@ -14,6 +14,7 @@
     "postinstall": "patch-package",
     "serve": "vue-cli-service serve",
     "build": "vue-cli-service build",
+    "build:all": "./scripts/build-and-package.sh --all",
     "test": "jest",
     "pretty": "prettier --write src/{**/*,*}.{js,ts,jsx,tsx,vue}",
     "pretty:check": "prettier --check src/{**/*,*}.{js,ts,jsx,tsx,vue}",

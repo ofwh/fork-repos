@@ -11,6 +11,12 @@ case "$1" in
 "modern") npm run build -- --modern ;;
 "legacy") npm run build ;;
 "extension") npm run make-extension ;;
+"--all")
+  "$0" legacy
+  "$0" extension
+  "$0" modern
+  exit 0
+  ;;
 
 *)
   echo "Unknown command: $1"
