@@ -18,6 +18,7 @@ case "$1" in
   ;;
 esac
 
+cp README.md LICENSE dist/
 mv dist "${DIST_NAME}"
 zip -rJ9 "${DIST_NAME}.zip" "${DIST_NAME}"
 
