@@ -25,12 +25,7 @@ jobs:
           - darwin
         GOARCH:
           - "amd64"
-          - "386"
           - "arm64"
-
-        exclude:
-          - GOOS: darwin
-            GOARCH: "386"
 
         include:
           - GOOS: windows
