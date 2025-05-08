@@ -12,17 +12,15 @@ pack() {
     fi
 
     local exe_dir="$(dirname "$1")"
-    local archive_name="$(basename "$1" ".exe")-${APP_VERSION}${suffix}"
+    local archive_name="$(basename "$1" ".exe")-${APP_VERSION}"
     local exe_name="um${suffix}"
 
     echo "archiving ${exe_name}..."
 
-    # Prepare metadata
-    cp README.md LICENSE "$exe_dir"
-    mv "$1" "${exe_dir}/${exe_name}"
-
+    mv "$1" "${exe_name}"
     if [[ "$is_windows" == 1 ]]; then
-        zip -Xqj9 "dist/${archive_name}.zip" "${exe_name}" README.md LICENSE
+        echo zip -Xqj9 "dist/${archive_name}.zip" -- "${exe_name}" README.md LICENSE
+        exit 1
     else
         tar \
             --sort=name --format=posix \
@@ -30,11 +28,11 @@ pack() {
             --pax-option=delete=atime,delete=ctime \
             --clamp-mtime --mtime='1970-01-01T00:00:00Z' \
             --numeric-owner --owner=0 --group=0 \
-            --mode=0755 \
-            -c -C "$exe_dir" "${exe_name}" README.md LICENSE |
+            --mode=0755 -c -- \
+            "${exe_name}" README.md LICENSE |
             gzip -9 >"dist/${archive_name}.tar.gz"
     fi
-    rm -rf "$exe_dir"
+    rm -rf "$exe_dir" "${exe_name}"
 }
 
 for exe in prepare/*/um*; do

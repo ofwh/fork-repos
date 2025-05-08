@@ -7,3 +7,6 @@
 /um-*.tar.gz
 /um-*.zip
 /.vscode
+
+/prepare
+/dist
