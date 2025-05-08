@@ -17,7 +17,7 @@
     "test": "jest",
     "pretty": "prettier --write src/{**/*,*}.{js,ts,jsx,tsx,vue}",
     "pretty:check": "prettier --check src/{**/*,*}.{js,ts,jsx,tsx,vue}",
-    "make-extension": "node ./make-extension.js"
+    "make-extension": "node ./scripts/make-extension.js"
   },
   "dependencies": {
     "@babel/preset-typescript": "^7.16.5",
