@@ -39,4 +39,4 @@ jobs:
         uses: christopherhx/gitea-upload-artifact@v4
         with:
           name: um-web-all
-          path: *.zip
+          path: "um-*.zip"
