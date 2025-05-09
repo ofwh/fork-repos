@@ -11,7 +11,7 @@
 > **WARNING**
 > 在本站 fork 不会起到备份的作用，只会浪费服务器储存空间。如无必要请勿 fork 该仓库。
 
-[授权协议]: https://git.unlock-music.dev/um/web/src/branch/master/LICENSE
+[授权协议]: https://git.unlock-music.dev/um/web/src/branch/main/LICENSE
 [unlock-music/cli]: https://git.unlock-music.dev/um/cli
 [`@unlock_music_chat`]: https://t.me/unlock_music_chat
 [ci]: https://git.unlock-music.dev/um/web/actions?workflow=build.yml
