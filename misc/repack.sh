@@ -19,8 +19,7 @@ pack() {
 
     mv "$1" "${exe_name}"
     if [[ "$is_windows" == 1 ]]; then
-        echo zip -Xqj9 "dist/${archive_name}.zip" "${exe_name}" README.md LICENSE
-        exit 1
+        zip -Xqj9 "dist/${archive_name}.zip" "${exe_name}" README.md LICENSE
     else
         tar \
             --sort=name --format=posix \
