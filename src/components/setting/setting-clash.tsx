@@ -39,6 +39,7 @@ const SettingClash = ({ onError }: Props) => {
 
   const {
     ipv6,
+    "global-ua": ua,
     "global-client-fingerprint": global,
     "tcp-concurrent": tcp,
     "allow-lan": allowLan,
@@ -203,12 +204,39 @@ const SettingClash = ({ onError }: Props) => {
         </GuardState>
       </SettingItem>
 
+       <SettingItem
+        label={t("Global UA")}
+        extra={
+      <TooltipIcon
+         title={t("Global User-Agent, takes precedence over client-UA in proxy")}
+         sx={{ opacity: "0.7" }}
+      />
+     }
+    >
+     <GuardState
+        value={ua || "clash-verge/v2.2.4-alpha"}
+        onCatch={onError}
+        onFormat={(e: any) => e.target.value}
+        onChange={(e) => onChangeData({ "global-ua": e })}
+        onGuard={(e) => patchClash({ "global-ua": e })}
+      >
+       <Select
+         size="small"
+         sx={{ width: 100, "> div": { py: "7.5px" } }}
+       >
+         <MenuItem value="clash-verge/v2.2.4-alpha">Alpha</MenuItem>
+         <MenuItem value="clash-verge/v2.3.0">Alpha Release</MenuItem>
+         <MenuItem value="clash-verge/v2.2.3">Release</MenuItem>
+        </Select>
+       </GuardState>
+     </SettingItem>
+
       <SettingItem
-       label={t("Global TLS fingerprint")}
+        label={t("Global TLS fingerprint")}
         extra={
        <TooltipIcon
-      title={t("Global TLS fingerprint, takes precedence over client-fingerprint in proxy")}
-      sx={{ opacity: "0.7" }}
+        title={t("Global TLS fingerprint, takes precedence over client-fingerprint in proxy")}
+        sx={{ opacity: "0.7" }}
       />
       }
     >
