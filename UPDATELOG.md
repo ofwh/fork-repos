@@ -57,7 +57,7 @@
  - 配置加载阶段自动补全 external-controller secret 字段。
  - 添加 TCP Concurrency (TCP并发)
  - 添加 全局TSL指纹 （默认 `chrome` ）
- - 添加 全局UA头 （默认 `Alpha` ）
+ - 添加 全局UA头 （默认 `Release` ）
  - 添加 进程匹配 （默认 `Strict` ）
 
 #### 优化了：
