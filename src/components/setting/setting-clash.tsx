@@ -222,7 +222,7 @@ const SettingClash = ({ onError }: Props) => {
       >
        <Select
          size="small"
-         sx={{ width: 100, "> div": { py: "7.5px" } }}
+         sx={{ width: 120, "> div": { py: "7.5px" } }}
        >
          <MenuItem value="clash-verge/v2.2.4-alpha">Alpha</MenuItem>
          <MenuItem value="clash-verge/v2.3.0">Alpha Release</MenuItem>
@@ -249,7 +249,7 @@ const SettingClash = ({ onError }: Props) => {
       >
       <Select
         size="small"
-        sx={{ width: 100, "> div": { py: "7.5px" } }}
+        sx={{ width: 120, "> div": { py: "7.5px" } }}
       >
       <MenuItem value="chrome">Chrome</MenuItem>
       <MenuItem value="firefox">Firefox</MenuItem>
@@ -277,7 +277,7 @@ const SettingClash = ({ onError }: Props) => {
           onChange={(e) => onChangeData({ "log-level": e })}
           onGuard={(e) => patchClash({ "log-level": e })}
         >
-          <Select size="small" sx={{ width: 100, "> div": { py: "7.5px" } }}>
+          <Select size="small" sx={{ width: 120, "> div": { py: "7.5px" } }}>
             <MenuItem value="debug">Debug</MenuItem>
             <MenuItem value="info">Info</MenuItem>
             <MenuItem value="warning">Warn</MenuItem>
@@ -295,7 +295,7 @@ const SettingClash = ({ onError }: Props) => {
           disabled={false}
           size="small"
           value={verge_mixed_port ?? 7897}
-          sx={{ width: 100, input: { py: "7.5px", cursor: "pointer" } }}
+          sx={{ width: 120, input: { py: "7.5px", cursor: "pointer" } }}
           onClick={(e) => {
             portRef.current?.open();
             (e.target as any).blur();
