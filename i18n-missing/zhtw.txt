@@ -1,0 +1,12 @@
+Direct Mode Description
+Failed to save settings
+Global Mode Description
+Global TLS fingerprint
+Global TLS fingerprint, takes precedence over client-fingerprint in proxy
+Global UA
+Global User-Agent, takes precedence over client-UA in proxy
+Port settings saved
+Rule Mode Description
+Saving...
+TCP Concurrency
+TCP ConcurrencyWhen accessing a web page, DNS resolution generally results in multiple IP addresses.
