@@ -572,5 +572,7 @@
   "TCP ConcurrencyWhen accessing a web page, DNS resolution generally results in multiple IP addresses.": "TCP ConcurrencyWhen accessing a web page, DNS resolution generally results in multiple IP addresses.",
   "Global TLS fingerprint": "Global TLS fingerprint",
   "Global TLS fingerprint, takes precedence over client-fingerprint in proxy": "Global TLS fingerprint, takes precedence over client-fingerprint in proxy",
-  "Random": "Random"
+  "Random": "Random",
+  "Global UA": "Global UA",
+  "Global User-Agent, takes precedence over client-UA in proxy": "Global User-Agent, takes precedence over client-UA in proxy"
 }
