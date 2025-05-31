@@ -288,20 +288,17 @@ const SettingClash = ({ onError }: Props) => {
       </SettingItem>
 
       <SettingItem
-        label={t("Port Config")}
-      >
-        <TextField
-          autoComplete="new-password"
-          disabled={false}
-          size="small"
-          value={verge_mixed_port ?? 7897}
-          sx={{ width: 120, input: { py: "7.5px", cursor: "pointer" } }}
-          onClick={(e) => {
-            portRef.current?.open();
-            (e.target as any).blur();
-          }}
-        />
-      </SettingItem>
+        onClick={() => portRef.current?.open()}
+        label={
+          <>
+            {t("Port Config")}
+            <TooltipIcon
+              title={t("Control port value")}
+              sx={{ opacity: "0.7" }}
+            />
+          </>
+        }
+      />
 
       <SettingItem
         onClick={() => ctrlRef.current?.open()}
@@ -309,7 +306,7 @@ const SettingClash = ({ onError }: Props) => {
           <>
             {t("External")}
             <TooltipIcon
-              title={t("Enable one-click random API port and key. Click to randomize the port and key")}
+              title={t("Control API Port Key")}
               sx={{ opacity: "0.7" }}
             />
           </>
