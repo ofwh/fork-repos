@@ -231,7 +231,7 @@ const SettingClash = ({ onError }: Props) => {
       <MenuItem value="edge">Edge</MenuItem>
       <MenuItem value="360">360</MenuItem>
       <MenuItem value="qq">QQ</MenuItem>
-      <MenuItem value="random">Random (Cloudflare Radar)</MenuItem>
+      <MenuItem value="random">Random</MenuItem>
        </Select>
      </GuardState>
    </SettingItem>
