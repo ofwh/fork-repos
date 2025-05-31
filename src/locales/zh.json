@@ -569,5 +569,8 @@
   "Port settings saved": "端口设置已保存",
   "Failed to save settings": "端口设置失败",
   "TCP Concurrency": "TCP并发",
-  "TCP ConcurrencyWhen accessing a web page, DNS resolution generally results in multiple IP addresses.": "TCP 并发性当访问网页时，DNS 解析通常会产生多个 IP 地址。"
+  "TCP ConcurrencyWhen accessing a web page, DNS resolution generally results in multiple IP addresses.": "TCP 并发性当访问网页时，DNS 解析通常会产生多个 IP 地址。",
+  "Global TLS fingerprint": "全局TLS指纹",
+  "Global TLS fingerprint, takes precedence over client-fingerprint in proxy": "全局 TLS 指纹，优先于代理中的客户端指纹",
+  "Random": "随机"
 }

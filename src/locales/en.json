@@ -569,5 +569,8 @@
   "Port settings saved": "Port settings saved",
   "Failed to save settings": "Failed to save settings",
   "TCP Concurrency": "TCP Concurrency",
-  "TCP ConcurrencyWhen accessing a web page, DNS resolution generally results in multiple IP addresses.": "TCP ConcurrencyWhen accessing a web page, DNS resolution generally results in multiple IP addresses."
+  "TCP ConcurrencyWhen accessing a web page, DNS resolution generally results in multiple IP addresses.": "TCP ConcurrencyWhen accessing a web page, DNS resolution generally results in multiple IP addresses.",
+  "Global TLS fingerprint": "Global TLS fingerprint",
+  "Global TLS fingerprint, takes precedence over client-fingerprint in proxy": "Global TLS fingerprint, takes precedence over client-fingerprint in proxy",
+  "Random": "Random"
 }
