@@ -56,7 +56,7 @@ git clone git@github.com/xxxx/yyyy.git <fork-repo>
 cd <fork-repo>
 
 # 添加源
-git remote add gh git@github.com:luoweihua7/fork-repos.git
+git remote add gh git@github.com:ofwh/fork-repos.git
 
 # 将本地的源分支(这里示例为master)推送到远程分支(示例为xxxx/yyyy，与原ref同名好记)
 git push gh master:xxxx/yyyy
