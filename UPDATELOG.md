@@ -58,6 +58,7 @@
  - 添加 TCP Concurrency (TCP并发)
  - 添加 全局TSL指纹 （默认 `chrome` ）
  - 添加 全局UA头 （默认 `Alpha` ）
+ - 添加 进程匹配 （默认 `Strict` ）
 
 #### 优化了：
  - 系统代理 Bypass 设置

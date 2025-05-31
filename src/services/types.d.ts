@@ -34,6 +34,7 @@ interface IConfigData {
   secret: string;
   "global-ua": string;
   "global-client-fingerprint": string;
+  "find-process-mode": string;
   "unified-delay": boolean;
   "tcp-concurrent": boolean;
   tun: {

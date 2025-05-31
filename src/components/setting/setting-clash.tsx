@@ -42,6 +42,7 @@ const SettingClash = ({ onError }: Props) => {
     "global-ua": ua,
     "global-client-fingerprint": global,
     "tcp-concurrent": tcp,
+    "find-process-mode": find,
     "allow-lan": allowLan,
     "log-level": logLevel,
     "unified-delay": unifiedDelay,
@@ -263,6 +264,37 @@ const SettingClash = ({ onError }: Props) => {
        </Select>
      </GuardState>
    </SettingItem>
+
+    <SettingItem
+       label={t("Process Matching Mode")}
+        extra={
+          <>
+            <TooltipIcon
+                title={t(`
+                    Controls whether Clash matches processes.
+                `)}
+                sx={{ opacity: "0.7" }}
+            />
+        </>
+       }
+   >
+    <GuardState
+        value={find || "strict"}
+        onCatch={onError}
+        onFormat={(e: any) => e.target.value}
+        onChange={(e) => onChangeData({ "find-process-mode": e })}
+        onGuard={(e) => patchClash({ "find-process-mode": e })}
+      >
+        <Select
+            size="small"
+            sx={{ width: 120, "> div": { py: "7.5px" } }}
+          >
+            <MenuItem value="always">Always</MenuItem>
+            <MenuItem value="strict">Strict</MenuItem>
+            <MenuItem value="off">Off</MenuItem>
+           </Select>
+        </GuardState>
+      </SettingItem>
 
       <SettingItem
         label={t("Log Level")}
