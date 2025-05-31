@@ -56,6 +56,7 @@
  - Winodws 快捷键名称改为 `Clash Verge`
  - 配置加载阶段自动补全 external-controller secret 字段。
  - 添加 TCP Concurrency (TCP并发)
+ - 添加 全局TSL指纹 （默认 `chrome` ）
 
 #### 优化了：
  - 系统代理 Bypass 设置

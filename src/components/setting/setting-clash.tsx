@@ -39,6 +39,7 @@ const SettingClash = ({ onError }: Props) => {
 
   const {
     ipv6,
+    "global-client-fingerprint": global,
     "tcp-concurrent": tcp,
     "allow-lan": allowLan,
     "log-level": logLevel,
@@ -201,6 +202,39 @@ const SettingClash = ({ onError }: Props) => {
           <Switch edge="end" />
         </GuardState>
       </SettingItem>
+
+      <SettingItem
+       label={t("Global TLS fingerprint")}
+        extra={
+       <TooltipIcon
+      title={t("Global TLS fingerprint, takes precedence over client-fingerprint in proxy")}
+      sx={{ opacity: "0.7" }}
+      />
+      }
+    >
+      <GuardState
+       value={global || "chrome"}
+       onCatch={onError}
+       onFormat={(e: any) => e.target.value}
+       onChange={(e) => onChangeData({ "global-client-fingerprint": e })}
+       onGuard={(e) => patchClash({ "global-client-fingerprint": e })}
+      >
+      <Select
+        size="small"
+        sx={{ width: 100, "> div": { py: "7.5px" } }}
+      >
+      <MenuItem value="chrome">Chrome</MenuItem>
+      <MenuItem value="firefox">Firefox</MenuItem>
+      <MenuItem value="safari">Safari</MenuItem>
+      <MenuItem value="ios">iOS</MenuItem>
+      <MenuItem value="android">Android</MenuItem>
+      <MenuItem value="edge">Edge</MenuItem>
+      <MenuItem value="360">360</MenuItem>
+      <MenuItem value="qq">QQ</MenuItem>
+      <MenuItem value="random">Random (Cloudflare Radar)</MenuItem>
+       </Select>
+     </GuardState>
+   </SettingItem>
 
       <SettingItem
         label={t("Log Level")}

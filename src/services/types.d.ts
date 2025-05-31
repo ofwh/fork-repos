@@ -32,6 +32,7 @@ interface IConfigData {
   "tproxy-port": number;
   "external-controller": string;
   secret: string;
+  "global-client-fingerprint": string;
   "unified-delay": boolean;
   "tcp-concurrent": boolean;
   tun: {
