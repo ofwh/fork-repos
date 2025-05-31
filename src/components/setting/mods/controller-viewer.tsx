@@ -61,18 +61,7 @@ export const ControllerViewer = forwardRef<DialogRef>((props, ref) => {
     } finally {
       setIsSaving(false);
     }
-  });
-
-  // 复制到剪贴板
-  const handleCopyToClipboard = useLockFn(async (text: string, type: string) => {
-    try {
-      await navigator.clipboard.writeText(text);
-      setCopySuccess(type);
-      setTimeout(() => setCopySuccess(null), 2000);
-    } catch (err) {
-      showNotice('error', t("Failed to copy"), 2000);
-    }
-  });
+  })
 
   return (
     <BaseDialog
@@ -108,16 +97,6 @@ export const ControllerViewer = forwardRef<DialogRef>((props, ref) => {
               onChange={e => setController(e.target.value)}
               disabled={isSaving}
             />
-            <Tooltip title={t("Copy to clipboard")}>
-              <IconButton
-                size="small"
-                onClick={() => handleCopyToClipboard(controller, "controller")}
-                color="primary"
-                disabled={isSaving}
-              >
-                <ContentCopy fontSize="small" />
-              </IconButton>
-            </Tooltip>
           </Box>
         </ListItem>
 
@@ -136,16 +115,6 @@ export const ControllerViewer = forwardRef<DialogRef>((props, ref) => {
               onChange={e => setSecret(e.target.value)}
               disabled={isSaving}
             />
-            <Tooltip title={t("Copy to clipboard")}>
-              <IconButton
-                size="small"
-                onClick={() => handleCopyToClipboard(secret, "secret")}
-                color="primary"
-                disabled={isSaving}
-              >
-                <ContentCopy fontSize="small" />
-              </IconButton>
-            </Tooltip>
           </Box>
         </ListItem>
       </List>
