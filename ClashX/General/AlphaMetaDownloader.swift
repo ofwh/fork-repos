@@ -130,7 +130,7 @@ class AlphaMetaDownloader: NSObject {
 		guard let path = Paths.alphaCorePath()?.path else {
 			throw errors.unknownError
 		}
-		if let v = AppDelegate.shared.clashProcess.verifyCoreFile(path),
+		if let v = ClashProcess.verifyCoreFile(path),
 		   asset.name.contains(v.version) {
 			throw errors.notFoundUpdate
 		}
@@ -166,7 +166,7 @@ class AlphaMetaDownloader: NSObject {
 		
 		Logger.log("save alpha core in \(cachePath)")
 
-		guard let version = AppDelegate.shared.clashProcess.verifyCoreFile(cachePath)?.version else {
+		guard let version = ClashProcess.verifyCoreFile(cachePath)?.version else {
 			throw errors.testFailed
 		}
 

@@ -51,7 +51,7 @@ actor LogRateLimiter {
         }
         
         // Resume after 60 seconds
-        try? await Task.sleep(nanoseconds: 60_000_000_000)
+        try? await Task.sleep(seconds: 60)
         
         isBlocked = false
         

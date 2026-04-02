@@ -10,6 +10,8 @@
 		0106179F2AF38EFA005C7877 /* Command.swift in Sources */ = {isa = PBXBuildFile; fileRef = 49FEC6682AD9369C00BAD9F5 /* Command.swift */; };
 		0114F0CF2E5B60CB007C7AAC /* LogRateLimiter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0114F0CE2E5B60CB007C7AAC /* LogRateLimiter.swift */; };
 		013B21FB2F7E95E0009B30CB /* DGCharts in Frameworks */ = {isa = PBXBuildFile; productRef = 013B21FA2F7E95E0009B30CB /* DGCharts */; };
+		013B21FD2F7EC4F9009B30CB /* ProxyConfigHelperXPCTransport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 013B21FC2F7EC4F9009B30CB /* ProxyConfigHelperXPCTransport.swift */; };
+		013B21FE2F7EC551009B30CB /* ProxyConfigHelperXPCTransport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 013B21FC2F7EC4F9009B30CB /* ProxyConfigHelperXPCTransport.swift */; };
 		0162E74F2864B819007218A6 /* MetaTask.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0162E74E2864B819007218A6 /* MetaTask.swift */; };
 		0197255A2CA15D6400C14E49 /* UserNotificationCenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 019725592CA15D6400C14E49 /* UserNotificationCenter.swift */; };
 		0197255C2CA15FC600C14E49 /* NSWorkspace+openFile.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0197255B2CA15FC600C14E49 /* NSWorkspace+openFile.swift */; };
@@ -81,6 +83,7 @@
 		01F335DB2AD10D0B0048AF77 /* SystemProxyManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = F935B2FB23085515009E4D33 /* SystemProxyManager.swift */; };
 		01F335DC2AD10D0B0048AF77 /* LaunchAtLogin.swift in Sources */ = {isa = PBXBuildFile; fileRef = 495A44D220D267D000888A0A /* LaunchAtLogin.swift */; };
 		01F335DD2AD10D0B0048AF77 /* Combine+Ext.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4991D2312A565E6A00978143 /* Combine+Ext.swift */; };
+		A15E90012E5C9A1100C0FFEE /* Task+Sleep.swift in Sources */ = {isa = PBXBuildFile; fileRef = A15E90002E5C9A1100C0FFEE /* Task+Sleep.swift */; };
 		01F335DE2AD10D0B0048AF77 /* DebugSettingViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 49281C7F2A1F01FA00F60935 /* DebugSettingViewController.swift */; };
 		01F335DF2AD10D0B0048AF77 /* ClashWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 49CCDA292A54F9AC00FF1E13 /* ClashWindowController.swift */; };
 		01F335E02AD10D0B0048AF77 /* Settings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4929F67E258CE04700A435F6 /* Settings.swift */; };
@@ -153,7 +156,6 @@
 		01F336262AD10D0B0048AF77 /* Gzip in Frameworks */ = {isa = PBXBuildFile; productRef = 01F335C62AD10D0B0048AF77 /* Gzip */; };
 		01F336272AD10D0B0048AF77 /* CocoaLumberjackSwift in Frameworks */ = {isa = PBXBuildFile; productRef = 01F335C12AD10D0B0048AF77 /* CocoaLumberjackSwift */; };
 		01F336282AD10D0B0048AF77 /* Starscream in Frameworks */ = {isa = PBXBuildFile; productRef = 01F335C22AD10D0B0048AF77 /* Starscream */; };
-		01F336292AD10D0B0048AF77 /* PromiseKit in Frameworks */ = {isa = PBXBuildFile; productRef = 01F335CA2AD10D0B0048AF77 /* PromiseKit */; };
 		01F3362A2AD10D0B0048AF77 /* KeyboardShortcuts in Frameworks */ = {isa = PBXBuildFile; productRef = 01F335B62AD10D0B0048AF77 /* KeyboardShortcuts */; };
 		01F3362B2AD10D0B0048AF77 /* Alamofire in Frameworks */ = {isa = PBXBuildFile; productRef = 01F335B82AD10D0B0048AF77 /* Alamofire */; };
 		01F3362C2AD10D0B0048AF77 /* CocoaLumberjack in Frameworks */ = {isa = PBXBuildFile; productRef = 01F335BF2AD10D0B0048AF77 /* CocoaLumberjack */; };
@@ -216,6 +218,7 @@
 
 /* Begin PBXFileReference section */
 		0114F0CE2E5B60CB007C7AAC /* LogRateLimiter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LogRateLimiter.swift; sourceTree = "<group>"; };
+		013B21FC2F7EC4F9009B30CB /* ProxyConfigHelperXPCTransport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProxyConfigHelperXPCTransport.swift; sourceTree = "<group>"; };
 		015F1E90288E42A50052B20A /* ClashMetaConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClashMetaConfig.swift; sourceTree = "<group>"; };
 		0162E74D2864B818007218A6 /* com.metacubex.ClashX.ProxyConfigHelper-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "com.metacubex.ClashX.ProxyConfigHelper-Bridging-Header.h"; sourceTree = "<group>"; };
 		0162E74E2864B819007218A6 /* MetaTask.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MetaTask.swift; sourceTree = "<group>"; };
@@ -325,6 +328,7 @@
 		498BC2542929CCAE00CA8084 /* GeneralSettingViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GeneralSettingViewController.swift; sourceTree = "<group>"; };
 		4991D22F2A564DDC00978143 /* SpeedUtils.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeedUtils.swift; sourceTree = "<group>"; };
 		4991D2312A565E6A00978143 /* Combine+Ext.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Combine+Ext.swift"; sourceTree = "<group>"; };
+		A15E90002E5C9A1100C0FFEE /* Task+Sleep.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Task+Sleep.swift"; sourceTree = "<group>"; };
 		4994B5532A47C4FF00E595B9 /* NormalMenuItemView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NormalMenuItemView.swift; sourceTree = "<group>"; };
 		499976C721359F0400E7BF83 /* ClashWebViewContoller.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClashWebViewContoller.swift; sourceTree = "<group>"; };
 		499A485322ED707300F6C675 /* RemoteConfigViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemoteConfigViewController.swift; sourceTree = "<group>"; };
@@ -397,7 +401,6 @@
 				01F336262AD10D0B0048AF77 /* Gzip in Frameworks */,
 				01F336272AD10D0B0048AF77 /* CocoaLumberjackSwift in Frameworks */,
 				01F336282AD10D0B0048AF77 /* Starscream in Frameworks */,
-				01F336292AD10D0B0048AF77 /* PromiseKit in Frameworks */,
 				01F3362A2AD10D0B0048AF77 /* KeyboardShortcuts in Frameworks */,
 				01BCDB212C9EEE260028FA94 /* Sparkle in Frameworks */,
 				01F3362B2AD10D0B0048AF77 /* Alamofire in Frameworks */,
@@ -754,6 +757,7 @@
 				49ABB748236B0F9E00535CD7 /* UnsafePointer+bridge.swift */,
 				4991D22F2A564DDC00978143 /* SpeedUtils.swift */,
 				4991D2312A565E6A00978143 /* Combine+Ext.swift */,
+				A15E90002E5C9A1100C0FFEE /* Task+Sleep.swift */,
 			);
 			path = Basic;
 			sourceTree = "<group>";
@@ -855,6 +859,7 @@
 			children = (
 				019A239528657A7A00AE5698 /* main.swift */,
 				01EF33612B98D3A700D1DBD9 /* ProxyConfigRemoteProcessProtocol.swift */,
+				013B21FC2F7EC4F9009B30CB /* ProxyConfigHelperXPCTransport.swift */,
 				01EF335F2B98D03B00D1DBD9 /* ProxyConfigHelper.swift */,
 				0162E74E2864B819007218A6 /* MetaTask.swift */,
 				01CA6BBF2B6A1B3100E386D6 /* MetaServer.swift */,
@@ -901,7 +906,6 @@
 				01F335C42AD10D0B0048AF77 /* FlexibleDiff */,
 				01F335C62AD10D0B0048AF77 /* Gzip */,
 				01F335C82AD10D0B0048AF77 /* Yams */,
-				01F335CA2AD10D0B0048AF77 /* PromiseKit */,
 				01BCDAB22C9ECB560028FA94 /* SwiftUIIntrospect */,
 				01BCDB202C9EEE260028FA94 /* Sparkle */,
 				013B21FA2F7E95E0009B30CB /* DGCharts */,
@@ -965,7 +969,6 @@
 				015B977B2A4F30B900F9FA4D /* XCRemoteSwiftPackageReference "FlexibleDiff" */,
 				015B977E2A4F30EA00F9FA4D /* XCRemoteSwiftPackageReference "GzipSwift" */,
 				015B97812A4F311300F9FA4D /* XCRemoteSwiftPackageReference "Yams" */,
-				015B97842A4F31AE00F9FA4D /* XCRemoteSwiftPackageReference "PromiseKit" */,
 				01BCDAB12C9ECB560028FA94 /* XCRemoteSwiftPackageReference "SwiftUI-Introspect" */,
 				01BCDB1F2C9EEE260028FA94 /* XCRemoteSwiftPackageReference "Sparkle" */,
 				013B21F92F7E95E0009B30CB /* XCRemoteSwiftPackageReference "Charts" */,
@@ -1027,6 +1030,7 @@
 				01F335DB2AD10D0B0048AF77 /* SystemProxyManager.swift in Sources */,
 				01F335DC2AD10D0B0048AF77 /* LaunchAtLogin.swift in Sources */,
 				01F335DD2AD10D0B0048AF77 /* Combine+Ext.swift in Sources */,
+				A15E90012E5C9A1100C0FFEE /* Task+Sleep.swift in Sources */,
 				01F335DE2AD10D0B0048AF77 /* DebugSettingViewController.swift in Sources */,
 				01F335DF2AD10D0B0048AF77 /* ClashWindowController.swift in Sources */,
 				01F335E02AD10D0B0048AF77 /* Settings.swift in Sources */,
@@ -1051,6 +1055,7 @@
 				01F335F12AD10D0B0048AF77 /* NSView+Nib.swift in Sources */,
 				0197255C2CA15FC600C14E49 /* NSWorkspace+openFile.swift in Sources */,
 				01F335F22AD10D0B0048AF77 /* ProxyDelayHistoryMenu.swift in Sources */,
+				013B21FE2F7EC551009B30CB /* ProxyConfigHelperXPCTransport.swift in Sources */,
 				01F335F32AD10D0B0048AF77 /* NSColor+Extension.swift in Sources */,
 				01F335F42AD10D0B0048AF77 /* ClashConfig.swift in Sources */,
 				01F335F52AD10D0B0048AF77 /* ApiRequest.swift in Sources */,
@@ -1155,6 +1160,7 @@
 				491E6203258A424D00313AEF /* CommonUtils.m in Sources */,
 				01BC9ABE2928EB5A00F9B177 /* MetaDNS.swift in Sources */,
 				01CA6BC12B6A1B3100E386D6 /* MetaServer.swift in Sources */,
+				013B21FD2F7EC4F9009B30CB /* ProxyConfigHelperXPCTransport.swift in Sources */,
 				F935B2FA23083EE6009E4D33 /* ProxySettingTool.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -1596,14 +1602,6 @@
 				minimumVersion = 6.0.0;
 			};
 		};
-		015B97842A4F31AE00F9FA4D /* XCRemoteSwiftPackageReference "PromiseKit" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/mxcl/PromiseKit";
-			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 8.0.0;
-			};
-		};
 		01BCDAB12C9ECB560028FA94 /* XCRemoteSwiftPackageReference "SwiftUI-Introspect" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/siteline/SwiftUI-Introspect";
@@ -1692,14 +1690,6 @@
 				minimumVersion = 5.0.0;
 			};
 		};
-		01F335CB2AD10D0B0048AF77 /* XCRemoteSwiftPackageReference "PromiseKit" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/mxcl/PromiseKit";
-			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 8.0.0;
-			};
-		};
 		4905A2C62A2058D400AEDA2E /* XCRemoteSwiftPackageReference "KeyboardShortcuts" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/sindresorhus/KeyboardShortcuts";
@@ -1780,11 +1770,6 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 01F335C92AD10D0B0048AF77 /* XCRemoteSwiftPackageReference "Yams" */;
 			productName = Yams;
-		};
-		01F335CA2AD10D0B0048AF77 /* PromiseKit */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 01F335CB2AD10D0B0048AF77 /* XCRemoteSwiftPackageReference "PromiseKit" */;
-			productName = PromiseKit;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

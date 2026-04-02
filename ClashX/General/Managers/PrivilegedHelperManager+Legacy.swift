@@ -73,20 +73,14 @@ extension PrivilegedHelperManager {
         try? FileManager.default.removeItem(at: tmpPath)
     }
 
-    func legacyInstallHelper() {
-        defer {
-            resetConnection()
-            Thread.sleep(forTimeInterval: 1)
-        }
+    func legacyInstallHelper() async {
         let script = getInstallScript()
         runScriptWithRootPermission(script: script)
+        resetHelper(invalidate: true)
+        try? await Task.sleep(seconds: 1)
     }
 
-    func removeInstallHelper() {
-        defer {
-            resetConnection()
-            Thread.sleep(forTimeInterval: 5)
-        }
+    func removeInstallHelper() async {
         let script = """
         /bin/launchctl remove \(PrivilegedHelperManager.machServiceName) || true
         /usr/bin/killall -u root -9 \(PrivilegedHelperManager.machServiceName)
@@ -95,5 +89,7 @@ extension PrivilegedHelperManager {
         """
 
         runScriptWithRootPermission(script: script)
+        resetHelper(invalidate: true)
+        try? await Task.sleep(seconds: 5)
     }
 }

@@ -6,9 +6,9 @@
 //
 
 import Cocoa
-import PromiseKit
 
-protocol ClashProcessDelegate {
+@MainActor
+protocol ClashProcessDelegate: AnyObject {
 	func clashLaunchPathNotFound(_ msg: String)
 	func clashApiUpdated(_ server: MetaServer)
 	func clashConfigUpdated()
@@ -24,29 +24,32 @@ enum StartMetaError: Error {
 	case launchPathMissing
 }
 
-class ClashProcess: NSObject {
+
+actor ClashProcess {
 	
-	enum CoreState: Int {
-		case stopped, startFailed, checkingHelper, helperReady, starting, running
+	enum CoreState {
+		case stopped, checkingLaunchPath, checkingHelper, preparingConfig, starting, running
 	}
+
+	static let metaCoreMd5 = "WOSHIZIDONGSHENGCHENGDEA"
 	
 	
-	private let md5: String
-	private var retryTimes = 0
-	
-	private var _coreState: CoreState = .stopped
-	
-	var coreState: CoreState {
-		return _coreState
+	private var coreState: CoreState = .stopped
+	private weak var delegate: (any ClashProcessDelegate)?
+	private var cachedLaunchPath: (path: String?, err: String?)?
+	private var startTask: Task<Void, Never>?
+
+	private func loadLaunchPath() -> (path: String?, err: String?) {
+		if let cachedLaunchPath {
+			return cachedLaunchPath
+		}
+
+		let launchPath = Self.resolveLaunchPath(md5: Self.metaCoreMd5)
+		cachedLaunchPath = launchPath
+		return launchPath
 	}
-	
-	var delegate: ClashProcessDelegate?
-	
-	init(_ md5: String) {
-		self.md5 = md5
-	}
-	
-	lazy var launchPath: (path: String?, err: String?) = {
+
+	private static func resolveLaunchPath(md5: String) -> (path: String?, err: String?) {
 		Logger.log("Get launchPath")
 		
 		guard let alphaCorePath = Paths.alphaCorePath(),
@@ -87,88 +90,53 @@ class ClashProcess: NSObject {
 			Logger.log(corePath.path)
 			return (nil, "Failure to verify the internal Meta Core.\nDo NOT replace core file in the resources folder.")
 		}
-	}()
+	}
 	
 	
 // MARK: start core
 	
-	func start() {
-		let paths = launchPath
-		
-		guard let _ = paths.path else {
-			let msg = paths.err ?? "Load internal Meta Core failed."
-			delegate?.clashLaunchPathNotFound(msg)
+	func startIfNeeded(delegate: any ClashProcessDelegate) async {
+		self.delegate = delegate
+		guard coreState != .running else { return }
+
+		if let startTask {
+			await startTask.value
 			return
 		}
-		
-		checkHelperVersion().then { _ in
-			self.startProxy()
-		}.done {
-			self.retryTimes = 0
-			Logger.log("Init config file success.")
-			
-			self.showUpdateNotification("ClashX_Meta_1.3.0_UpdateTips", info: "Config Floder migrated from\n~/.config/clash to\n~/.config/clash.meta")
-		}.catch { error in
-			Logger.log("\(error)", level: .error)
 
-			switch error {
-			case StartMetaError.helperNotFound:
-				self._coreState = .checkingHelper
-				let delay: DispatchTimeInterval = {
-					switch self.retryTimes {
-					case 0..<10:
-						return .milliseconds(500)
-					case 10..<20:
-						return .seconds(2)
-					case 20..<30:
-						return .seconds(8)
-					case 30..<40:
-						return .seconds(15)
-					default:
-						return .seconds(60)
-					}
-				}()
-				self.retryTimes += 1
-				after(delay).done {
-					self.start()
-				}
-			default:
-				self._coreState = .startFailed
-				self.delegate?.clashStartError(error)
-			}
+		let task = Task {
+			await self.runStartSequence()
 		}
+		startTask = task
+		await task.value
 	}
-	
-	func checkHelperVersion() -> Promise<String?> {
-		guard coreState.rawValue < CoreState.helperReady.rawValue else {
-			return .value(nil)
+
+	private func runStartSequence() async {
+		defer {
+			startTask = nil
 		}
-		_coreState = .checkingHelper
-		return Promise { resolver in
-			PrivilegedHelperManager.shared.helper {
-				Logger.log("Helper, check status failed, will try again")
-				resolver.reject(StartMetaError.helperNotFound)
-			}?.getVersion {
-				Logger.log("Helper, check status success \($0)")
-				self._coreState = .helperReady
-				resolver.fulfill($0)
-			}
+
+		coreState = .checkingLaunchPath
+		let paths = loadLaunchPath()
+		guard let launchPath = paths.path else {
+			coreState = .stopped
+			let msg = paths.err ?? "Load internal Meta Core failed."
+			await delegate?.clashLaunchPathNotFound(msg)
+			return
 		}
-	}
-	
-	private func startProxy() -> Promise<()> {
-		guard coreState.rawValue < CoreState.starting.rawValue else {
-			return .value(())
-		}
-		_coreState = .starting
-		
-		Logger.log("Trying start meta core")
-		
-		return prepareConfigFile().then {
-			self.generateInitConfig()
-		}.then {
-			self.startMeta($0)
-		}.get { res in
+
+		var didStartCore = false
+
+		do {
+			try await checkHelperVersion()
+			coreState = .preparingConfig
+			try await prepareConfigFile()
+			let config = try await generateInitConfig()
+			coreState = .starting
+			let res = try await startMeta(config, launchPath: launchPath)
+			didStartCore = true
+			coreState = .running
+
 			if res.log != "" {
 				Logger.log("""
 \n########  Clash Meta Start Log  #########
@@ -176,150 +144,188 @@ class ClashProcess: NSObject {
 ########  END  #########
 """, level: .info)
 			}
-			self._coreState = .running
-			self.delegate?.clashApiUpdated(res)
-		}.then { _ in
-			self.pushInitConfig()
+
+			await delegate?.clashApiUpdated(res)
+			try await pushInitConfig()
+			Logger.log("Init config file success.")
+			showUpdateNotification("ClashX_Meta_1.3.0_UpdateTips", info: "Config Floder migrated from\n~/.config/clash to\n~/.config/clash.meta")
+		} catch {
+			await handleStartError(error, didStartCore: didStartCore)
 		}
+	}
+
+	private func handleStartError(_ error: Error, didStartCore: Bool) async {
+		Logger.log("\(error)", level: .error)
+		coreState = didStartCore ? .running : .stopped
+		await delegate?.clashStartError(error)
+	}
+
+	private func checkHelperVersion() async throws {
+		coreState = .checkingHelper
+
+		let version: String
+		do {
+			version = try await PrivilegedHelperManager.shared.request(ProxyConfigHelperMessages.GetVersion())
+		} catch {
+			Logger.log("Helper, check status failed, will try again")
+			throw StartMetaError.helperNotFound
+		}
+
+		Logger.log("Helper, check status success \(version)")
 	}
 	
-
-	func prepareConfigFile() -> Promise<()> {
-		.init { resolver in
-			let configName = ConfigManager.selectConfigName
-			ApiRequest.findConfigPath(configName: configName) { path in
-				guard let path = path else {
-					resolver.reject(StartMetaError.configMissing)
-					return
-				}
-				
-				if FileManager.default.fileExists(atPath: path) {
-					resolver.fulfill_()
-					return
-				}
-				
-				Logger.log("\(configName) not exists")
-				if let config = RemoteConfigManager.shared.configs.first(where: { $0.name == configName }) {
-					Logger.log("Try to download remote config \(configName)")
-					RemoteConfigManager.updateConfig(config: config) {
-						if let error = $0 {
-							Logger.log("Download remote config failed, \(error)")
-							resolver.reject(StartMetaError.remoteConfigMissing)
-						} else {
-							Logger.log("Download remote config success")
-							resolver.fulfill_()
-						}
-					}
-				} else {
-					if configName != "config" {
-						ConfigManager.selectConfigName = "config"
-					}
-
-					Logger.log("Try to copy default config")
-					ICloudManager.shared.setup()
-					ConfigFileManager.copySampleConfigIfNeed()
-					resolver.fulfill_()
-				}
-			}
+	private func prepareConfigFile() async throws {
+		let configName = ConfigManager.selectConfigName
+		guard let path = await findConfigPath(configName: configName) else {
+			throw StartMetaError.configMissing
 		}
+
+		if FileManager.default.fileExists(atPath: path) {
+			return
+		}
+
+		Logger.log("\(configName) not exists")
+		if let config = RemoteConfigManager.shared.configs.first(where: { $0.name == configName }) {
+			Logger.log("Try to download remote config \(configName)")
+			if let error = await updateRemoteConfig(config) {
+				Logger.log("Download remote config failed, \(error)")
+				throw StartMetaError.remoteConfigMissing
+			}
+
+			Logger.log("Download remote config success")
+			return
+		}
+
+		if configName != "config" {
+			ConfigManager.selectConfigName = "config"
+		}
+
+		Logger.log("Try to copy default config")
+		ICloudManager.shared.setup()
+		ConfigFileManager.copySampleConfigIfNeed()
 	}
 
-	func generateInitConfig() -> Promise<ClashMetaConfig.Config> {
-        safePaths().then { paths in
-            Promise { resolver in
-                ClashMetaConfig.generateInitConfig {
-                    var config = $0
-                    config.safePaths = paths.joined(separator: ":")
-                    PrivilegedHelperManager.shared.helper {
-    //                    resolver.reject(StartMetaError.helperNotFound)
-                        Logger.log("helperNotFound, getUsedPorts failed", level: .error)
-                        resolver.fulfill(config)
-                    }?.getUsedPorts {
-                        config.updatePorts($0 ?? "")
-                        resolver.fulfill(config)
-                    }
-                }
-            }
-        }
+	private func generateInitConfig() async throws -> ClashMetaConfig.Config {
+		let paths = try await safePaths()
+		var config = await generateBaseConfig()
+		config.safePaths = paths.joined(separator: ":")
+		config.updatePorts(await usedPorts() ?? "")
+		return config
 	}
     
-    func safePaths() -> Promise<[String]> {
-        .init { resolver in
-            guard let resourcePath = Bundle.main.resourcePath else {
-                resolver.reject(StartMetaError.startMetaFailed("resourcePath"))
-                return
-            }
-            var paths = [String]()
-            paths.append(resourcePath + "/dashboard")
-            
-            if ICloudManager.shared.useiCloud.value {
-                ICloudManager.shared.getUrl { url in
-                    if let p = url?.path {
-                        paths.append(p)
-                        resolver.fulfill(paths)
-                    } else {
-                        resolver.fulfill(paths)
-                    }
-                }
-            } else {
-                resolver.fulfill(paths)
-            }
-        }
+	private func safePaths() async throws -> [String] {
+		guard let resourcePath = Bundle.main.resourcePath else {
+			throw StartMetaError.startMetaFailed("resourcePath")
+		}
+
+		var paths = [resourcePath + "/dashboard"]
+		guard ICloudManager.shared.useiCloud.value else {
+			return paths
+		}
+
+		if let path = await iCloudURL()?.path {
+			paths.append(path)
+		}
+
+		return paths
     }
 
-	func startMeta(_ config: ClashMetaConfig.Config) -> Promise<MetaServer> {
-		.init { resolver in
-			guard let path = launchPath.path else {
-				resolver.reject(StartMetaError.launchPathMissing)
-				return
-			}
-        
-            
-            let confJSON = MetaServer(
-                externalController: config.externalController,
-                secret: config.secret ?? "",
-                safePaths: config.safePaths ?? ""
-            ).jsonString()
-			
-			PrivilegedHelperManager.shared.helper {
-				Logger.log("helperNotFound, startMeta failed", level: .error)
-				resolver.reject(StartMetaError.helperNotFound)
-			}?.startMeta(path: path,
-						 confPath: kConfigFolderPath,
-						 confFilePath: config.path,
-						 confJSON: confJSON) {
-				if let string = $0 {
-					guard let jsonData = string.data(using: .utf8),
-						  let res = try? JSONDecoder().decode(MetaServer.self, from: jsonData) else {
-						resolver.reject(StartMetaError.startMetaFailed(string))
-						return
-					}
+	private func startMeta(_ config: ClashMetaConfig.Config, launchPath: String) async throws -> MetaServer {
+		Logger.log("Trying start meta core")
 
-					resolver.fulfill(res)
-				} else {
-					resolver.reject(StartMetaError.startMetaFailed($0 ?? "unknown error"))
-				}
+		let confJSON = MetaServer(
+			externalController: config.externalController,
+			secret: config.secret ?? "",
+			safePaths: config.safePaths ?? ""
+		).jsonString()
+
+		let response: String?
+		do {
+			response = try await PrivilegedHelperManager.shared.request(
+				ProxyConfigHelperMessages.StartMeta(path: launchPath,
+				                                   confPath: kConfigFolderPath,
+				                                   confFilePath: config.path,
+				                                   confJSON: confJSON)
+			)
+		} catch {
+			Logger.log("helperNotFound, startMeta failed", level: .error)
+			throw StartMetaError.helperNotFound
+		}
+
+		guard let response else {
+			throw StartMetaError.startMetaFailed("unknown error")
+		}
+
+		guard let jsonData = response.data(using: .utf8),
+			  let res = try? JSONDecoder().decode(MetaServer.self, from: jsonData) else {
+			throw StartMetaError.startMetaFailed(response)
+		}
+
+		return res
+	}
+
+	private func pushInitConfig() async throws {
+		ClashProxy.cleanCache()
+		let configName = ConfigManager.selectConfigName
+		Logger.log("Push init config file: \(configName)")
+
+		if let error = await requestConfigUpdate(configName: configName) {
+			throw StartMetaError.pushConfigFailed(error)
+		}
+
+		await delegate?.clashConfigUpdated()
+	}
+
+	private func findConfigPath(configName: String) async -> String? {
+		await withCheckedContinuation { continuation in
+			ApiRequest.findConfigPath(configName: configName) { path in
+				continuation.resume(returning: path)
 			}
 		}
 	}
 
-	func pushInitConfig() -> Promise<()> {
-		.init { resolver in
-			ClashProxy.cleanCache()
-			let configName = ConfigManager.selectConfigName
-			Logger.log("Push init config file: \(configName)")
-			ApiRequest.requestConfigUpdate(configName: configName) { err in
-				if let error = err {
-					resolver.reject(StartMetaError.pushConfigFailed(error))
-				} else {
-					self.delegate?.clashConfigUpdated()
-					resolver.fulfill_()
-				}
+	private func updateRemoteConfig(_ config: RemoteConfigModel) async -> String? {
+		await withCheckedContinuation { continuation in
+			RemoteConfigManager.updateConfig(config: config) { error in
+				continuation.resume(returning: error)
+			}
+		}
+	}
+
+	private func generateBaseConfig() async -> ClashMetaConfig.Config {
+		await withCheckedContinuation { continuation in
+			ClashMetaConfig.generateInitConfig { config in
+				continuation.resume(returning: config)
+			}
+		}
+	}
+
+	private func usedPorts() async -> String? {
+		do {
+			return try await PrivilegedHelperManager.shared.request(ProxyConfigHelperMessages.GetUsedPorts())
+		} catch {
+			Logger.log("helperNotFound, getUsedPorts failed", level: .error)
+			return nil
+		}
+	}
+
+	private func iCloudURL() async -> URL? {
+		await withCheckedContinuation { continuation in
+			ICloudManager.shared.getUrl { url in
+				continuation.resume(returning: url)
+			}
+		}
+	}
+
+	private func requestConfigUpdate(configName: String) async -> ErrorString? {
+		await withCheckedContinuation { continuation in
+			ApiRequest.requestConfigUpdate(configName: configName) { error in
+				continuation.resume(returning: error)
 			}
 		}
 	}
 	
-	func showUpdateNotification(_ udString: String, info: String) {
+	private func showUpdateNotification(_ udString: String, info: String) {
 		guard !UserDefaults.standard.bool(forKey: udString) else { return }
 		
 		UserDefaults.standard.set(true, forKey: udString)
@@ -329,7 +335,7 @@ class ClashProcess: NSObject {
 	
 // MARK: launch path
 	
-	private func unzipMetaCore() -> String? {
+	private static func unzipMetaCore() -> String? {
 		guard let corePath = Paths.defaultCorePath(),
 			  let gzPath = Paths.defaultCoreGzPath() else { return "Paths error" }
 		let fm = FileManager.default
@@ -349,7 +355,7 @@ class ClashProcess: NSObject {
 		}
 	}
 
-	func verifyCoreFile(_ path: String) -> (version: String, date: Date?)? {
+	static func verifyCoreFile(_ path: String) -> (version: String, date: Date?)? {
 		guard chmodX(path) else { return nil }
 
 		let proc = Process()
@@ -400,7 +406,7 @@ class ClashProcess: NSObject {
 		return (version: version, date: date)
 	}
 
-	private func validateDefaultCore(_ md5: String) -> Bool {
+	private static func validateDefaultCore(_ md5: String) -> Bool {
 		guard let path = Paths.defaultCorePath()?.path,
 			  chmodX(path) else { return false }
 
@@ -424,7 +430,7 @@ class ClashProcess: NSObject {
 		return md5 == out.replacingOccurrences(of: "\n", with: "")
 	}
 
-	private func chmodX(_ path: String) -> Bool {
+	private static func chmodX(_ path: String) -> Bool {
 		let proc = Process()
 		proc.executableURL = .init(fileURLWithPath: "/bin/chmod")
 		proc.arguments = ["+x", path]
@@ -440,9 +446,9 @@ class ClashProcess: NSObject {
 	
 // MARK: verify config file
 	
-	@objc func verify(_ confPath: String, confFilePath: String) -> String? {
+	static func verify(_ confPath: String, confFilePath: String, md5: String = ClashProcess.metaCoreMd5) -> String? {
 		do {
-			guard let path = launchPath.path else { return nil }
+			guard let path = resolveLaunchPath(md5: md5).path else { return nil }
 			
 			let proc = Process()
 			proc.executableURL = .init(fileURLWithPath: path)

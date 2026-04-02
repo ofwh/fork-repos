@@ -226,7 +226,7 @@ class RemoteConfigManager {
             return "Create verify config file failed"
         }
 		
-        return (NSApplication.shared.delegate as? AppDelegate)?.clashProcess.verify(kConfigFolderPath, confFilePath: confPath)
+        return ClashProcess.verify(kConfigFolderPath, confFilePath: confPath)
     }
 
     static func showAdd() {

@@ -21,16 +21,18 @@ class SystemProxyManager: NSObject {
         }
     }
 
-    private var helper: ProxyConfigRemoteProcessProtocol? {
-        PrivilegedHelperManager.shared.helper()
-    }
-
     func saveProxy() {
         guard !Settings.disableRestoreProxy else { return }
         Logger.log("saveProxy", level: .debug)
-        helper?.getCurrentProxySetting { [weak self] info in
-            Logger.log("saveProxy done", level: .debug)
-			self?.savedProxyInfo = info
+        Task { @MainActor [weak self] in
+            guard let self else { return }
+            do {
+                let payload = try await PrivilegedHelperManager.shared.request(ProxyConfigHelperMessages.GetCurrentProxySetting())
+                Logger.log("saveProxy done", level: .debug)
+                self.savedProxyInfo = try payload.dictionary()
+            } catch {
+                Logger.log("saveProxy failed: \(error)", level: .error)
+            }
         }
     }
 
@@ -50,15 +52,20 @@ class SystemProxyManager: NSObject {
             return
         }
         Logger.log("enableProxy", level: .debug)
-		helper?.enableProxy(port: port,
-							socksPort: socksPort,
-							pac: nil,
-							filterInterface: Settings.filterInterface,
-							ignoreList: Settings.proxyIgnoreList) { error in
-			if let error = error {
-				Logger.log("enableProxy \(error)", level: .error)
-			}
-		}
+        Task {
+            do {
+                let message = ProxyConfigHelperMessages.EnableProxy(port: port,
+                                                                    socksPort: socksPort,
+                                                                    pac: nil,
+                                                                    filterInterface: Settings.filterInterface,
+                                                                    ignoreList: Settings.proxyIgnoreList)
+                if let error = try await PrivilegedHelperManager.shared.request(message) {
+                    Logger.log("enableProxy \(error)", level: .error)
+                }
+            } catch {
+                Logger.log("enableProxy failed: \(error)", level: .error)
+            }
+        }
     }
 
     func disableProxy(forceDisable: Bool = false, complete: (() -> Void)? = nil) {
@@ -71,20 +78,35 @@ class SystemProxyManager: NSObject {
         Logger.log("disableProxy", level: .debug)
 
         if Settings.disableRestoreProxy || forceDisable {
-			helper?.disableProxy(filterInterface: Settings.filterInterface) { error in
-                if let error = error {
-                    Logger.log("disableProxy \(error)", level: .error)
+            Task { @MainActor in
+                do {
+                    let message = ProxyConfigHelperMessages.DisableProxy(filterInterface: Settings.filterInterface)
+                    if let error = try await PrivilegedHelperManager.shared.request(message) {
+                        Logger.log("disableProxy \(error)", level: .error)
+                    }
+                } catch {
+                    Logger.log("disableProxy failed: \(error)", level: .error)
                 }
                 complete?()
             }
             return
         }
 
-		helper?.restoreProxy(currentPort: port, socksPort: socksPort, info: savedProxyInfo, filterInterface: Settings.filterInterface) { error in
-			if let error = error {
-				Logger.log("restoreProxy \(error)", level: .error)
-			}
-			complete?()
-		}
+        let savedProxyInfo = self.savedProxyInfo
+        Task { @MainActor in
+            do {
+                let info = try ProxyConfigHelperPropertyList(savedProxyInfo)
+                let message = ProxyConfigHelperMessages.RestoreProxy(currentPort: port,
+                                                                    socksPort: socksPort,
+                                                                    info: info,
+                                                                    filterInterface: Settings.filterInterface)
+                if let error = try await PrivilegedHelperManager.shared.request(message) {
+                    Logger.log("restoreProxy \(error)", level: .error)
+                }
+            } catch {
+                Logger.log("restoreProxy failed: \(error)", level: .error)
+            }
+            complete?()
+        }
     }
 }

@@ -182,8 +182,7 @@ class MetaPrefsViewController: NSViewController {
 	
 	func setAlphaVersion() {
 		if let alphaCorePath = Paths.alphaCorePath(),
-		   let delegate = NSApplication.shared.delegate as? AppDelegate,
-		   let v = delegate.clashProcess.verifyCoreFile(alphaCorePath.path)?.version {
+		   let v = ClashProcess.verifyCoreFile(alphaCorePath.path)?.version {
 			updateAlphaVersion(v)
 		} else {
 			updateAlphaVersion(nil)

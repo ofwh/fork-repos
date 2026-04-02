@@ -12,11 +12,8 @@ import RxCocoa
 import RxSwift
 import SwiftyJSON
 import Yams
-import PromiseKit
 
 let statusItemLengthWithSpeed: CGFloat = 72
-
-private let MetaCoreMd5 = "WOSHIZIDONGSHENGCHENGDEA"
 
 @main
 class AppDelegate: NSObject, NSApplicationDelegate {
@@ -65,7 +62,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 	
 	var updateGeoTimer: Timer?
 	
-	let clashProcess = ClashProcess(MetaCoreMd5)
+    let clashProcess = ClashProcess()
 
     func applicationWillFinishLaunching(_ notification: Notification) {
         Logger.log("applicationWillFinishLaunching")
@@ -118,7 +115,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 		
         // install proxy helper
         _ = ClashResourceManager.check()
-        PrivilegedHelperManager.shared.checkInstall()
+        Task { @MainActor in
+            await PrivilegedHelperManager.shared.checkInstall()
+        }
         ConfigFileManager.copySampleConfigIfNeed()
 
         // claer not existed selected model
@@ -141,6 +140,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         RemoteControlManager.setupMenuItem(separator: externalControlSeparator)
     }
 
+    
+    
+    
     func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
         return TerminalConfirmAction.run()
     }
@@ -440,7 +442,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                 return
             }
 
-			PrivilegedHelperManager.shared.helper()?.updateTun(state: enable, dns: ConfigManager.metaTunDNS)
+            Task {
+                try? await PrivilegedHelperManager.shared.request(ProxyConfigHelperMessages.UpdateTun(state: enable, dns: ConfigManager.metaTunDNS))
+            }
             Logger.log("tun state updated, new: \(enable)")
         }
     }
@@ -541,11 +545,12 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 extension AppDelegate: ClashProcessDelegate {
 	
 	func startProxyCore() {
-		guard clashProcess.coreState == .stopped,
-			  !ConfigManager.shared.isRunning else { return }
-		
-		clashProcess.delegate = self
-		clashProcess.start()
+        guard !ConfigManager.shared.isRunning else { return }
+
+        Task { [weak self] in
+            guard let self else { return }
+            await clashProcess.startIfNeeded(delegate: self)
+        }
 	}
 	
 	func clashLaunchPathNotFound(_ msg: String) {
@@ -576,7 +581,9 @@ extension AppDelegate: ClashProcessDelegate {
 		
 		if ConfigManager.shared.restoreTunProxy {
 			ApiRequest.updateTun(enable: true) {
-				PrivilegedHelperManager.shared.helper()?.updateTun(state: true, dns: ConfigManager.metaTunDNS)
+                Task {
+                    try? await PrivilegedHelperManager.shared.request(ProxyConfigHelperMessages.UpdateTun(state: true, dns: ConfigManager.metaTunDNS))
+                }
 			}
 		} else {
 			syncConfigWithTun(true)
@@ -593,10 +600,16 @@ extension AppDelegate: ClashProcessDelegate {
 	}
 	
 	func clashStartError(_ error: Error) {
-		ConfigManager.shared.isRunning = false
-		proxyModeMenuItem.isEnabled = false
-		
 		let unc = UserNotificationCenter.shared
+        switch error {
+        case StartMetaError.pushConfigFailed:
+            ConfigManager.shared.isRunning = true
+            proxyModeMenuItem.isEnabled = true
+        default:
+            ConfigManager.shared.isRunning = false
+            proxyModeMenuItem.isEnabled = false
+        }
+
 		switch error {
 		case StartMetaError.configMissing:
 			unc.postConfigErrorNotice(msg: "Can't find config.")
@@ -862,7 +875,9 @@ extension AppDelegate {
 
     @IBAction func flushDNSCache(_ sender: NSMenuItem) {
         ApiRequest.flushDNSCache()
-        PrivilegedHelperManager.shared.helper()?.flushDnsCache()
+        Task {
+            try? await PrivilegedHelperManager.shared.request(ProxyConfigHelperMessages.FlushDnsCache())
+        }
     }
 
     @IBAction func updateSniffing(_ sender: NSMenuItem) {

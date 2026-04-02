@@ -15,6 +15,20 @@ class MetaTask: NSObject {
     
     var timer: DispatchSourceTimer?
     let timerQueue = DispatchQueue(label: Bundle.main.bundleIdentifier! + ".timer")
+
+    func start(_ path: String,
+                 confPath: String,
+                 confFilePath: String,
+                 confJSON: String) async -> String? {
+        await withCheckedContinuation { continuation in
+            start(path,
+                  confPath: confPath,
+                  confFilePath: confFilePath,
+                  confJSON: confJSON) {
+                continuation.resume(returning: $0)
+            }
+        }
+    }
     
 	@objc func start(_ path: String,
 					 confPath: String,
@@ -196,16 +210,14 @@ class MetaTask: NSObject {
 	
     }
 
-    @objc func stop() {
-        DispatchQueue.main.async {
-            guard self.proc.isRunning else { return }
-            let proc = Process()
-            proc.executableURL = .init(fileURLWithPath: "/bin/kill")
-            proc.arguments = ["-9", "\(self.proc.processIdentifier)"]
-            try? proc.run()
-            proc.waitUntilExit()
-        }
-    }
+	func stop() {
+		guard proc.isRunning else { return }
+		let proc = Process()
+		proc.executableURL = .init(fileURLWithPath: "/bin/kill")
+		proc.arguments = ["-9", "\(self.proc.processIdentifier)"]
+		try? proc.run()
+		proc.waitUntilExit()
+	}
     
 
     
@@ -217,30 +229,27 @@ class MetaTask: NSObject {
         proc.waitUntilExit()
     }
     
-    @objc func getUsedPorts(_ result: @escaping (String?) -> Void) {
-        let proc = Process()
-        let pipe = Pipe()
-        proc.standardOutput = pipe
-        proc.executableURL = .init(fileURLWithPath: "/bin/bash")
-        proc.arguments = ["-c", "lsof -nP -iTCP -sTCP:LISTEN | grep LISTEN"]
-        try? proc.run()
-        proc.waitUntilExit()
-        
-        let data = pipe.fileHandleForReading.readDataToEndOfFile()
-        guard let str = String(data: data, encoding: .utf8) else {
-            result("")
-            return
-        }
-        
-        let usedPorts = str.split(separator: "\n").compactMap { str -> Int? in
-            let line = str.split(separator: " ").map(String.init)
-            guard line.count == 10,
-            let port = line[8].components(separatedBy: ":").last else { return nil }
-            return Int(port)
-        }.map(String.init).joined(separator: ",")
-        
-        result(usedPorts)
-    }
+	func getUsedPorts() -> String? {
+		let proc = Process()
+		let pipe = Pipe()
+		proc.standardOutput = pipe
+		proc.executableURL = .init(fileURLWithPath: "/bin/bash")
+		proc.arguments = ["-c", "lsof -nP -iTCP -sTCP:LISTEN | grep LISTEN"]
+		try? proc.run()
+		proc.waitUntilExit()
+
+		let data = pipe.fileHandleForReading.readDataToEndOfFile()
+		guard let str = String(data: data, encoding: .utf8) else {
+			return ""
+		}
+
+		return str.split(separator: "\n").compactMap { str -> Int? in
+			let line = str.split(separator: " ").map(String.init)
+			guard line.count == 10,
+			let port = line[8].components(separatedBy: ":").last else { return nil }
+			return Int(port)
+		}.map(String.init).joined(separator: ",")
+	}
     
     func testListenPort(_ port: Int) -> (pid: Int32, addr: String) {
         let proc = Process()

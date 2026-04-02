@@ -11,100 +11,88 @@ import RxCocoa
 import RxSwift
 import ServiceManagement
 
-class PrivilegedHelperManager {
-    let isHelperCheckFinished = BehaviorRelay<Bool>(value: false)
-	
-	
-    private var cancelInstallCheck = false
+final class PrivilegedHelperManager {
+	// MARK: Types
 
-    private let useLegacyInstall = true
+    enum AsyncHelperError: LocalizedError {
+        case unavailable
+        case remote(String)
+        case codec(Error)
 
-    private var authRef: AuthorizationRef?
-    private var connection: NSXPCConnection?
-    private var _helper: ProxyConfigRemoteProcessProtocol?
-    static let machServiceName = "com.metacubex.ClashX.ProxyConfigHelper"
-
-    static let shared = PrivilegedHelperManager()
-    init() {
-        initAuthorizationRef()
-    }
-
-    // MARK: - Public
-
-    func checkInstall() {
-        Logger.log("checkInstall", level: .debug)
-        getHelperStatus { [weak self] status in
-            Logger.log("check result: \(status)", level: .debug)
-            guard let self = self else { return }
-            switch status {
-            case .noFound:
-                if #available(macOS 13, *) {
-                    let url = URL(string: "/Library/LaunchDaemons/\(PrivilegedHelperManager.machServiceName).plist")!
-                    let status = SMAppService.statusForLegacyPlist(at: url)
-                    if status == .requiresApproval {
-                        let alert = NSAlert()
-                        let notice = NSLocalizedString("ClashX use a daemon helper to setup your system proxy. Please enable ClashX in the Login Items under the Allow in the Background section and relaunch the app", comment: "")
-                        let addition = NSLocalizedString("If you can not find ClashX in the settings, you can try reset daemon", comment: "")
-                        alert.messageText = notice + "\n" + addition
-                        alert.addButton(withTitle: NSLocalizedString("Open System Login Item Setting", comment: ""))
-                        alert.addButton(withTitle: NSLocalizedString("Reset Daemon", comment: ""))
-                        if alert.runModal() == .alertFirstButtonReturn {
-                            SMAppService.openSystemSettingsLoginItems()
-                        } else {
-                            self.removeInstallHelper()
-                        }
-                    }
-                }
-                fallthrough
-            case .needUpdate:
-                Logger.log("need to install helper", level: .debug)
-                if Thread.isMainThread {
-                    self.notifyInstall()
-                } else {
-                    DispatchQueue.main.async {
-                        self.notifyInstall()
-                    }
-                }
-            case .installed:
-                self.isHelperCheckFinished.accept(true)
+        var errorDescription: String? {
+            switch self {
+            case .unavailable:
+                return "The privileged helper is unavailable."
+            case let .remote(message):
+                return message
+            case let .codec(error):
+                return error.localizedDescription
             }
         }
     }
 
-    func resetConnection() {
-        connection?.invalidate()
-        connection = nil
-        _helper = nil
+    let isHelperCheckFinished = BehaviorRelay<Bool>(value: false)
+
+    private var cancelInstallCheck = false
+    private let useLegacyInstall = true
+    private var connection: NSXPCConnection?
+    private var _helper: ProxyConfigRemoteProcessProtocol?
+    private var helperStatusTimer: Timer?
+
+    static let machServiceName = "com.metacubex.ClashX.ProxyConfigHelper"
+    static let shared = PrivilegedHelperManager()
+
+    enum HelperStatus {
+        case installed
+        case noFound
+        case needUpdate
     }
 
-    private func initAuthorizationRef() {
-        // Create an empty AuthorizationRef
-        let status = AuthorizationCreate(nil, nil, AuthorizationFlags(), &authRef)
-        if status != OSStatus(errAuthorizationSuccess) {
-            Logger.log("initAuthorizationRef AuthorizationCreate failed", level: .error)
-            return
+	// MARK: Public API
+
+    func request<Message: ProxyConfigHelperXPCMessage>(_ message: Message) async throws -> Message.Response {
+        try await performAsyncRequest(message)
+    }
+
+    func request<Message>(_ message: Message) async throws where Message: ProxyConfigHelperXPCMessage, Message.Response == ProxyConfigHelperExplicitSuccess {
+        _ = try await performAsyncRequest(message) as ProxyConfigHelperExplicitSuccess
+    }
+
+    @MainActor
+    func checkInstall() async {
+        Logger.log("checkInstall", level: .debug)
+        let status = await getHelperStatus()
+        Logger.log("check result: \(status)", level: .debug)
+
+        switch status {
+        case .noFound:
+            await resolveRequiresApprovalIfNeeded()
+            fallthrough
+        case .needUpdate:
+            Logger.log("need to install helper", level: .debug)
+            await notifyInstall()
+        case .installed:
+            isHelperCheckFinished.accept(true)
         }
     }
 
-    /// Install new helper daemon
+	// MARK: Connection
+
     private func installHelperDaemon() -> DaemonInstallResult {
         Logger.log("installHelperDaemon", level: .info)
 
         defer {
-            resetConnection()
+            resetHelper(invalidate: true)
         }
 
-        // Create authorization reference for the user
         var authRef: AuthorizationRef?
         var authStatus = AuthorizationCreate(nil, nil, [], &authRef)
 
-        // Check if the reference is valid
         guard authStatus == errAuthorizationSuccess else {
             Logger.log("Authorization failed: \(authStatus)", level: .error)
             return .authorizationFail
         }
 
-        // Ask user for the admin privileges to install the
         var authItem = AuthorizationItem(name: (kSMRightBlessPrivilegedHelper as NSString).utf8String!, valueLength: 0, value: nil, flags: 0)
         var authRights = withUnsafeMutablePointer(to: &authItem) { pointer in
             AuthorizationRights(count: 1, items: pointer)
@@ -116,13 +104,12 @@ class PrivilegedHelperManager {
                 AuthorizationFree(ref, [])
             }
         }
-        // Check if the authorization went succesfully
+
         guard authStatus == errAuthorizationSuccess else {
             Logger.log("Couldn't obtain admin privileges: \(authStatus)", level: .error)
             return .getAdminFail
         }
 
-        // Launch the privileged helper using SMJobBless tool
         var error: Unmanaged<CFError>?
         if SMJobBless(kSMDomainSystemLaunchd, PrivilegedHelperManager.machServiceName as CFString, authRef, &error) == false {
             let blessError = error!.takeRetainedValue() as Error
@@ -134,72 +121,177 @@ class PrivilegedHelperManager {
         return .success
     }
 
-    func helper(failture: (() -> Void)? = nil) -> ProxyConfigRemoteProcessProtocol? {
-        connection = NSXPCConnection(machServiceName: PrivilegedHelperManager.machServiceName, options: NSXPCConnection.Options.privileged)
-        connection?.remoteObjectInterface = NSXPCInterface(with: ProxyConfigRemoteProcessProtocol.self)
-        connection?.invalidationHandler = {
-            Logger.log("XPC Connection Invalidated")
+    private func configuredConnection() -> NSXPCConnection {
+        let connection = NSXPCConnection(machServiceName: PrivilegedHelperManager.machServiceName,
+                                         options: NSXPCConnection.Options.privileged)
+        connection.remoteObjectInterface = NSXPCInterface(with: ProxyConfigRemoteProcessProtocol.self)
+        return connection
+    }
+
+    func resetHelper(invalidate: Bool) {
+        if invalidate {
+            connection?.invalidationHandler = nil
+            connection?.interruptionHandler = nil
+            connection?.invalidate()
         }
-        connection?.resume()
-        guard let helper = connection?.remoteObjectProxyWithErrorHandler({ error in
+
+        connection = nil
+        _helper = nil
+    }
+
+    private func helperProxy() throws -> ProxyConfigRemoteProcessProtocol {
+        if let helper = _helper {
+            return helper
+        }
+
+        let connection = configuredConnection()
+        connection.invalidationHandler = { [weak self] in
+            Logger.log("XPC Connection Invalidated")
+            self?.resetHelper(invalidate: false)
+        }
+        connection.interruptionHandler = { [weak self] in
+            Logger.log("XPC Connection Interrupted")
+            self?.resetHelper(invalidate: false)
+        }
+        connection.resume()
+
+        guard let helper = connection.remoteObjectProxyWithErrorHandler({ [weak self] error in
             Logger.log("Helper connection was closed with error: \(error)")
-            failture?()
-        }) as? ProxyConfigRemoteProcessProtocol else { return nil }
+            self?.resetHelper(invalidate: true)
+        }) as? ProxyConfigRemoteProcessProtocol else {
+            connection.invalidationHandler = nil
+            connection.interruptionHandler = nil
+            connection.invalidate()
+            throw AsyncHelperError.unavailable
+        }
+
+        self.connection = connection
+        self._helper = helper
         return helper
     }
 
-    var timer: Timer?
+    private func performAsyncRequest<Message: ProxyConfigHelperXPCMessage>(_ message: Message) async throws -> Message.Response {
+        let helper = try helperProxy()
 
-    enum HelperStatus {
-        case installed
-        case noFound
-        case needUpdate
-    }
-
-    private func getHelperStatus(callback: @escaping ((HelperStatus) -> Void)) {
-        var called = false
-        let reply: ((HelperStatus) -> Void) = {
-            status in
-            if called { return }
-            called = true
-            callback(status)
+        let requestData: Data
+        do {
+            requestData = try ProxyConfigHelperXPCCodec.encodeRequest(message)
+        } catch {
+            throw AsyncHelperError.codec(error)
         }
 
-        let helperURL = Bundle.main.bundleURL.appendingPathComponent("Contents/Library/LaunchServices/" + PrivilegedHelperManager.machServiceName)
+        return try await withCheckedThrowingContinuation { continuation in
+            helper.sendRequest(requestData) { responseData, errorMessage in
+                continuation.resume(with: self.decodeRequestResult(responseData: responseData,
+                                                                   errorMessage: errorMessage,
+                                                                   as: Message.self))
+            }
+        }
+    }
+
+    private func decodeRequestResult<Message: ProxyConfigHelperXPCMessage>(
+        responseData: Data?,
+        errorMessage: NSString?,
+        as type: Message.Type) -> Result<Message.Response, Error> {
+        if let errorMessage {
+            return .failure(AsyncHelperError.remote(errorMessage as String))
+        }
+
+        guard let responseData else {
+            return .failure(AsyncHelperError.unavailable)
+        }
+
+        do {
+            let response = try ProxyConfigHelperXPCCodec.decodeResponse(responseData, as: type)
+            return .success(response)
+        } catch {
+            return .failure(AsyncHelperError.codec(error))
+        }
+    }
+
+	// MARK: Install Status
+
+    @MainActor
+    private func getHelperStatus() async -> HelperStatus {
+        let helperURL = helperBundleURL()
         guard
             let helperBundleInfo = CFBundleCopyInfoDictionaryForURL(helperURL as CFURL) as? [String: Any],
             let helperVersion = helperBundleInfo["CFBundleShortVersionString"] as? String else {
             Logger.log("check helper status fail")
-            reply(.noFound)
-            return
+            return .noFound
         }
-        let helperFileExists = FileManager.default.fileExists(atPath: "/Library/PrivilegedHelperTools/\(PrivilegedHelperManager.machServiceName)")
-        if !helperFileExists {
-            reply(.noFound)
-            return
+
+        guard FileManager.default.fileExists(atPath: "/Library/PrivilegedHelperTools/\(PrivilegedHelperManager.machServiceName)") else {
+            return .noFound
         }
-        let timeout: TimeInterval = helperFileExists ? 15 : 5
+
+        let timeout: TimeInterval = 15
         let time = Date()
+        return await withCheckedContinuation { continuation in
+            var didFinish = false
 
-        timer = Timer.scheduledTimer(withTimeInterval: timeout, repeats: false) { _ in
-            Logger.log("check helper timeout time: \(timeout)")
-            reply(.noFound)
-        }
+            func finish(_ status: HelperStatus) {
+                guard !didFinish else { return }
+                didFinish = true
+                helperStatusTimer?.invalidate()
+                helperStatusTimer = nil
+                continuation.resume(returning: status)
+            }
 
-        helper()?.getVersion { [weak timer] installedHelperVersion in
-            timer?.invalidate()
-            timer = nil
-            Logger.log("helper version \(installedHelperVersion) require version \(helperVersion)", level: .debug)
-            let versionMatch = installedHelperVersion == helperVersion
-            let interval = Date().timeIntervalSince(time)
-            Logger.log("check helper using time: \(interval)")
-            reply(versionMatch ? .installed : .needUpdate)
+            helperStatusTimer = Timer.scheduledTimer(withTimeInterval: timeout, repeats: false) { _ in
+                Logger.log("check helper timeout time: \(timeout)")
+                finish(.noFound)
+            }
+
+            Task {
+                do {
+                    let installedHelperVersion: String = try await self.request(ProxyConfigHelperMessages.GetVersion())
+                    Logger.log("helper version \(installedHelperVersion) require version \(helperVersion)", level: .debug)
+                    let versionMatch = installedHelperVersion == helperVersion
+                    let interval = Date().timeIntervalSince(time)
+                    Logger.log("check helper using time: \(interval)")
+                    finish(versionMatch ? .installed : .needUpdate)
+                } catch {
+                    finish(.noFound)
+                }
+            }
         }
+    }
+
+    @MainActor
+    private func resolveRequiresApprovalIfNeeded() async {
+        guard #available(macOS 13, *) else { return }
+
+        let status = SMAppService.statusForLegacyPlist(at: launchDaemonPlistURL())
+        guard status == .requiresApproval else { return }
+
+        let alert = NSAlert()
+        let notice = NSLocalizedString("ClashX use a daemon helper to setup your system proxy. Please enable ClashX in the Login Items under the Allow in the Background section and relaunch the app", comment: "")
+        let addition = NSLocalizedString("If you can not find ClashX in the settings, you can try reset daemon", comment: "")
+        alert.messageText = notice + "\n" + addition
+        alert.addButton(withTitle: NSLocalizedString("Open System Login Item Setting", comment: ""))
+        alert.addButton(withTitle: NSLocalizedString("Reset Daemon", comment: ""))
+        if alert.runModal() == .alertFirstButtonReturn {
+            SMAppService.openSystemSettingsLoginItems()
+        } else {
+            await removeInstallHelper()
+        }
+    }
+
+    private func helperBundleURL() -> URL {
+        Bundle.main.bundleURL.appendingPathComponent("Contents/Library/LaunchServices/" + PrivilegedHelperManager.machServiceName)
+    }
+
+    private func launchDaemonPlistURL() -> URL {
+        URL(fileURLWithPath: "/Library/LaunchDaemons/\(PrivilegedHelperManager.machServiceName).plist")
     }
 }
 
 extension PrivilegedHelperManager {
-    private func notifyInstall() {
+	// MARK: Install Flow
+
+    @MainActor
+    private func notifyInstall() async {
         guard showInstallHelperAlert() else { exit(0) }
 
         if cancelInstallCheck {
@@ -207,9 +299,9 @@ extension PrivilegedHelperManager {
         }
 
         if useLegacyInstall {
-            legacyInstallHelper()
+            await legacyInstallHelper()
             if !cancelInstallCheck {
-                checkInstall()
+                await checkInstall()
             }
             return
         }
@@ -221,7 +313,7 @@ extension PrivilegedHelperManager {
         result.alertAction()
         NSAlert.alert(with: result.alertContent)
         if !cancelInstallCheck {
-            checkInstall()
+            await checkInstall()
         }
     }
 
@@ -250,16 +342,6 @@ extension PrivilegedHelperManager {
     }
 }
 
-private enum AppAuthorizationRights {
-    static let rightName: NSString = "\(PrivilegedHelperManager.machServiceName).config" as NSString
-    static let rightDefaultRule: Dictionary = adminRightsRule
-    static let rightDescription: CFString = "ProxyConfigHelper wants to configure your proxy setting'" as CFString
-    static var adminRightsRule: [String: Any] = ["class": "user",
-                                                 "group": "admin",
-                                                 "timeout": 0,
-                                                 "version": 1]
-}
-
 private enum DaemonInstallResult {
     case success
     case authorizationFail
@@ -270,36 +352,31 @@ private enum DaemonInstallResult {
         switch self {
         case .success:
             return ""
-        case .authorizationFail: return "Failed to create authorization!"
-        case .getAdminFail: return "Failed to get admin authorization!"
+        case .authorizationFail:
+            return "Failed to create authorization!"
+        case .getAdminFail:
+            return "Failed to get admin authorization!"
         case let .blessError(code):
             switch code {
-            case kSMErrorInternalFailure: return "blessError: kSMErrorInternalFailure"
-            case kSMErrorInvalidSignature: return "blessError: kSMErrorInvalidSignature"
-            case kSMErrorAuthorizationFailure: return "blessError: kSMErrorAuthorizationFailure"
-            case kSMErrorToolNotValid: return "blessError: kSMErrorToolNotValid"
-            case kSMErrorJobNotFound: return "blessError: kSMErrorJobNotFound"
-            case kSMErrorServiceUnavailable: return "blessError: kSMErrorServiceUnavailable"
-            case kSMErrorJobMustBeEnabled: return "ClashX Helper is disabled by other process. Please run \"sudo launchctl enable system/\(PrivilegedHelperManager.machServiceName)\" in your terminal. The command has been copied to your pasteboard"
-            case kSMErrorInvalidPlist: return "blessError: kSMErrorInvalidPlist"
+            case kSMErrorInternalFailure:
+                return "blessError: kSMErrorInternalFailure"
+            case kSMErrorInvalidSignature:
+                return "blessError: kSMErrorInvalidSignature"
+            case kSMErrorAuthorizationFailure:
+                return "blessError: kSMErrorAuthorizationFailure"
+            case kSMErrorToolNotValid:
+                return "blessError: kSMErrorToolNotValid"
+            case kSMErrorJobNotFound:
+                return "blessError: kSMErrorJobNotFound"
+            case kSMErrorServiceUnavailable:
+                return "blessError: kSMErrorServiceUnavailable"
+            case kSMErrorJobMustBeEnabled:
+                return "ClashX Helper is disabled by other process. Please run \"sudo launchctl enable system/\(PrivilegedHelperManager.machServiceName)\" in your terminal. The command has been copied to your pasteboard"
+            case kSMErrorInvalidPlist:
+                return "blessError: kSMErrorInvalidPlist"
             default:
                 return "bless unknown error:\(code)"
             }
-        }
-    }
-
-    func shouldRetryLegacyWay() -> Bool {
-        switch self {
-        case .success: return false
-        case let .blessError(code):
-            switch code {
-            case kSMErrorJobMustBeEnabled:
-                return false
-            default:
-                return true
-            }
-        default:
-            return true
         }
     }
 

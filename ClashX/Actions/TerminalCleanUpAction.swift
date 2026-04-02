@@ -20,8 +20,10 @@ enum TerminalConfirmAction {
 		
 		ConfigManager.shared.restoreTunProxy = ConfigManager.shared.isTunModeVariable.value
 
-		PrivilegedHelperManager.shared.helper()?.stopMeta()
-		PrivilegedHelperManager.shared.helper()?.updateTun(state: false, dns: ConfigManager.metaTunDNS)
+        Task {
+            try? await PrivilegedHelperManager.shared.request(ProxyConfigHelperMessages.StopMeta())
+            try? await PrivilegedHelperManager.shared.request(ProxyConfigHelperMessages.UpdateTun(state: false, dns: ConfigManager.metaTunDNS))
+        }
 		
 		try? FileManager.default.removeItem(atPath: Paths.tempPath() + "/cacheConfigs")
         try? FileManager.default.removeItem(atPath: Paths.localConfigPath(for: kSafeConfigName))
