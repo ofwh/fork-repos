@@ -4,8 +4,6 @@ on:
   push:
     tags: [ v* ]
   workflow_dispatch:
-    inputs:
-      logLevel:
 
 jobs:
   build:
@@ -76,22 +74,38 @@ jobs:
         ref: sparkle
         path: 'sparkle-repo'
 
+    - name: preprocess sparkle-repo
+      if: startsWith(github.ref, 'refs/tags/')
+      run: |
+        rm -f sparkle-repo/*.delta
+        rm -rf sparkle-repo/old_updates
+
+        cd sparkle-repo
+        ruby <<'RUBY'
+        archives = Dir.glob('ClashX Meta *.zip')
+        sorted_archives = archives.sort_by do |archive|
+          version = archive[/ClashX Meta (.+)\.zip\z/, 1] || archive
+          Gem::Version.new(version.sub(/\Av/, ''))
+        end
+
+        if sorted_archives.length > 2
+          sorted_archives[0...-2].each { |archive| File.delete(archive) }
+        end
+        RUBY
+        cd ..
+
     - name: update sparkle-repo
       if: startsWith(github.ref, 'refs/tags/')
       run: |
         git config --global user.name "github-actions[bot]"
         git config --global user.email 'github-actions[bot]@users.noreply.github.com'
 
-        rm -f sparkle-repo/*.delta
-
         cp "ClashX Meta.zip" "sparkle-repo/ClashX Meta $GITHUB_REF_NAME.zip"
         
         brew install sparkle
-        echo '${{ secrets.ED_KEY }}' | $(brew --prefix)/Caskroom/sparkle/2.*/bin/generate_appcast sparkle-repo --maximum-versions 1 --maximum-deltas 2 --auto-prune-update-files --ed-key-file -
+        echo '${{ secrets.ED_KEY }}' | $(brew --prefix)/Caskroom/sparkle/2.*/bin/generate_appcast --maximum-deltas 2 --ed-key-file - sparkle-repo
         
         cd sparkle-repo
-        rm -rf old_updates
-        
         git checkout --orphan temp-sparkle
 
         git add -A
