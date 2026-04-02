@@ -144,8 +144,9 @@ private struct TrafficLineChartRepresentable: NSViewRepresentable {
 
 		let dataSet = LineChartDataSet(entries: chartEntries, label: "")
 		dataSet.colors = [graphColor]
-		dataSet.lineWidth = 1.5
-		dataSet.mode = .horizontalBezier
+		dataSet.lineWidth = 1.7
+		dataSet.mode = .cubicBezier
+		dataSet.cubicIntensity = 0.3
 		dataSet.drawValuesEnabled = false
 		dataSet.drawCirclesEnabled = false
 		dataSet.highlightEnabled = false
