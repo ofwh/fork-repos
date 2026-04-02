@@ -12,7 +12,7 @@ struct SidebarView: View {
 	
 	private let timer = Timer.publish(every: 1, on: .main, in: .default).autoconnect()
 	
-	@State private var sidebarSelectionName: SidebarItem?
+	@State private var sidebarSelectionName: SidebarItem? = .overview
 	@State private var updateConnectionsTask: Task<Void, Never>?
 	
     var body: some View {

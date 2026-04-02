@@ -61,14 +61,7 @@ struct SidebarListView: View {
 		}
 		.introspect(.table, on: .macOS(.v12...)) {
 			$0.refusesFirstResponder = true
-			
-			if selection == nil {
-				selection = SidebarItem.overview
-				$0.allowsEmptySelection = false
-				if $0.selectedRow == -1 {
-					$0.selectRowIndexes(.init(integer: 0), byExtendingSelection: false)
-				}
-			}
+			$0.allowsEmptySelection = false
 		}
 		.listStyle(.sidebar)
 		.id(reloadID)
