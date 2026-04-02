@@ -83,7 +83,6 @@
 		01F335DB2AD10D0B0048AF77 /* SystemProxyManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = F935B2FB23085515009E4D33 /* SystemProxyManager.swift */; };
 		01F335DC2AD10D0B0048AF77 /* LaunchAtLogin.swift in Sources */ = {isa = PBXBuildFile; fileRef = 495A44D220D267D000888A0A /* LaunchAtLogin.swift */; };
 		01F335DD2AD10D0B0048AF77 /* Combine+Ext.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4991D2312A565E6A00978143 /* Combine+Ext.swift */; };
-		A15E90012E5C9A1100C0FFEE /* Task+Sleep.swift in Sources */ = {isa = PBXBuildFile; fileRef = A15E90002E5C9A1100C0FFEE /* Task+Sleep.swift */; };
 		01F335DE2AD10D0B0048AF77 /* DebugSettingViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 49281C7F2A1F01FA00F60935 /* DebugSettingViewController.swift */; };
 		01F335DF2AD10D0B0048AF77 /* ClashWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 49CCDA292A54F9AC00FF1E13 /* ClashWindowController.swift */; };
 		01F335E02AD10D0B0048AF77 /* Settings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4929F67E258CE04700A435F6 /* Settings.swift */; };
@@ -179,6 +178,7 @@
 		01F336402AD10D0B0048AF77 /* com.metacubex.ClashX.ProxyConfigHelper in Copy Files */ = {isa = PBXBuildFile; fileRef = F9A7C0692306E874007163C7 /* com.metacubex.ClashX.ProxyConfigHelper */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		01FBC6312B9C2B0800810BFF /* ClashProcess.swift in Sources */ = {isa = PBXBuildFile; fileRef = 01FBC62F2B9C2B0800810BFF /* ClashProcess.swift */; };
 		491E6203258A424D00313AEF /* CommonUtils.m in Sources */ = {isa = PBXBuildFile; fileRef = 491E61FD258A424500313AEF /* CommonUtils.m */; };
+		A15E90012E5C9A1100C0FFEE /* Task+Sleep.swift in Sources */ = {isa = PBXBuildFile; fileRef = A15E90002E5C9A1100C0FFEE /* Task+Sleep.swift */; };
 		F935B2FA23083EE6009E4D33 /* ProxySettingTool.m in Sources */ = {isa = PBXBuildFile; fileRef = F935B2F923083EE6009E4D33 /* ProxySettingTool.m */; };
 /* End PBXBuildFile section */
 
@@ -328,7 +328,6 @@
 		498BC2542929CCAE00CA8084 /* GeneralSettingViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GeneralSettingViewController.swift; sourceTree = "<group>"; };
 		4991D22F2A564DDC00978143 /* SpeedUtils.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeedUtils.swift; sourceTree = "<group>"; };
 		4991D2312A565E6A00978143 /* Combine+Ext.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Combine+Ext.swift"; sourceTree = "<group>"; };
-		A15E90002E5C9A1100C0FFEE /* Task+Sleep.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Task+Sleep.swift"; sourceTree = "<group>"; };
 		4994B5532A47C4FF00E595B9 /* NormalMenuItemView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NormalMenuItemView.swift; sourceTree = "<group>"; };
 		499976C721359F0400E7BF83 /* ClashWebViewContoller.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClashWebViewContoller.swift; sourceTree = "<group>"; };
 		499A485322ED707300F6C675 /* RemoteConfigViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemoteConfigViewController.swift; sourceTree = "<group>"; };
@@ -367,6 +366,7 @@
 		8A2BBEA627A03ACB0081EBEF /* ProxySetting.sdef */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = ProxySetting.sdef; sourceTree = "<group>"; };
 		8ACD21BA27A04C7800BC4632 /* ProxySettingCommand.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProxySettingCommand.swift; sourceTree = "<group>"; };
 		8ACD21BC27A04ED500BC4632 /* ProxyModeChangeCommand.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProxyModeChangeCommand.swift; sourceTree = "<group>"; };
+		A15E90002E5C9A1100C0FFEE /* Task+Sleep.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Task+Sleep.swift"; sourceTree = "<group>"; };
 		F910AA23240134AF00116E95 /* ProxyGroupMenu.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProxyGroupMenu.swift; sourceTree = "<group>"; };
 		F915A4612366ADEF004840BE /* ClashConnection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClashConnection.swift; sourceTree = "<group>"; };
 		F9203A25236342820020D57D /* AppDelegate+..swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AppDelegate+..swift"; sourceTree = "<group>"; };
@@ -939,7 +939,7 @@
 			attributes = {
 				BuildIndependentTargetsInParallel = YES;
 				LastSwiftUpdateCheck = 1030;
-				LastUpgradeCheck = 1600;
+				LastUpgradeCheck = 2640;
 				ORGANIZATIONNAME = west2online;
 				TargetAttributes = {
 					F9A7C0682306E874007163C7 = {
@@ -1332,6 +1332,7 @@
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu11;
 				GCC_DYNAMIC_NO_PIC = NO;
 				GCC_NO_COMMON_BLOCKS = YES;
@@ -1350,6 +1351,7 @@
 				MTL_ENABLE_DEBUG_INFO = YES;
 				ONLY_ACTIVE_ARCH = YES;
 				SDKROOT = macosx;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 			};
@@ -1396,6 +1398,7 @@
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu11;
 				GCC_NO_COMMON_BLOCKS = YES;
 				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
@@ -1407,6 +1410,7 @@
 				MACOSX_DEPLOYMENT_TARGET = 10.14;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				SDKROOT = macosx;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_COMPILATION_MODE = wholemodule;
 				SWIFT_OPTIMIZATION_LEVEL = "-O";
 			};
@@ -1431,7 +1435,7 @@
 					"@loader_path/../Frameworks",
 				);
 				LIBRARY_SEARCH_PATHS = "$(inherited)";
-				MACOSX_DEPLOYMENT_TARGET = "$(RECOMMENDED_MACOSX_DEPLOYMENT_TARGET)";
+				MACOSX_DEPLOYMENT_TARGET = 11.0;
 				MARKETING_VERSION = 1.2;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
@@ -1475,7 +1479,7 @@
 					"@loader_path/../Frameworks",
 				);
 				LIBRARY_SEARCH_PATHS = "$(inherited)";
-				MACOSX_DEPLOYMENT_TARGET = "$(RECOMMENDED_MACOSX_DEPLOYMENT_TARGET)";
+				MACOSX_DEPLOYMENT_TARGET = 11.0;
 				MARKETING_VERSION = 1.2;
 				MTL_FAST_MATH = YES;
 				OTHER_LDFLAGS = (
