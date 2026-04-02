@@ -86,7 +86,9 @@ struct ProviderProxiesView: View {
 				iconName: "bolt.fill",
 				inProgress: $isTesting,
 				autoWidth: false) {
-					startHealthCheck()
+					Task {
+						await startHealthCheck()
+					}
 				}
 			
 			ProgressButton(
@@ -95,7 +97,9 @@ struct ProviderProxiesView: View {
 				iconName: "arrow.clockwise",
 				inProgress: $isUpdating,
 				autoWidth: false) {
-					startUpdate()
+					Task {
+						await startUpdate()
+					}
 				}
 		}
 		.frame(width: ProgressButton.width(
@@ -107,30 +111,27 @@ struct ProviderProxiesView: View {
 		))
 	}
 	
-	func startHealthCheck() {
+	@MainActor
+	func startHealthCheck() async {
 		isTesting = true
-		ApiRequest.healthCheck(proxy: provider.name) {
-			updateProvider {
-				isTesting = false
-			}
-		}
+		await ApiRequest.healthCheck(proxy: provider.name)
+		await updateProvider()
+		isTesting = false
 	}
 	
-	func startUpdate() {
+	@MainActor
+	func startUpdate() async {
 		isUpdating = true
-		ApiRequest.updateProvider(for: .proxy, name: provider.name) { _ in
-			updateProvider {
-				isUpdating = false
-			}
-		}
+		_ = await ApiRequest.updateProvider(for: .proxy, name: provider.name)
+		await updateProvider()
+		isUpdating = false
 	}
 	
-	func updateProvider(_ completeHandler: (() -> Void)? = nil) {
-		ApiRequest.requestProxyProviderList { resp in
-			if let p = resp.allProviders[provider.name] {
-				provider.updateInfo(DBProxyProvider(provider: p))
-			}
-			completeHandler?()
+	@MainActor
+	func updateProvider() async {
+		let resp = await ApiRequest.requestProxyProviderList()
+		if let p = resp.allProviders[provider.name] {
+			provider.updateInfo(DBProxyProvider(provider: p))
 		}
 	}
 }

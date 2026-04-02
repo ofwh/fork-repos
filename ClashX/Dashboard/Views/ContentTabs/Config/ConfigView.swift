@@ -23,7 +23,8 @@ struct ConfigView: View {
 	@State var deviceName: String = "utun9"
 	@State var interfaceName: String = "en0"
 	
-	@State private var configInited = false
+	@State private var hasLoadedConfig = false
+	@State private var isApplyingConfig = false
 	
 	private let toggleStyle = SwitchToggleStyle()
 	
@@ -47,32 +48,47 @@ struct ConfigView: View {
 				.padding()
 		}
         .background(Color("SwiftUI Colors/WindowBackgroundColor"))
-		.disabled(!configInited)
-		.onAppear {
-			configInited = false
-			ApiRequest.requestConfig { config in
-				httpPort = config.port
-				socks5Port = config.socksPort
-				mixedPort = config.mixedPort
-				redirPort = config.redirPort
-				mode = config.mode
-				logLevel = config.logLevel
-				
-				allowLAN = config.allowLan
-				sniffer = config.sniffing
-				ipv6 = config.ipv6
-				
-				enableTUNDevice = config.tun.enable
-				tunIPStack = config.tun.stack
-				deviceName = config.tun.device
-				interfaceName = config.interfaceName
-				
-				configInited = true
-			}
+		.disabled(!hasLoadedConfig)
+		.task {
+			await loadConfig()
 		}
-		.onDisappear {
-			configInited = false
-		}
+	}
+
+	@MainActor
+	func loadConfig() async {
+		hasLoadedConfig = false
+		guard let config = await ApiRequest.requestConfig(), !Task.isCancelled else { return }
+		apply(config: config)
+	}
+
+	@MainActor
+	func refreshConfig() async {
+		guard let config = await ApiRequest.requestConfig(), !Task.isCancelled else { return }
+		apply(config: config)
+	}
+
+	@MainActor
+	func apply(config: ClashConfig) {
+		isApplyingConfig = true
+
+		httpPort = config.port
+		socks5Port = config.socksPort
+		mixedPort = config.mixedPort
+		redirPort = config.redirPort
+		mode = config.mode
+		logLevel = config.logLevel
+
+		allowLAN = config.allowLan
+		sniffer = config.sniffing
+		ipv6 = config.ipv6
+
+		enableTUNDevice = config.tun.enable
+		tunIPStack = config.tun.stack
+		deviceName = config.tun.device
+		interfaceName = config.interfaceName
+
+		hasLoadedConfig = true
+		isApplyingConfig = false
 	}
 	
 	
@@ -87,8 +103,10 @@ struct ConfigView: View {
 			}
 		}
 		.onChange(of: mode) { newValue in
-			guard configInited else { return }
-			ApiRequest.updateOutBoundMode(mode: newValue)
+			guard hasLoadedConfig, !isApplyingConfig else { return }
+			Task {
+				_ = await ApiRequest.updateOutBoundMode(mode: newValue)
+			}
 		}
 		.padding()
 		.controlSize(.large)
@@ -200,11 +218,10 @@ struct ConfigView: View {
 				Toggle("", isOn: $allowLAN)
 					.toggleStyle(toggleStyle)
 					.onChange(of: allowLAN) { newValue in
-						guard configInited else { return }
-						ApiRequest.updateAllowLan(allow: newValue) {
-							ApiRequest.requestConfig { config in
-								allowLAN = config.allowLan
-							}
+						guard hasLoadedConfig, !isApplyingConfig else { return }
+						Task {
+							await ApiRequest.updateAllowLan(allow: newValue)
+							await refreshConfig()
 						}
 					}
 			}
@@ -213,11 +230,10 @@ struct ConfigView: View {
 				Toggle("", isOn: $sniffer)
 					.toggleStyle(toggleStyle)
 					.onChange(of: sniffer) { newValue in
-						guard configInited else { return }
-						ApiRequest.updateSniffing(enable: newValue) {
-							ApiRequest.requestConfig { config in
-								sniffer = config.sniffing
-							}
+						guard hasLoadedConfig, !isApplyingConfig else { return }
+						Task {
+							await ApiRequest.updateSniffing(enable: newValue)
+							await refreshConfig()
 						}
 					}
 			}
@@ -234,7 +250,9 @@ struct ConfigView: View {
 			
 			ConfigItemView(name: "GEO Databases") {
 				Button {
-					ApiRequest.updateGEO()
+					Task {
+						_ = await ApiRequest.updateGEO()
+					}
 				} label: {
 					Text("Update GEO Databases")
 				}

@@ -9,11 +9,32 @@ import SwiftUI
 import CocoaLumberjackSwift
 
 class ClashApiDatasStorage: NSObject, ObservableObject {
+	private static let memoryFormatter = ByteCountFormatter()
 	
 	@Published var overviewData = ClashOverviewData()
 	
 	@Published var logStorage = ClashLogStorage()
 	@Published var connsStorage = ClashConnsStorage()
+
+	private var pendingTraffic: (up: Int, down: Int)?
+	private var pendingLogs = [(level: String, log: String)]()
+	private var pendingMemory: String?
+	private var uiUpdateTask: Task<Void, Never>?
+
+	override init() {
+		super.init()
+		uiUpdateTask = Task { @MainActor [weak self] in
+			while !Task.isCancelled {
+				try? await Task.sleep(seconds: 1)
+				guard let self else { return }
+				flushPendingUpdates()
+			}
+		}
+	}
+
+	deinit {
+		uiUpdateTask?.cancel()
+	}
 	
 	func resetStreamApi() {
 		ApiRequest.shared.dashboardDelegate = self
@@ -24,31 +45,61 @@ class ClashApiDatasStorage: NSObject, ObservableObject {
 }
 
 extension ClashApiDatasStorage: ApiRequestStreamDelegate {
-	func streamStatusChanged() {
+	func streamStatusChanged() async {
 		print("streamStatusChanged", ConfigManager.shared.isRunning)
 		
 	}
 
-	func didUpdateTraffic(up: Int, down: Int) {
-		overviewData.down = down
-		overviewData.up = up
+	func didUpdateTraffic(up: Int, down: Int) async {
+		await enqueueTrafficUpdate(up: up, down: down)
 	}
 	
-	func didGetLog(log: String, level: String) {
-		DispatchQueue.main.async {
-			self.logStorage.logs.append(.init(level: level, log: log))
-			
-			if self.logStorage.logs.count > 1000 {
-				self.logStorage.logs.removeFirst(100)
+	func didGetLog(log: String, level: String) async {
+		await enqueueLog(level: level, log: log)
+	}
+	
+	func didUpdateMemory(memory: Int64) async {
+        let memoryString = Self.memoryFormatter.string(fromByteCount: memory)
+		await enqueueMemory(memoryString)
+	}
+
+	@MainActor
+	func enqueueTrafficUpdate(up: Int, down: Int) {
+		pendingTraffic = (up: up, down: down)
+	}
+
+	@MainActor
+	func enqueueLog(level: String, log: String) {
+		pendingLogs.append((level: level, log: log))
+	}
+
+	@MainActor
+	func enqueueMemory(_ value: String) {
+		pendingMemory = value
+	}
+
+	@MainActor
+	func flushPendingUpdates() {
+		if let traffic = pendingTraffic {
+			overviewData.down = traffic.down
+			overviewData.up = traffic.up
+			pendingTraffic = nil
+		}
+
+		if !pendingLogs.isEmpty {
+			logStorage.logs.append(contentsOf: pendingLogs.map { .init(level: $0.level, log: $0.log) })
+			pendingLogs.removeAll(keepingCapacity: true)
+
+			if logStorage.logs.count > 1000 {
+				logStorage.logs.removeFirst(100)
 			}
 		}
-	}
-	
-	func didUpdateMemory(memory: Int64) {
-		let v = ByteCountFormatter().string(fromByteCount: memory)
-		
-		if overviewData.memory != v {
-			overviewData.memory = v
+
+		if let memory = pendingMemory {
+			if overviewData.memory != memory {
+				overviewData.memory = memory
+			}
+			pendingMemory = nil
 		}
 	}
 	
@@ -77,7 +128,7 @@ class ClashOverviewData: ObservableObject, Identifiable {
 			downloadString = getSpeedString(for: down)
 			downloadHistories.append(CGFloat(down))
 			
-			if downloadHistories.count > 120 {
+			if downloadHistories.count > TrafficHistoryLimit {
 				downloadHistories.removeFirst()
 			}
 		}
@@ -88,7 +139,7 @@ class ClashOverviewData: ObservableObject, Identifiable {
 			uploadString = getSpeedString(for: up)
 			uploadHistories.append(CGFloat(up))
 			
-			if uploadHistories.count > 120 {
+			if uploadHistories.count > TrafficHistoryLimit {
 				uploadHistories.removeFirst()
 			}
 		}

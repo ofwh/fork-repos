@@ -98,9 +98,9 @@ class RemoteConfigManager {
             let isCurrentConfig = config.name == currentConfigName
             config.updating = true
             group.enter()
-            RemoteConfigManager.updateConfig(config: config) {
-                [weak config] error in
+            Task { @MainActor [weak config] in
                 guard let config = config else { return }
+                let error = await RemoteConfigManager.updateConfig(config: config)
 
                 config.updating = false
                 group.leave()
@@ -110,19 +110,17 @@ class RemoteConfigManager {
 
                 if isCurrentConfig {
                     if let error = error {
-                        // Fail
                         if showNotification {
-							UserNotificationCenter.shared.post(title: NSLocalizedString("Remote Config Update Fail", comment: ""),
+                            UserNotificationCenter.shared.post(title: NSLocalizedString("Remote Config Update Fail", comment: ""),
                                       info: "\(config.name): \(error)")
                         }
 
                     } else {
-                        // Success
                         if showNotification {
                             let info = "\(config.name): \(NSLocalizedString("Succeed!", comment: ""))"
-							UserNotificationCenter.shared.post(title: NSLocalizedString("Remote Config Update", comment: ""), info: info)
+                            UserNotificationCenter.shared.post(title: NSLocalizedString("Remote Config Update", comment: ""), info: info)
                         }
-                        AppDelegate.shared.updateConfig(showNotification: false)
+                        _ = await AppDelegate.shared.updateConfig(showNotification: false)
                     }
                 }
                 Logger.log("[Auto Upgrade] Finish \(config.name) result: \(error ?? "succeed")")
@@ -135,72 +133,71 @@ class RemoteConfigManager {
         }
     }
 
-    static func getRemoteConfigData(config: RemoteConfigModel, complete: @escaping ((String?, String?) -> Void)) {
+    static func getRemoteConfigData(config: RemoteConfigModel) async -> (String?, String?) {
         guard var urlRequest = try? URLRequest(url: config.url, method: .get) else {
             assertionFailure()
             Logger.log("[getRemoteConfigData] url incorrect,\(config.name) \(config.url)")
-            return
+            return (nil, nil)
         }
         urlRequest.cachePolicy = .reloadIgnoringCacheData
 
-        AF.request(urlRequest)
-            .validate()
-            .responseString(encoding: .utf8) { res in
-                complete(try? res.result.get(), res.response?.suggestedFilename)
-            }
+        return await withCheckedContinuation { continuation in
+            AF.request(urlRequest)
+                .validate()
+                .responseString(encoding: .utf8) { res in
+                    continuation.resume(returning: (try? res.result.get(), res.response?.suggestedFilename))
+                }
+        }
     }
 
-    static func updateConfig(config: RemoteConfigModel, complete: ((String?) -> Void)? = nil) {
-        getRemoteConfigData(config: config) { configString, suggestedFilename in
-            guard let newConfig = configString else {
-                complete?(NSLocalizedString("Download fail", comment: ""))
-                return
-            }
+    static func updateConfig(config: RemoteConfigModel) async -> String? {
+        let (configString, suggestedFilename) = await getRemoteConfigData(config: config)
+        guard let newConfig = configString else {
+            return NSLocalizedString("Download fail", comment: "")
+        }
 
-            let verifyRes = verifyConfig(string: newConfig)
-            if let error = verifyRes {
-                complete?(NSLocalizedString("Remote Config Format Error", comment: "") + ": " + error)
-                return
-            }
+        let verifyRes = verifyConfig(string: newConfig)
+        if let error = verifyRes {
+            return NSLocalizedString("Remote Config Format Error", comment: "") + ": " + error
+        }
 
-            if let suggestName = suggestedFilename, config.isPlaceHolderName {
-                let name = URL(fileURLWithPath: suggestName).deletingPathExtension().lastPathComponent
-                if !shared.configs.contains(where: { $0.name == name }) {
-                    config.name = name
-                }
+        if let suggestName = suggestedFilename, config.isPlaceHolderName {
+            let name = URL(fileURLWithPath: suggestName).deletingPathExtension().lastPathComponent
+            if !shared.configs.contains(where: { $0.name == name }) {
+                config.name = name
             }
-            config.isPlaceHolderName = false
+        }
+        config.isPlaceHolderName = false
 
-            if ICloudManager.shared.useiCloud.value {
-                ConfigFileManager.shared.stopWatchConfigFile()
-            }
-            if config.name == ConfigManager.selectConfigName {
-                ConfigFileManager.shared.pauseForNextChange()
-            }
+        if ICloudManager.shared.useiCloud.value {
+            ConfigFileManager.shared.stopWatchConfigFile()
+        }
+        if config.name == ConfigManager.selectConfigName {
+            ConfigFileManager.shared.pauseForNextChange()
+        }
 
-            let saveAction: ((String) -> Void) = {
-                savePath in
-                do {
-                    if FileManager.default.fileExists(atPath: savePath) {
-                        try FileManager.default.removeItem(atPath: savePath)
-                    }
-                    try newConfig.write(to: URL(fileURLWithPath: savePath), atomically: true, encoding: .utf8)
-                    complete?(nil)
-                } catch let err {
-                    complete?(err.localizedDescription)
-                }
-            }
-
-            if ICloudManager.shared.useiCloud.value {
+        let savePath: String?
+        if ICloudManager.shared.useiCloud.value {
+            savePath = await withCheckedContinuation { continuation in
                 ICloudManager.shared.getUrl { url in
-                    guard let url = url else { return }
-                    let saveUrl = url.appendingPathComponent(Paths.configFileName(for: config.name))
-                    saveAction(saveUrl.path)
+                    let saveUrl = url?.appendingPathComponent(Paths.configFileName(for: config.name))
+                    continuation.resume(returning: saveUrl?.path)
                 }
-            } else {
-                let savePath = Paths.localConfigPath(for: config.name)
-                saveAction(savePath)
             }
+        } else {
+            savePath = Paths.localConfigPath(for: config.name)
+        }
+
+        guard let savePath else { return NSLocalizedString("Download fail", comment: "") }
+
+        do {
+            if FileManager.default.fileExists(atPath: savePath) {
+                try FileManager.default.removeItem(atPath: savePath)
+            }
+            try newConfig.write(to: URL(fileURLWithPath: savePath), atomically: true, encoding: .utf8)
+            return nil
+        } catch let err {
+            return err.localizedDescription
         }
     }
 

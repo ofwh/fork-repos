@@ -176,7 +176,7 @@ actor ClashProcess {
 	
 	private func prepareConfigFile() async throws {
 		let configName = ConfigManager.selectConfigName
-		guard let path = await findConfigPath(configName: configName) else {
+		guard let path = await ApiRequest.findConfigPath(configName: configName) else {
 			throw StartMetaError.configMissing
 		}
 
@@ -187,7 +187,7 @@ actor ClashProcess {
 		Logger.log("\(configName) not exists")
 		if let config = RemoteConfigManager.shared.configs.first(where: { $0.name == configName }) {
 			Logger.log("Try to download remote config \(configName)")
-			if let error = await updateRemoteConfig(config) {
+			if let error = await RemoteConfigManager.updateConfig(config: config) {
 				Logger.log("Download remote config failed, \(error)")
 				throw StartMetaError.remoteConfigMissing
 			}
@@ -207,7 +207,7 @@ actor ClashProcess {
 
 	private func generateInitConfig() async throws -> ClashMetaConfig.Config {
 		let paths = try await safePaths()
-		var config = await generateBaseConfig()
+		var config = await ClashMetaConfig.generateInitConfig()
 		config.safePaths = paths.joined(separator: ":")
 		config.updatePorts(await usedPorts() ?? "")
 		return config
@@ -269,35 +269,11 @@ actor ClashProcess {
 		let configName = ConfigManager.selectConfigName
 		Logger.log("Push init config file: \(configName)")
 
-		if let error = await requestConfigUpdate(configName: configName) {
+		if let error = await ApiRequest.requestConfigUpdate(configName: configName) {
 			throw StartMetaError.pushConfigFailed(error)
 		}
 
 		await delegate?.clashConfigUpdated()
-	}
-
-	private func findConfigPath(configName: String) async -> String? {
-		await withCheckedContinuation { continuation in
-			ApiRequest.findConfigPath(configName: configName) { path in
-				continuation.resume(returning: path)
-			}
-		}
-	}
-
-	private func updateRemoteConfig(_ config: RemoteConfigModel) async -> String? {
-		await withCheckedContinuation { continuation in
-			RemoteConfigManager.updateConfig(config: config) { error in
-				continuation.resume(returning: error)
-			}
-		}
-	}
-
-	private func generateBaseConfig() async -> ClashMetaConfig.Config {
-		await withCheckedContinuation { continuation in
-			ClashMetaConfig.generateInitConfig { config in
-				continuation.resume(returning: config)
-			}
-		}
 	}
 
 	private func usedPorts() async -> String? {
@@ -313,14 +289,6 @@ actor ClashProcess {
 		await withCheckedContinuation { continuation in
 			ICloudManager.shared.getUrl { url in
 				continuation.resume(returning: url)
-			}
-		}
-	}
-
-	private func requestConfigUpdate(configName: String) async -> ErrorString? {
-		await withCheckedContinuation { continuation in
-			ApiRequest.requestConfigUpdate(configName: configName) { error in
-				continuation.resume(returning: error)
 			}
 		}
 	}

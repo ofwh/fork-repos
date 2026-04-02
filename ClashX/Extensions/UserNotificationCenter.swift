@@ -150,8 +150,8 @@ extension UserNotificationCenter: UNUserNotificationCenterDelegate {
 	func handleNotificationActive(with identifier: String) {
 		switch identifier {
 		case "postConfigFileChangeDetectionNotice":
-			DispatchQueue.main.async {
-				AppDelegate.shared.updateConfig()
+			Task { @MainActor in
+				_ = await AppDelegate.shared.updateConfig()
 			}
 		default:
 			break

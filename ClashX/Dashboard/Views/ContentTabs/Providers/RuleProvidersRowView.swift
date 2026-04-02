@@ -53,7 +53,9 @@ struct RuleProvidersRowView: View {
                         title2: "Updating",
                         iconName: "arrow.clockwise",
                         inProgress: $isUpdating) {
-                            updateAll()
+							Task {
+                                await updateAll()
+                            }
                         }
                 }
 			}
@@ -61,17 +63,16 @@ struct RuleProvidersRowView: View {
 		}
 	}
 	
-	func updateAll() {
+	@MainActor
+	func updateAll() async {
 		isUpdating = true
-		ApiRequest.updateAllProviders(for: .rule) { _ in
-			ApiRequest.requestRuleProviderList { resp in
-				providerStorage.ruleProviders = resp.allProviders.values.sorted {
-					$0.name < $1.name
-				}
-				.map(DBRuleProvider.init)
-				isUpdating = false
-			}
+		_ = await ApiRequest.updateAllProviders(for: .rule)
+		let resp = await ApiRequest.requestRuleProviderList()
+		providerStorage.ruleProviders = resp.allProviders.values.sorted {
+			$0.name < $1.name
 		}
+		.map(DBRuleProvider.init)
+		isUpdating = false
 	}
 }
 

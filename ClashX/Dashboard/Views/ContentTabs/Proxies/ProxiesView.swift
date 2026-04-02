@@ -43,20 +43,19 @@ struct ProxiesView: View {
 			hideProxyNames.hide = hide
 		}
 		.environmentObject(searchString)
-		.onAppear {
-			loadProxies()
+		.task {
+			await loadProxies()
 		}
 		.environmentObject(hideProxyNames)
     }
 	
 	
-	func loadProxies() {
+	@MainActor
+	func loadProxies() async {
 //			self.isGlobalMode = ConfigManager.shared.currentConfig?.mode == .global
-		ApiRequest.getMergedProxyData {
-			guard let resp = $0 else { return }
-			proxyStorage.groups = DBProxyStorage(resp).groups.filter {
-				isGlobalMode ? true : $0.name != "GLOBAL"
-			}
+		let resp = await ApiRequest.getMergedProxyData()
+		proxyStorage.groups = DBProxyStorage(resp).groups.filter {
+			isGlobalMode ? true : $0.name != "GLOBAL"
 		}
 	}
 }

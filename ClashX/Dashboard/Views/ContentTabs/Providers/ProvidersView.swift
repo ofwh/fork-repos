@@ -29,8 +29,8 @@ struct ProvidersView: View {
 			hideProxyNames.hide = hide
 		}
 		.environmentObject(searchString)
-		.onAppear {
-			loadProviders()
+		.task {
+			await loadProviders()
 		}
 		.environmentObject(hideProxyNames)
     }
@@ -93,19 +93,19 @@ struct ProvidersView: View {
 		.listStyle(.plain)
 	}
 	
-	func loadProviders() {
-		ApiRequest.requestProxyProviderList { resp in
-			providerStorage.proxyProviders = resp.allProviders.values.sorted {
-				$0.name < $1.name
-			}
-			.map(DBProxyProvider.init)
+	@MainActor
+	func loadProviders() async {
+		let proxyResp = await ApiRequest.requestProxyProviderList()
+		providerStorage.proxyProviders = proxyResp.allProviders.values.sorted {
+			$0.name < $1.name
 		}
-		ApiRequest.requestRuleProviderList { resp in
-            providerStorage.ruleProviders = resp.allProviders.values.sorted {
+		.map(DBProxyProvider.init)
+
+		let ruleResp = await ApiRequest.requestRuleProviderList()
+            providerStorage.ruleProviders = ruleResp.allProviders.values.sorted {
                 $0.name < $1.name
             }
             .map(DBRuleProvider.init)
-		}
 	}
 	
 }

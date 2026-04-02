@@ -124,7 +124,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         removeUnExistProxyGroups()
         setupData()
         runAfterConfigReload = { [weak self] in
-            self?.selectAllowLanWithMenory()
+            Task {
+                await self?.selectAllowLanWithMenory()
+            }
         }
 
         updateLoggingLevel()
@@ -299,12 +301,16 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 					guard let self = self else { return }
 					self.proxySettingMenuItem.target = self
 					self.tunModeMenuItem.target = self
-					self.startProxyCore()
+                    Task {
+                        await self.startProxyCore()
+                    }
 				}.disposed(by: disposeBag)
 		} else {
 			self.proxySettingMenuItem.target = self
 			self.tunModeMenuItem.target = self
-			startProxyCore()
+            Task {
+                await startProxyCore()
+            }
 		}
 
         LaunchAtLogin.shared
@@ -399,8 +405,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
     func updateConfigFiles() {
         guard let menu = configSeparatorLine.menu else { return }
-        MenuItemFactory.generateSwitchConfigMenuItems {
-            items in
+        Task { @MainActor in
+            let items = await MenuItemFactory.generateSwitchConfigMenuItems()
             let lineIndex = menu.items.firstIndex(of: self.configSeparatorLine)!
             for _ in 0 ..< lineIndex {
                 menu.removeItem(at: 0)
@@ -412,41 +418,36 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     func updateLoggingLevel() {
-        ApiRequest.updateLogLevel(level: ConfigManager.selectLoggingApiLevel)
+        Task {
+            _ = await ApiRequest.updateLogLevel(level: ConfigManager.selectLoggingApiLevel)
+        }
         for item in logLevelMenuItem.submenu?.items ?? [] {
             item.state = item.title.lowercased() == ConfigManager.selectLoggingApiLevel.rawValue ? .on : .off
         }
         NotificationCenter.default.post(name: .reloadDashboard, object: nil)
     }
 
-    func syncConfig(completeHandler: (() -> Void)? = nil) {
-        ApiRequest.requestConfig { config in
-            ConfigManager.shared.currentConfig = config
-            completeHandler?()
-        }
+    @MainActor
+    func syncConfig() async {
+        guard let config = await ApiRequest.requestConfig() else { return }
+        ConfigManager.shared.currentConfig = config
     }
 
-    func syncConfigWithTun(_ isInit: Bool = false,
-                           _ completeHandler: (() -> Void)? = nil) {
-        syncConfig {
-            defer {
-                completeHandler?()
-            }
+    @MainActor
+    func syncConfigWithTun(_ isInit: Bool = false) async {
+        await syncConfig()
 
-            guard let config = ConfigManager.shared.currentConfig else { return }
+        guard let config = ConfigManager.shared.currentConfig else { return }
 
-            let enable = config.tun.enable
+        let enable = config.tun.enable
 
-            if isInit, !enable {
-                Logger.log("tun didn't set")
-                return
-            }
-
-            Task {
-                try? await PrivilegedHelperManager.shared.request(ProxyConfigHelperMessages.UpdateTun(state: enable, dns: ConfigManager.metaTunDNS))
-            }
-            Logger.log("tun state updated, new: \(enable)")
+        if isInit, !enable {
+            Logger.log("tun didn't set")
+            return
         }
+
+        try? await PrivilegedHelperManager.shared.request(ProxyConfigHelperMessages.UpdateTun(state: enable, dns: ConfigManager.metaTunDNS))
+        Logger.log("tun state updated, new: \(enable)")
     }
 
     func resetStreamApi() {
@@ -454,44 +455,40 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         ApiRequest.shared.resetStreamApis()
     }
 
-    func updateConfig(configName: String? = nil, showNotification: Bool = true, completeHandler: ((ErrorString?) -> Void)? = nil) {
-		startProxyCore()
-        guard ConfigManager.shared.isRunning else { return }
+    @MainActor
+    func updateConfig(configName: String? = nil, showNotification: Bool = true) async -> ErrorString? {
+		await startProxyCore()
+        guard ConfigManager.shared.isRunning else { return nil }
 
         let config = configName ?? ConfigManager.selectConfigName
 
         ClashProxy.cleanCache()
 
-        ApiRequest.requestConfigUpdate(configName: config) {
-            [weak self] err in
-            guard let self = self else { return }
+        let err = await ApiRequest.requestConfigUpdate(configName: config)
 
-            defer {
-                completeHandler?(err)
-            }
-
-            if let err {
-                UpdateConfigAction.showError(text: err, configName: config)
-            } else {
-                self.syncConfigWithTun()
-                self.resetStreamApi()
-                self.runAfterConfigReload?()
-                self.runAfterConfigReload = nil
-                if showNotification {
-					UserNotificationCenter.shared.post(
-						title: NSLocalizedString("Reload Config Succeed", comment: ""),
-						info: NSLocalizedString("Success", comment: ""))
-                }
-
-                if let newConfigName = configName {
-                    ConfigManager.selectConfigName = newConfigName
-                }
-                self.selectProxyGroupWithMemory()
-                self.selectOutBoundModeWithMenory()
-                MenuItemFactory.recreateProxyMenuItems()
-                NotificationCenter.default.post(name: .reloadDashboard, object: nil)
-            }
+        if let err {
+            UpdateConfigAction.showError(text: err, configName: config)
+            return err
         }
+
+        await syncConfigWithTun()
+        resetStreamApi()
+        runAfterConfigReload?()
+        runAfterConfigReload = nil
+        if showNotification {
+			UserNotificationCenter.shared.post(
+				title: NSLocalizedString("Reload Config Succeed", comment: ""),
+				info: NSLocalizedString("Success", comment: ""))
+        }
+
+        if let newConfigName = configName {
+            ConfigManager.selectConfigName = newConfigName
+        }
+        selectProxyGroupWithMemory()
+        await selectOutBoundModeWithMenory()
+        await MenuItemFactory.recreateProxyMenuItems()
+        NotificationCenter.default.post(name: .reloadDashboard, object: nil)
+        return nil
     }
 
 
@@ -512,9 +509,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     @objc func healthCheckOnNetworkChange() {
-        ApiRequest.getMergedProxyData {
-            proxyResp in
-            guard let proxyResp = proxyResp else { return }
+        Task {
+            let proxyResp = await ApiRequest.getMergedProxyData()
 
             var providers = Set<ClashProxyName>()
 
@@ -529,12 +525,12 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
             for group in groups {
                 Logger.log("Start auto health check for group \(group.name)")
-                ApiRequest.healthCheck(proxy: group.name)
+                await ApiRequest.healthCheck(proxy: group.name)
             }
 
             for provider in providers {
                 Logger.log("Start auto health check for provider \(provider)")
-                ApiRequest.healthCheck(proxy: provider)
+                await ApiRequest.healthCheck(proxy: provider)
             }
         }
     }
@@ -544,13 +540,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
 extension AppDelegate: ClashProcessDelegate {
 	
-	func startProxyCore() {
+    @MainActor
+    func startProxyCore() async {
         guard !ConfigManager.shared.isRunning else { return }
-
-        Task { [weak self] in
-            guard let self else { return }
-            await clashProcess.startIfNeeded(delegate: self)
-        }
+        await clashProcess.startIfNeeded(delegate: self)
 	}
 	
 	func clashLaunchPathNotFound(_ msg: String) {
@@ -580,13 +573,14 @@ extension AppDelegate: ClashProcessDelegate {
 		}
 		
 		if ConfigManager.shared.restoreTunProxy {
-			ApiRequest.updateTun(enable: true) {
-                Task {
-                    try? await PrivilegedHelperManager.shared.request(ProxyConfigHelperMessages.UpdateTun(state: true, dns: ConfigManager.metaTunDNS))
-                }
-			}
+            Task {
+                await ApiRequest.updateTun(enable: true)
+                try? await PrivilegedHelperManager.shared.request(ProxyConfigHelperMessages.UpdateTun(state: true, dns: ConfigManager.metaTunDNS))
+            }
 		} else {
-			syncConfigWithTun(true)
+            Task { @MainActor in
+                await self.syncConfigWithTun(true)
+            }
 		}
 		
 		SSIDSuspendTool.shared.setup()
@@ -595,7 +589,9 @@ extension AppDelegate: ClashProcessDelegate {
 		runAfterConfigReload?()
 		runAfterConfigReload = nil
 		selectProxyGroupWithMemory()
-		MenuItemFactory.recreateProxyMenuItems()
+        Task {
+            await MenuItemFactory.recreateProxyMenuItems()
+        }
 		NotificationCenter.default.post(name: .reloadDashboard, object: nil)
 	}
 	
@@ -635,10 +631,10 @@ extension AppDelegate {
     }
 
     @IBAction func actionAllowFromLan(_ sender: NSMenuItem) {
-        ApiRequest.updateAllowLan(allow: !ConfigManager.allowConnectFromLan) {
-            [weak self] in
+        Task { @MainActor [weak self] in
+            await ApiRequest.updateAllowLan(allow: !ConfigManager.allowConnectFromLan)
             guard let self = self else { return }
-            self.syncConfig()
+            await self.syncConfig()
             ConfigManager.allowConnectFromLan = !ConfigManager.allowConnectFromLan
         }
     }
@@ -665,10 +661,11 @@ extension AppDelegate {
     func switchProxyMode(mode: ClashProxyMode) {
         let config = ConfigManager.shared.currentConfig?.copy()
         config?.mode = mode
-        ApiRequest.updateOutBoundMode(mode: mode) { _ in
+        Task { @MainActor in
+            _ = await ApiRequest.updateOutBoundMode(mode: mode)
             ConfigManager.shared.currentConfig = config
             ConfigManager.selectOutBoundMode = mode
-            MenuItemFactory.recreateProxyMenuItems()
+            await MenuItemFactory.recreateProxyMenuItems()
         }
     }
 
@@ -722,31 +719,32 @@ extension AppDelegate {
 
         isSpeedTesting = true
 
-        ApiRequest.getMergedProxyData { [weak self] resp in
-            let group = DispatchGroup()
+        Task { @MainActor [weak self] in
+            let resp = await ApiRequest.getMergedProxyData()
 
-            for (name, _) in resp?.enclosingProviderResp?.providers ?? [:] {
-                group.enter()
-                ApiRequest.healthCheck(proxy: name) {
-                    group.leave()
+            await withTaskGroup(of: Void.self) { group in
+                for (name, _) in resp.enclosingProviderResp?.providers ?? [:] {
+                    group.addTask {
+                        await ApiRequest.healthCheck(proxy: name)
+                    }
+                }
+
+                for p in resp.proxiesMap["GLOBAL"]?.all ?? [] {
+                    group.addTask {
+                        _ = await ApiRequest.getProxyDelay(proxyName: p)
+                    }
                 }
             }
 
-            for p in resp?.proxiesMap["GLOBAL"]?.all ?? [] {
-                group.enter()
-                ApiRequest.getProxyDelay(proxyName: p) { _ in
-                    group.leave()
-                }
-            }
-            group.notify(queue: DispatchQueue.main) {
-				UserNotificationCenter.shared.postSpeedTestFinishNotice()
-                self?.isSpeedTesting = false
-            }
+			UserNotificationCenter.shared.postSpeedTestFinishNotice()
+            self?.isSpeedTesting = false
         }
     }
 
     @IBAction func actionUpdateExternalResource(_ sender: Any) {
-        UpdateExternalResourceAction.run()
+        Task {
+            await UpdateExternalResourceAction.run()
+        }
     }
 
     @IBAction func actionQuit(_ sender: Any) {
@@ -761,20 +759,22 @@ extension AppDelegate {
 // MARK: Streaming Info
 
 extension AppDelegate: ApiRequestStreamDelegate {
-	func didUpdateMemory(memory: Int64) {
+	func didUpdateMemory(memory: Int64) async {
 		
 	}
 	
-	func streamStatusChanged() {
+	func streamStatusChanged() async {
 		
 	}
 	
-    func didUpdateTraffic(up: Int, down: Int) {
-        statusItemView.updateSpeedLabel(up: up, down: down)
+    func didUpdateTraffic(up: Int, down: Int) async {
+        await MainActor.run {
+            statusItemView.updateSpeedLabel(up: up, down: down)
+        }
     }
 
-    func didGetLog(log: String, level: String) {
         Logger.log(log, level: ClashLogLevel(rawValue: level) ?? .unknow)
+    func didGetLog(log: String, level: String) async {
     }
 }
 
@@ -803,7 +803,9 @@ extension AppDelegate {
     }
 
     @IBAction func actionUpdateConfig(_ sender: AnyObject) {
-        updateConfig()
+        Task { @MainActor in
+            _ = await updateConfig()
+        }
     }
 
     @IBAction func actionSetLogLevel(_ sender: NSMenuItem) {
@@ -835,11 +837,11 @@ extension AppDelegate {
     @IBAction func actionSetTunMode(_ sender: NSMenuItem?) {
         let enable = tunModeMenuItem.state != .on
 		tunModeMenuItem.isEnabled = false
-        ApiRequest.updateTun(enable: enable) {
-            self.syncConfigWithTun {
-				self.tunModeMenuItem.state = enable ? .on : .off
-				self.tunModeMenuItem.isEnabled = true
-            }
+        Task { @MainActor in
+            await ApiRequest.updateTun(enable: enable)
+            await self.syncConfigWithTun()
+			self.tunModeMenuItem.state = enable ? .on : .off
+			self.tunModeMenuItem.isEnabled = true
         }
     }
 
@@ -849,40 +851,43 @@ extension AppDelegate {
 			
 			timer.fireDate = .init(timeIntervalSinceNow: 5)
 			
-			ApiRequest.getRules { rules in
-				guard self?.updateGeoTimer != nil else { return }
-				if let rule = rules.first,
-				   rule.payload == ClashMetaConfig.initRulePayload {
-					Logger.log("Update GEO Finished.")
-					self?.updateConfig(showNotification: false) { _ in
-						UserNotificationCenter.shared.post(title: "Update GEO Databases Finished.", info: "")
+            Task { @MainActor [weak self] in
+                let rules = await ApiRequest.getRules()
+                guard self?.updateGeoTimer != nil else { return }
+                if let rule = rules.first,
+                   rule.payload == ClashMetaConfig.initRulePayload {
+                    Logger.log("Update GEO Finished.")
+					if let self {
+						_ = await self.updateConfig(showNotification: false)
 					}
+					UserNotificationCenter.shared.post(title: "Update GEO Databases Finished.", info: "")
 					
-					timer.invalidate()
-					self?.updateGeoTimer = nil
-				} else {
-					timer.fireDate = .init(timeIntervalSinceNow: 0.5)
-				}
-			}
+                    timer.invalidate()
+                    self?.updateGeoTimer = nil
+                } else {
+                    timer.fireDate = .init(timeIntervalSinceNow: 0.5)
+                }
+            }
 		}
 		
-        ApiRequest.updateGEO { _ in
-			UserNotificationCenter.shared.post(title: NSLocalizedString("Updating GEO Databases...", comment: ""), info: NSLocalizedString("Good luck to you  🙃", comment: ""))
-			
-			self.updateGeoTimer?.fire()
+        Task { @MainActor in
+            _ = await ApiRequest.updateGEO()
+            UserNotificationCenter.shared.post(title: NSLocalizedString("Updating GEO Databases...", comment: ""), info: NSLocalizedString("Good luck to you  🙃", comment: ""))
+            self.updateGeoTimer?.fire()
         }
     }
 
     @IBAction func flushDNSCache(_ sender: NSMenuItem) {
-        ApiRequest.flushDNSCache()
         Task {
+            await ApiRequest.flushDNSCache()
             try? await PrivilegedHelperManager.shared.request(ProxyConfigHelperMessages.FlushDnsCache())
         }
     }
 
     @IBAction func updateSniffing(_ sender: NSMenuItem) {
         let enable = sender.state != .on
-        ApiRequest.updateSniffing(enable: enable) {
+        Task { @MainActor in
+            await ApiRequest.updateSniffing(enable: enable)
             sender.state = enable ? .on : .off
         }
     }
@@ -947,7 +952,8 @@ extension AppDelegate {
         for item in copy {
             guard item.config == ConfigManager.selectConfigName else { continue }
             Logger.log("Auto selecting \(item.group) \(item.selected)", level: .debug)
-            ApiRequest.updateProxyGroup(group: item.group, selectProxy: item.selected) { success in
+            Task { @MainActor in
+                let success = await ApiRequest.updateProxyGroup(group: item.group, selectProxy: item.selected)
                 if !success {
                     ConfigManager.selectedProxyRecords.removeAll { model -> Bool in
                         return model.key == item.key
@@ -977,19 +983,17 @@ extension AppDelegate {
         }
     }
 
-    func selectOutBoundModeWithMenory() {
-        ApiRequest.updateOutBoundMode(mode: ConfigManager.selectOutBoundMode) {
-            [weak self] _ in
-            ConnectionManager.closeAllConnection()
-            self?.syncConfig()
-        }
+    @MainActor
+    func selectOutBoundModeWithMenory() async {
+        _ = await ApiRequest.updateOutBoundMode(mode: ConfigManager.selectOutBoundMode)
+        await ConnectionManager.closeAllConnection()
+        await syncConfig()
     }
 
-    func selectAllowLanWithMenory() {
-        ApiRequest.updateAllowLan(allow: ConfigManager.allowConnectFromLan) {
-            [weak self] in
-            self?.syncConfig()
-        }
+    @MainActor
+    func selectAllowLanWithMenory() async {
+        await ApiRequest.updateAllowLan(allow: ConfigManager.allowConnectFromLan)
+        await syncConfig()
     }
 
     func hasMenuSelected() -> Bool {
@@ -1006,9 +1010,11 @@ extension AppDelegate {
 extension AppDelegate: NSMenuDelegate {
     func menuNeedsUpdate(_ menu: NSMenu) {
         guard ConfigManager.shared.isRunning else { return }
-        MenuItemFactory.refreshExistingMenuItems()
         updateConfigFiles()
-        syncConfig()
+        Task { @MainActor in
+            await MenuItemFactory.refreshExistingMenuItems()
+            await syncConfig()
+        }
         NotificationCenter.default.post(name: .proxyMeneViewShowLeftPadding,
                                         object: nil,
                                         userInfo: ["show": hasMenuSelected()])
@@ -1059,7 +1065,9 @@ extension AppDelegate {
                 NotificationCenter.default.post(name: Notification.Name(rawValue: "didGetUrl"), object: nil, userInfo: userInfo)
             }
         } else if host == "update-config" {
-            updateConfig()
+            Task { @MainActor in
+                _ = await updateConfig()
+            }
         }
     }
 }

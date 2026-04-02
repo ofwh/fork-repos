@@ -10,10 +10,10 @@ struct SidebarView: View {
 	
 	@StateObject var clashApiDatasStorage = ClashApiDatasStorage()
 	
-	private let connsQueue = DispatchQueue(label: "thread-safe-connsQueue", attributes: .concurrent)
 	private let timer = Timer.publish(every: 1, on: .main, in: .default).autoconnect()
 	
 	@State private var sidebarSelectionName: SidebarItem?
+	@State private var updateConnectionsTask: Task<Void, Never>?
 	
     var body: some View {
 		Group {
@@ -28,10 +28,7 @@ struct SidebarView: View {
 			}
 			
 			clashApiDatasStorage.resetStreamApi()
-			connsQueue.sync {
-				clashApiDatasStorage.connsStorage.conns
-					.removeAll()
-			}
+			clashApiDatasStorage.connsStorage.conns.removeAll()
 			
 			updateConnections()
 		}
@@ -41,18 +38,31 @@ struct SidebarView: View {
 		.onReceive(timer, perform: { _ in
 			updateConnections()
 		})
+		.onDisappear {
+			updateConnectionsTask?.cancel()
+			updateConnectionsTask = nil
+		}
 
 	}
 	
+	@MainActor
 	func updateConnections() {
-		ApiRequest.getConnections { snap in
-			connsQueue.sync {
-				clashApiDatasStorage.overviewData.upTotal = snap.uploadTotal
-				clashApiDatasStorage.overviewData.downTotal = snap.downloadTotal
-				clashApiDatasStorage.overviewData.activeConns = "\(snap.connections.count)"
-				clashApiDatasStorage.connsStorage.conns = snap.connections
-			}
+		let previousTask = updateConnectionsTask
+		updateConnectionsTask = Task {
+			await previousTask?.value
+			guard !Task.isCancelled,
+				  let snap = await ApiRequest.getConnectionsSnapshot(),
+				  !Task.isCancelled else { return }
+			await applyConnectionsSnapshot(snap)
 		}
+	}
+
+	@MainActor
+	func applyConnectionsSnapshot(_ snap: DBConnectionSnapShot) {
+		clashApiDatasStorage.overviewData.upTotal = snap.uploadTotal
+		clashApiDatasStorage.overviewData.downTotal = snap.downloadTotal
+		clashApiDatasStorage.overviewData.activeConns = "\(snap.connections.count)"
+		clashApiDatasStorage.connsStorage.conns = snap.connections
 	}
 	
 	func sidebarItemChanged(_ item: SidebarItem?) {

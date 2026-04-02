@@ -12,10 +12,10 @@ import Starscream
 import SwiftyJSON
 
 protocol ApiRequestStreamDelegate: AnyObject {
-	func didUpdateTraffic(up: Int, down: Int)
-	func didGetLog(log: String, level: String)
-	func didUpdateMemory(memory: Int64)
-	func streamStatusChanged()
+    func didUpdateTraffic(up: Int, down: Int) async
+    func didGetLog(log: String, level: String) async
+    func didUpdateMemory(memory: Int64) async
+    func streamStatusChanged() async
 }
 
 typealias ErrorString = String
@@ -65,10 +65,10 @@ class ApiRequest {
         _ url: String,
         method: HTTPMethod = .get,
         parameters: Parameters? = nil,
-        encoding: ParameterEncoding = URLEncoding.default
-    )
-        -> DataRequest {
-        guard ConfigManager.shared.isRunning else {
+        encoding: ParameterEncoding = URLEncoding.default,
+        requiresCoreRunning: Bool = true
+    ) -> DataRequest {
+        guard !requiresCoreRunning || ConfigManager.shared.isRunning else {
             return AF.request("")
         }
 
@@ -78,6 +78,52 @@ class ApiRequest {
                      parameters: parameters,
                      encoding: encoding,
                      headers: authHeader())
+    }
+
+    static func findConfigPath(configName: String) async -> String? {
+        await withCheckedContinuation { continuation in
+            if ICloudManager.shared.useiCloud.value {
+                ICloudManager.shared.getUrl { url in
+                    guard let url = url else {
+                        continuation.resume(returning: nil)
+                        return
+                    }
+                    let configPath = url.appendingPathComponent(Paths.configFileName(for: configName)).path
+                    continuation.resume(returning: configPath)
+                }
+            } else {
+                let filePath = Paths.localConfigPath(for: configName)
+                continuation.resume(returning: filePath)
+            }
+        }
+    }
+
+    private static func flushFakeipCacheResult() async -> Bool {
+        Logger.log("FlushFakeipCache")
+
+        let success: Bool
+
+        let response = await req("/cache/fakeip/flush", method: .post)
+            .serializingData()
+            .response
+        success = response.response?.statusCode == 204
+
+        Logger.log("FlushFakeipCache \(success ? "success" : "failed")")
+        return success
+    }
+
+    private static func flushDNSCacheResult() async -> Bool {
+        Logger.log("FlushDNSCache")
+
+        let success: Bool
+
+        let response = await req("/cache/dns/flush", method: .post)
+            .serializingData()
+            .response
+        success = response.response?.statusCode == 204
+
+        Logger.log("FlushDNSCache \(success ? "success" : "failed")")
+        return success
     }
 
     weak var delegate: ApiRequestStreamDelegate?
@@ -108,248 +154,241 @@ class ApiRequest {
 
 	private var alamoFireManager: Session
 
-	static func requestVersion(completeHandler: @escaping ((ClashVersion?) -> Void)) {
-		shared.alamoFireManager
-			.request(ConfigManager.apiUrl + "/version",
-					 method: .get,
-					 headers: authHeader())
-			.responseDecodable(of: ClashVersion.self) {
-				resp in
-				switch resp.result {
-				case let .success(ver):
-					completeHandler(ver)
-				case let .failure(err):
-					Logger.log("Request Version failed, \(err)", level: .error)
-					completeHandler(nil)
-				}
-			}
+	static func requestVersion() async -> ClashVersion? {
+		do {
+			return try await req("/version", requiresCoreRunning: false)
+				.validate()
+				.serializingDecodable(ClashVersion.self)
+				.value
+		} catch {
+			Logger.log("Request Version failed, \(error)", level: .error)
+			return nil
+		}
 	}
 
-    static func requestConfig(completeHandler: @escaping ((ClashConfig) -> Void)) {
-        req("/configs").responseDecodable(of: ClashConfig.self) {
-            resp in
-            switch resp.result {
-            case let .success(config):
-                completeHandler(config)
-            case let .failure(err):
-                Logger.log(err.localizedDescription)
-				UserNotificationCenter.shared.post(title: "Error", info: err.localizedDescription)
+    static func requestConfig() async -> ClashConfig? {
+        do {
+            return try await req("/configs")
+                .validate()
+                .serializingDecodable(ClashConfig.self)
+                .value
+        } catch {
+            Logger.log(error.localizedDescription)
+            await MainActor.run {
+                UserNotificationCenter.shared.post(title: "Error", info: error.localizedDescription)
             }
+            return nil
         }
     }
 
-    static func findConfigPath(configName: String, callback: @escaping ((String?) -> Void)) {
-        if ICloudManager.shared.useiCloud.value {
-            ICloudManager.shared.getUrl { url in
-                guard let url = url else {
-                    callback(nil)
-                    return
-                }
-                let configPath = url.appendingPathComponent(Paths.configFileName(for: configName)).path
-                callback(configPath)
-            }
-        } else {
-            let filePath = Paths.localConfigPath(for: configName)
-            callback(filePath)
+    static func requestConfigUpdate(configName: String) async -> ErrorString? {
+        guard let path = await findConfigPath(configName: configName) else {
+            return "icloud error"
         }
+
+        guard ICloudManager.shared.useiCloud.value else {
+            return await requestConfigUpdate(configPath: path)
+        }
+
+        #warning("icloud operation not permitted")
+
+        let tempPath = Paths.localConfigPath(for: kSafeConfigName)
+
+        try? FileManager.default.removeItem(atPath: tempPath)
+
+        do {
+            try FileManager.default.copyItem(atPath: path, toPath: tempPath)
+        } catch {
+            return "clashx_meta_config error \(error)"
+        }
+
+        return await requestConfigUpdate(configPath: tempPath)
     }
 
-    static func requestConfigUpdate(configName: String, callback: @escaping ((ErrorString?) -> Void)) {
-        findConfigPath(configName: configName) { path in
-            guard let path = path else {
-                callback("icloud error")
-                return
-            }
-            
-            guard ICloudManager.shared.useiCloud.value else {
-                requestConfigUpdate(configPath: path, callback: callback)
-                return
-            }
-            
-            #warning("icloud operation not permitted")
-            
-            let tempPath = Paths.localConfigPath(for: kSafeConfigName)
-            
-            try? FileManager.default.removeItem(atPath: tempPath)
-            
-            do {
-                try FileManager.default.copyItem(atPath: path, toPath: tempPath)
-            } catch {
-                callback("clashx_meta_config error \(error)")
-                return
-            }
-            
-            requestConfigUpdate(configPath: tempPath, callback: callback)
-        }
-    }
-
-    static func requestConfigUpdate(configPath: String, callback: @escaping ((ErrorString?) -> Void)) {
+    static func requestConfigUpdate(configPath: String) async -> ErrorString? {
         let placeHolderErrorDesp = "Error occoured, Please try to fix it by restarting ClashX. "
-		req("/configs", method: .put, parameters: ["Path": configPath], encoding: JSONEncoding.default).responseData { res in
-            if res.response?.statusCode == 204 {
-                ConfigManager.shared.isRunning = true
-                callback(nil)
-            } else {
-				let errorData = try? res.result.get()
-                let err = JSON(errorData ?? Data())["message"].string ?? placeHolderErrorDesp
-                Logger.log(err)
-                callback(err)
-            }
+
+        let response = await req(
+                "/configs",
+                method: .put,
+                parameters: ["Path": configPath],
+                encoding: JSONEncoding.default
+            )
+            .serializingData()
+            .response
+
+        if response.response?.statusCode == 204 {
+            ConfigManager.shared.isRunning = true
+            return nil
+        }
+
+        let err = JSON(response.data ?? Data())["message"].string
+            ?? response.error?.localizedDescription
+            ?? placeHolderErrorDesp
+        Logger.log(err)
+        return err
+    }
+
+    static func updateOutBoundMode(mode: ClashProxyMode) async -> Bool {
+        do {
+            _ = try await req(
+                "/configs",
+                method: .patch,
+                parameters: ["mode": mode.rawValue],
+                encoding: JSONEncoding.default
+            )
+            .validate()
+            .serializingData()
+            .value
+            return true
+        } catch {
+            return false
         }
     }
 
-    static func updateOutBoundMode(mode: ClashProxyMode, callback: ((Bool) -> Void)? = nil) {
-        req("/configs", method: .patch, parameters: ["mode": mode.rawValue], encoding: JSONEncoding.default)
-            .responseData { response in
-                switch response.result {
-                case .success:
-                    callback?(true)
-                case .failure:
-                    callback?(false)
-                }
-            }
-    }
-
-    static func updateLogLevel(level: ClashLogLevel, callback: ((Bool) -> Void)? = nil) {
-        req("/configs", method: .patch, parameters: ["log-level": level.rawValue], encoding: JSONEncoding.default).responseData(completionHandler: { response in
-            switch response.result {
-            case .success:
-                callback?(true)
-            case .failure:
-                callback?(false)
-            }
-        })
-    }
-
-    static func requestProxyGroupList(completeHandler: ((ClashProxyResp) -> Void)? = nil) {
-        req("/proxies").responseData {
-            res in
-            let proxies = ClashProxyResp(try? res.result.get())
-            ApiRequest.shared.proxyRespCache = proxies
-            completeHandler?(proxies)
+    static func updateLogLevel(level: ClashLogLevel) async -> Bool {
+        do {
+            _ = try await req(
+                "/configs",
+                method: .patch,
+                parameters: ["log-level": level.rawValue],
+                encoding: JSONEncoding.default
+            )
+            .validate()
+            .serializingData()
+            .value
+            return true
+        } catch {
+            return false
         }
     }
 
-    static func requestProxyProviderList(completeHandler: ((ClashProviderResp) -> Void)? = nil) {
-        req("/providers/proxies")
-            .responseDecodable(of: ClashProviderResp.self, decoder: ClashProviderResp.decoder) { resp in
-                switch resp.result {
-                case let .success(providerResp):
-                    completeHandler?(providerResp)
-                case let .failure(err):
-                    Logger.log("requestProxyProviderList error \(err.localizedDescription)")
-                    completeHandler?(ClashProviderResp())
-                }
-            }
+    static func requestProxyGroupList() async -> ClashProxyResp {
+        let proxies: ClashProxyResp
+
+        do {
+            let responseData = try await req("/proxies")
+                .validate()
+                .serializingData()
+                .value
+            proxies = ClashProxyResp(responseData)
+        } catch {
+            Logger.log(error.localizedDescription)
+            proxies = ClashProxyResp(nil)
+        }
+
+        ApiRequest.shared.proxyRespCache = proxies
+        return proxies
     }
 
-    static func updateAllowLan(allow: Bool, completeHandler: (() -> Void)? = nil) {
+    static func requestProxyProviderList() async -> ClashProviderResp {
+        do {
+            return try await req("/providers/proxies")
+                .validate()
+                .serializingDecodable(ClashProviderResp.self, decoder: ClashProviderResp.decoder)
+                .value
+        } catch {
+            Logger.log("requestProxyProviderList error \(error.localizedDescription)")
+            return ClashProviderResp()
+        }
+    }
+
+    static func getAllProxyList() async -> [ClashProxyName] {
+        let proxyInfo = await requestProxyGroupList()
+        return proxyInfo.proxiesMap["GLOBAL"]?.all ?? []
+    }
+
+    static func updateAllowLan(allow: Bool) async {
         Logger.log("update allow lan:\(allow)", level: .debug)
-        req("/configs",
-            method: .patch,
-            parameters: ["allow-lan": allow],
-            encoding: JSONEncoding.default).response {
-            _ in
-            completeHandler?()
+        do {
+            _ = try await req(
+                "/configs",
+                method: .patch,
+                parameters: ["allow-lan": allow],
+                encoding: JSONEncoding.default
+            )
+            .validate()
+            .serializingData()
+            .value
+        } catch {
+            Logger.log("update allow lan failed: \(error.localizedDescription)", level: .error)
         }
     }
 
-    static func updateProxyGroup(group: String, selectProxy: String, callback: @escaping ((Bool) -> Void)) {
-        req("/proxies/\(group.encoded)",
+    static func updateProxyGroup(group: String, selectProxy: String) async -> Bool {
+        let response = await req(
+            "/proxies/\(group.encoded)",
             method: .put,
             parameters: ["name": selectProxy],
-            encoding: JSONEncoding.default)
-            .responseData { response in
-                callback(response.response?.statusCode == 204)
-            }
+            encoding: JSONEncoding.default
+        )
+        .serializingData()
+        .response
+        return response.response?.statusCode == 204
     }
 
-    static func getAllProxyList(callback: @escaping (([ClashProxyName]) -> Void)) {
-        requestProxyGroupList {
-            proxyInfo in
-            let lists: [ClashProxyName] = proxyInfo.proxiesMap["GLOBAL"]?.all ?? []
-            callback(lists)
+    static func getMergedProxyData() async -> ClashProxyResp {
+        async let provider = requestProxyProviderList()
+        async let proxyInfo = requestProxyGroupList()
+
+        let mergedProxyInfo = await proxyInfo
+        mergedProxyInfo.updateProvider(await provider)
+        return mergedProxyInfo
+    }
+
+    static func getProxyDelay(proxyName: String) async -> Int {
+        do {
+            let responseData = try await req(
+                "/proxies/\(proxyName.encoded)/delay",
+                method: .get,
+                parameters: ["timeout": 2500, "url": ConfigManager.shared.benchMarkUrl]
+            )
+            .validate()
+            .serializingData()
+            .value
+            return JSON(responseData)["delay"].intValue
+        } catch {
+            return 0
         }
     }
 
-    static func getMergedProxyData(complete: ((ClashProxyResp?) -> Void)? = nil) {
-        let group = DispatchGroup()
-        group.enter()
-        group.enter()
-
-        var provider: ClashProviderResp?
-        var proxyInfo: ClashProxyResp?
-
-        group.notify(queue: .main) {
-            guard let proxyInfo = proxyInfo, let proxyprovider = provider else {
-                assertionFailure()
-                complete?(nil)
-                return
-            }
-            proxyInfo.updateProvider(proxyprovider)
-            complete?(proxyInfo)
-        }
-
-        ApiRequest.requestProxyProviderList {
-            proxyprovider in
-            provider = proxyprovider
-            group.leave()
-        }
-
-        ApiRequest.requestProxyGroupList {
-            proxy in
-            proxyInfo = proxy
-            group.leave()
+    static func getGroupDelay(groupName: String) async -> [String: Int] {
+        do {
+            let responseData = try await req(
+                "/group/\(groupName.encoded)/delay",
+                method: .get,
+                parameters: ["timeout": 2500, "url": ConfigManager.shared.benchMarkUrl]
+            )
+            .validate()
+            .serializingData()
+            .value
+            return (try? JSONDecoder().decode([String: Int].self, from: responseData)) ?? [:]
+        } catch {
+            return [:]
         }
     }
 
-    static func getProxyDelay(proxyName: String, callback: @escaping ((Int) -> Void)) {
-        req("/proxies/\(proxyName.encoded)/delay",
-            method: .get,
-            parameters: ["timeout": 2500, "url": ConfigManager.shared.benchMarkUrl])
-            .responseData { res in
-                switch res.result {
-                case let .success(value):
-                    let json = JSON(value)
-                    callback(json["delay"].intValue)
-                case .failure:
-                    callback(0)
-                }
-            }
-    }
-
-    static func getGroupDelay(groupName: String, callback: @escaping (([String: Int]) -> Void)) {
-        req("/group/\(groupName.encoded)/delay",
-            method: .get,
-            parameters: ["timeout": 2500, "url": ConfigManager.shared.benchMarkUrl])
-            .responseData { res in
-                switch res.result {
-                case let .success(value):
-                    let dic = try? JSONDecoder().decode([String: Int].self, from: value)
-                    callback(dic ?? [:])
-                case .failure:
-                    callback([:])
-                }
-            }
-    }
-
-    static func getRules(completeHandler: @escaping ([ClashRule]) -> Void) {
-        req("/rules").responseData { res in
-            guard let data = try? res.result.get() else { return }
-            let rule = ClashRuleResponse.fromData(data)
-            completeHandler(rule.rules ?? [])
+    static func getRules() async -> [ClashRule] {
+        do {
+            let responseData = try await req("/rules")
+                .validate()
+                .serializingData()
+                .value
+            return ClashRuleResponse.fromData(responseData).rules ?? []
+        } catch {
+            return []
         }
     }
 
-    static func healthCheck(proxy: ClashProviderName, completeHandler: (() -> Void)? = nil) {
+    static func healthCheck(proxy: ClashProviderName) async {
         Logger.log("HeathCheck for \(proxy) started")
-        req("/providers/proxies/\(proxy.encoded)/healthcheck").response { res in
-            if res.response?.statusCode == 204 {
-                Logger.log("HeathCheck for \(proxy) finished")
-            } else {
-                Logger.log("HeathCheck for \(proxy) failed:\(res.response?.statusCode ?? -1)")
-            }
-            completeHandler?()
+        let response = await req("/providers/proxies/\(proxy.encoded)/healthcheck")
+            .serializingData()
+            .response
+        if response.response?.statusCode == 204 {
+            Logger.log("HeathCheck for \(proxy) finished")
+        } else {
+            Logger.log("HeathCheck for \(proxy) failed:\(response.response?.statusCode ?? -1)")
         }
     }
 }
@@ -357,193 +396,171 @@ class ApiRequest {
 // MARK: - Connections
 
 extension ApiRequest {
-    static func getConnections(completeHandler: @escaping ([ClashConnectionBaseSnapShot.Connection]) -> Void) {
-        req("/connections").responseDecodable(of: ClashConnectionBaseSnapShot.self) { resp in
-            switch resp.result {
-            case let .success(snapshot):
-                completeHandler(snapshot.connections)
-            case .failure:
-                assertionFailure()
-                completeHandler([])
-            }
+    static func getConnections() async -> [ClashConnectionBaseSnapShot.Connection] {
+        do {
+            let snapshot = try await req("/connections")
+                .validate()
+                .serializingDecodable(ClashConnectionBaseSnapShot.self)
+                .value
+            return snapshot.connections
+        } catch {
+            assertionFailure()
+            return []
         }
     }
 
-    static func closeConnection(_ id: String) {
-        req("/connections/\(id)", method: .delete).response { _ in }
+    static func closeConnection(_ id: String) async {
+        _ = try? await req("/connections/\(id)", method: .delete)
+            .validate()
+            .serializingData()
+            .value
     }
 	
-	static func getConnections(completeHandler: @escaping (DBConnectionSnapShot) -> Void) {
-		
+	static func getConnectionsSnapshot() async -> DBConnectionSnapShot? {
 		let decoder = JSONDecoder()
 		decoder.dateDecodingStrategy = .formatted(DateFormatter.js)
 		
-		req("/connections").responseDecodable(of: DBConnectionSnapShot.self, decoder: decoder) { resp in
-			switch resp.result {
-			case let .success(snapshot):
-				completeHandler(snapshot)
-			case .failure:
-				return
-//                assertionFailure()
-//                completeHandler(DBConnectionSnapShot())
-			}
+		do {
+			return try await req("/connections")
+				.validate()
+				.serializingDecodable(DBConnectionSnapShot.self, decoder: decoder)
+				.value
+		} catch {
+			return nil
 		}
 	}
 
-	static func closeConnection(_ conn: ClashConnectionSnapShot.Connection) {
-		req("/connections/".appending(conn.id), method: .delete).response { _ in }
+	static func closeConnection(_ conn: ClashConnectionSnapShot.Connection) async {
+		_ = try? await req("/connections/".appending(conn.id), method: .delete)
+			.validate()
+			.serializingData()
+			.value
 	}
 
-	static func closeAllConnection() {
-		req("/connections", method: .delete).response { _ in }
+	static func closeAllConnection() async {
+		_ = try? await req("/connections", method: .delete)
+			.validate()
+			.serializingData()
+			.value
 	}
 }
 
 // MARK: - Meta
 
 extension ApiRequest {
-    static func updateAllProviders(for type: ProviderType, completeHandler: ((Int) -> Void)? = nil) {
-        var failuresCount = 0
-
-        let group = DispatchGroup()
-        group.enter()
+    static func updateAllProviders(for type: ProviderType) async -> Int {
+        let providerNames: [String]
 
         if type == .proxy {
-            requestProxyProviderList { resp in
-                resp.allProviders.filter {
-                    $0.value.vehicleType == .HTTP
-                }.forEach {
-                    group.enter()
-                    updateProvider(for: .proxy, name: $0.key) {
-                        if !$0 {
-                            failuresCount += 1
-                        }
-                        group.leave()
-                    }
-                }
-                group.leave()
-            }
+            let response = await requestProxyProviderList()
+            providerNames = response.allProviders
+                .filter { $0.value.vehicleType == .HTTP }
+                .map(\.key)
         } else {
-            requestRuleProviderList { resp in
-                resp.allProviders.forEach {
-                    group.enter()
-                    updateProvider(for: .rule, name: $0.key) {
-                        if !$0 {
-                            failuresCount += 1
-                        }
-                        group.leave()
-                    }
+            let response = await requestRuleProviderList()
+            providerNames = response.allProviders.map(\.key)
+        }
+
+        return await withTaskGroup(of: Bool.self, returning: Int.self) { group in
+            for name in providerNames {
+                group.addTask {
+                    await !updateProvider(for: type, name: name)
                 }
-                group.leave()
             }
-        }
 
-        group.notify(queue: .main) {
-            completeHandler?(failuresCount)
-        }
-    }
-
-    static func updateProvider(for type: ProviderType, name: String, completeHandler: ((Bool) -> Void)? = nil) {
-        let s = "Update \(type.logString()) Provider"
-
-        Logger.log("\(s) \(name)")
-        req("/providers/\(type.apiString())/\(name)", method: .put).response {
-            let re = $0.response?.statusCode == 204
-            Logger.log("\(s) \(name) \(re ? "success" : "failed")")
-            completeHandler?(re)
-        }
-    }
-
-    static func requestRuleProviderList(completeHandler: @escaping (ClashRuleProviderResp) -> Void) {
-        req("/providers/rules")
-            .responseDecodable(of: ClashRuleProviderResp.self, decoder: ClashProviderResp.decoder) { resp in
-            switch resp.result {
-            case let .success(providerResp):
-                completeHandler(providerResp)
-            case let .failure(err):
-                Logger.log("Get Rule providers error \(err.errorDescription ?? "unknown")" )
-                completeHandler(ClashRuleProviderResp())
+            var failuresCount = 0
+            for await didFail in group {
+                if didFail {
+                    failuresCount += 1
+                }
             }
+            return failuresCount
         }
     }
 
-    static func updateGEO(completeHandler: ((Bool) -> Void)? = nil) {
-        Logger.log("UpdateGEO")
-        req("/configs/geo", method: .post).response {
-            let re = $0.response?.statusCode == 204
+    static func updateProvider(for type: ProviderType, name: String) async -> Bool {
+        let logTitle = "Update \(type.logString()) Provider"
 
-            completeHandler?(re)
-//            Logger.log("UpdateGEO \(re ? "success" : "failed")")
-            Logger.log("Updating GEO Databases...")
+        Logger.log("\(logTitle) \(name)")
+
+        let response = await req("/providers/\(type.apiString())/\(name)", method: .put)
+            .serializingData()
+            .response
+        let success = response.response?.statusCode == 204
+
+        Logger.log("\(logTitle) \(name) \(success ? "success" : "failed")")
+        return success
+    }
+
+    static func requestRuleProviderList() async -> ClashRuleProviderResp {
+        do {
+            return try await req("/providers/rules")
+                .validate()
+                .serializingDecodable(ClashRuleProviderResp.self, decoder: ClashProviderResp.decoder)
+                .value
+        } catch {
+            Logger.log("Get Rule providers error \(error.localizedDescription)")
+            return ClashRuleProviderResp()
         }
     }
 
-    static func updateTun(enable: Bool, completeHandler: (() -> Void)? = nil) {
-        Logger.log("update tun:\(enable)", level: .debug)
-        req("/configs",
-            method: .patch,
-            parameters: ["tun": ["enable": enable]],
-            encoding: JSONEncoding.default).response {
-            _ in
-            completeHandler?()
-        }
-    }
+    static func flushDNSCache() async {
+        async let flushFakeipCache = flushFakeipCacheResult()
+        async let flushDNSCache = flushDNSCacheResult()
 
-    static func updateSniffing(enable: Bool, completeHandler: (() -> Void)? = nil) {
-        Logger.log("update sniffing:\(enable)", level: .debug)
-        req("/configs",
-            method: .patch,
-            parameters: ["sniffing": enable],
-            encoding: JSONEncoding.default).response {
-            _ in
-            completeHandler?()
-        }
-    }
-    
-    static func flushDNSCache() {
-        let group = DispatchGroup()
-        
-        var flushFakeipCacheResult = false
-        var flushDNSCacheResult = false
-        
-        group.enter()
-        ApiRequest.flushFakeipCache {
-            flushFakeipCacheResult = $0
-            group.leave()
-        }
-        
-        group.enter()
-        ApiRequest.flushDNSCache {
-            flushDNSCacheResult = $0
-            group.leave()
-        }
-        
-        group.notify(queue: .main) {
-            let info = (flushFakeipCacheResult && flushDNSCacheResult) ? "Success" : "Failed"
+        let flushFakeipCacheResult = await flushFakeipCache
+        let flushDNSCacheResult = await flushDNSCache
+        let info = (flushFakeipCacheResult && flushDNSCacheResult) ? "Success" : "Failed"
+
+        await MainActor.run {
             UserNotificationCenter.shared.post(title: NSLocalizedString("Flush dns cache", comment: ""), info: info)
         }
     }
 
-    private static func flushFakeipCache(completeHandler: ((Bool) -> Void)? = nil) {
-        Logger.log("FlushFakeipCache")
-        req("/cache/fakeip/flush",
-            method: .post).response {
-            let re = $0.response?.statusCode == 204
-            completeHandler?(re)
-            Logger.log("FlushFakeipCache \(re ? "success" : "failed")")
-        }
+    static func updateGEO() async -> Bool {
+        Logger.log("UpdateGEO")
+        let response = await req("/configs/geo", method: .post)
+            .serializingData()
+            .response
+        let success = response.response?.statusCode == 204
+        Logger.log("Updating GEO Databases...")
+        return success
     }
-    
-    private static func flushDNSCache(completeHandler: ((Bool) -> Void)? = nil) {
-        Logger.log("FlushDNSCache")
-        req("/cache/dns/flush",
-            method: .post).response {
-            let re = $0.response?.statusCode == 204
-            completeHandler?(re)
-            Logger.log("FlushDNSCache \(re ? "success" : "failed")")
+
+    static func updateTun(enable: Bool) async {
+        Logger.log("update tun:\(enable)", level: .debug)
+        do {
+            _ = try await req(
+                "/configs",
+                method: .patch,
+                parameters: ["tun": ["enable": enable]],
+                encoding: JSONEncoding.default
+            )
+            .validate()
+            .serializingData()
+            .value
+        } catch {
+            Logger.log("update tun failed: \(error.localizedDescription)", level: .error)
         }
     }
 
+    static func updateSniffing(enable: Bool) async {
+        Logger.log("update sniffing:\(enable)", level: .debug)
+        do {
+            _ = try await req(
+                "/configs",
+                method: .patch,
+                parameters: ["sniffing": enable],
+                encoding: JSONEncoding.default
+            )
+            .validate()
+            .serializingData()
+            .value
+        } catch {
+            Logger.log("update sniffing failed: \(error.localizedDescription)", level: .error)
+        }
+    }
+    
     // MARK: - Providers
 
     struct AllProviders {
@@ -551,41 +568,44 @@ extension ApiRequest {
         var rules = [String]()
     }
 
-    static func requestExternalProviderNames(completeHandler: @escaping (AllProviders) -> Void) {
-        var providers = AllProviders()
-        let group = DispatchGroup()
-        group.enter()
-        ApiRequest.req("/providers/proxies").responseData { resp in
-            switch resp.result {
-            case let .success(res):
-                let json = JSON(res)
-                let provoders = json["providers"].dictionaryValue
-                    .filter { $0.value["vehicleType"] == "HTTP" }.map(\.key)
-                providers.proxies = provoders
-            case let .failure(err):
-                Logger.log(err.localizedDescription, level: .warning)
+    static func requestExternalProviderNames() async -> AllProviders {
+        async let proxyNamesTask: [String] = {
+            do {
+                let responseData = try await req("/providers/proxies")
+                    .validate()
+                    .serializingData()
+                    .value
+                let json = JSON(responseData)
+                return json["providers"].dictionaryValue
+                    .filter { $0.value["vehicleType"] == "HTTP" }
+                    .map(\.key)
+            } catch {
+                Logger.log(error.localizedDescription, level: .warning)
+                return []
             }
-            group.leave()
-        }
+        }()
 
         #if PRO_VERSION
-            group.enter()
-            ApiRequest.req("/providers/rules").responseData { resp in
-                switch resp.result {
-                case let .success(res):
-                    let json = JSON(res)
-                    let provoders = json["providers"].dictionaryValue
-                        .filter { $0.value["vehicleType"] == "HTTP" }.map(\.key)
-                    providers.rules = provoders
-                case let .failure(err):
-                    Logger.log(err.localizedDescription, level: .warning)
+            async let ruleNamesTask: [String] = {
+                do {
+                    let responseData = try await req("/providers/rules")
+                        .validate()
+                        .serializingData()
+                        .value
+                    let json = JSON(responseData)
+                    return json["providers"].dictionaryValue
+                        .filter { $0.value["vehicleType"] == "HTTP" }
+                        .map(\.key)
+                } catch {
+                    Logger.log(error.localizedDescription, level: .warning)
+                    return []
                 }
-                group.leave()
-            }
+            }()
+
+            return AllProviders(proxies: await proxyNamesTask, rules: await ruleNamesTask)
+        #else
+            return AllProviders(proxies: await proxyNamesTask, rules: [])
         #endif
-        group.notify(queue: .main) {
-            completeHandler(providers)
-        }
     }
 
 	/*
@@ -595,27 +615,11 @@ extension ApiRequest {
     }
 	 */
 
-    static func updateProvider(name: String, type: ProviderType, completeHandler: @escaping (Bool) -> Void) {
-        let url: String
-        switch type {
-        case .proxy:
-            url = "/providers/proxies/\(name.encoded)"
-        case .rule:
-            url = "/providers/rules/\(name.encoded)"
-        }
-        ApiRequest.req(url, method: .put).response { resp in
-            if resp.response?.statusCode == 204 {
-                completeHandler(true)
-            } else {
-                completeHandler(false)
-            }
-        }
-    }
-
-    static func resetFakeIpCache() {
-        ApiRequest.req("/cache/fakeip/flush", method: .post).response { resp in
-            Logger.log("flush fake ip: \(resp.response?.statusCode ?? -1)")
-        }
+    static func resetFakeIpCache() async {
+        let response = await req("/cache/fakeip/flush", method: .post)
+            .serializingData()
+            .response
+        Logger.log("flush fake ip: \(response.response?.statusCode ?? -1)")
     }
 }
 
@@ -693,6 +697,32 @@ extension ApiRequest {
 		socket.connect()
 		memoryWebSocket = socket
 	}
+
+    private func notifyStreamStatusChanged() {
+        Task {
+            await delegate?.streamStatusChanged()
+            await dashboardDelegate?.streamStatusChanged()
+        }
+    }
+
+    private func notifyTrafficUpdate(up: Int, down: Int) {
+        Task {
+            await delegate?.didUpdateTraffic(up: up, down: down)
+            await dashboardDelegate?.didUpdateTraffic(up: up, down: down)
+        }
+    }
+
+    private func notifyLog(log: String, level: String) async {
+        await delegate?.didGetLog(log: log, level: level)
+        await dashboardDelegate?.didGetLog(log: log, level: level)
+    }
+
+    private func notifyMemoryUpdate(memory: Int64) {
+        Task {
+            await delegate?.didUpdateMemory(memory: memory)
+            await dashboardDelegate?.didUpdateMemory(memory: memory)
+        }
+    }
 }
 
 extension ApiRequest: WebSocketDelegate {
@@ -704,8 +734,7 @@ extension ApiRequest: WebSocketDelegate {
 			Logger.log("trafficWebSocket did Connect", level: .debug)
 			
 			ConfigManager.shared.isRunning = true
-			delegate?.streamStatusChanged()
-			dashboardDelegate?.streamStatusChanged()
+            notifyStreamStatusChanged()
 		case loggingWebSocket:
 			loggingWebSocketRetryDelay = 1
 			Logger.log("loggingWebSocket did Connect", level: .debug)
@@ -721,8 +750,7 @@ extension ApiRequest: WebSocketDelegate {
 		
 		if (socket as? WebSocket) == trafficWebSocket {
 			ConfigManager.shared.isRunning = false
-			delegate?.streamStatusChanged()
-			dashboardDelegate?.streamStatusChanged()
+            notifyStreamStatusChanged()
 		}
 		
 		guard let err = error else {
@@ -777,17 +805,14 @@ extension ApiRequest: WebSocketDelegate {
 		
 		switch webSocket {
 		case trafficWebSocket:
-			delegate?.didUpdateTraffic(up: json["up"].intValue, down: json["down"].intValue)
-			dashboardDelegate?.didUpdateTraffic(up: json["up"].intValue, down: json["down"].intValue)
+            notifyTrafficUpdate(up: json["up"].intValue, down: json["down"].intValue)
 		case loggingWebSocket:
             Task {
                 guard await logRateLimiter.processLog() else { return }
-                delegate?.didGetLog(log: json["payload"].stringValue, level: json["type"].string ?? "info")
-                dashboardDelegate?.didGetLog(log: json["payload"].stringValue, level: json["type"].string ?? "info")
+                await notifyLog(log: json["payload"].stringValue, level: json["type"].string ?? "info")
             }
 		case memoryWebSocket:
-			delegate?.didUpdateMemory(memory: json["inuse"].int64Value)
-			dashboardDelegate?.didUpdateMemory(memory: json["inuse"].int64Value)
+            notifyMemoryUpdate(memory: json["inuse"].int64Value)
 		default:
 			return
 		}

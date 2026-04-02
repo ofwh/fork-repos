@@ -66,13 +66,16 @@ struct OverviewView: View {
 
 		}
 		.padding()
-		.onAppear {
-			ApiRequest.requestVersion {
-				self.version = $0?.version ?? ""
-			}
+		.task {
+			await loadVersion()
 		}
         .background(Color("SwiftUI Colors/WindowBackgroundColor"))
     }
+
+	@MainActor
+	func loadVersion() async {
+		version = await ApiRequest.requestVersion()?.version ?? ""
+	}
 	
 	func updateColumnCount(_ width: Double) {
 		let v = Int(Int(width) / 155)

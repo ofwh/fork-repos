@@ -8,40 +8,37 @@
 
 import Foundation
 enum UpdateExternalResourceAction {
-    static func run() {
-        ApiRequest.requestExternalProviderNames { provider in
-            let group = DispatchGroup()
-            var successCount = 0
-            let totalCount = provider.proxies.count + provider.rules.count
-            if totalCount == 0 {
-                onFinished(success: 0, total: 0, fails: [])
-                return
-            }
-            var fails = [String]()
+    static func run() async {
+        let provider = await ApiRequest.requestExternalProviderNames()
+        let totalCount = provider.proxies.count + provider.rules.count
+        if totalCount == 0 {
+            onFinished(success: 0, total: 0, fails: [])
+            return
+        }
+
+        let results = await withTaskGroup(of: (String, Bool).self, returning: [(String, Bool)].self) { group in
             for name in provider.proxies {
-                group.enter()
-                ApiRequest.updateProvider(name: name, type: .proxy) { success in
-                    if success { successCount += 1 } else {
-                        fails.append(name)
-                    }
-                    group.leave()
+                group.addTask {
+                    (name, await ApiRequest.updateProvider(for: .proxy, name: name))
                 }
             }
 
             for name in provider.rules {
-                group.enter()
-                ApiRequest.updateProvider(name: name, type: .rule) { success in
-                    if success { successCount += 1 } else {
-                        fails.append(name)
-                    }
-                    group.leave()
+                group.addTask {
+                    (name, await ApiRequest.updateProvider(for: .rule, name: name))
                 }
             }
 
-            group.notify(queue: .main) {
-                onFinished(success: successCount, total: totalCount, fails: fails)
+            var results = [(String, Bool)]()
+            for await result in group {
+                results.append(result)
             }
+            return results
         }
+
+        let successCount = results.filter(\.1).count
+        let fails = results.filter { !$0.1 }.map(\.0)
+        onFinished(success: successCount, total: totalCount, fails: fails)
     }
 
     private static func onFinished(success: Int, total: Int, fails: [String]) {

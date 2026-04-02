@@ -151,12 +151,11 @@ class ClashMetaConfig: NSObject {
         }
     }
 
-    static func generateInitConfig(_ callback: @escaping ((Config) -> Void)) {
+    static func generateInitConfig() async -> Config {
         var config = Config()
-        ApiRequest.findConfigPath(configName: ConfigManager.selectConfigName) {
-            config.loadDefaultConfigFile($0 ?? "")
-            callback(config)
-        }
+        let path = await ApiRequest.findConfigPath(configName: ConfigManager.selectConfigName)
+		config.loadDefaultConfigFile(path ?? "")
+		return config
     }
 
     static func updateConfigTun(_ config: Data, enable: Bool) -> String? {

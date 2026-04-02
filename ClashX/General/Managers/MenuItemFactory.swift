@@ -18,7 +18,9 @@ class MenuItemFactory {
     static var hideUnselectable: Int = UserDefaults.standard.object(forKey: "hideUnselectable") as? Int ?? NSControl.StateValue.off.rawValue {
         didSet {
             UserDefaults.standard.set(hideUnselectable, forKey: "hideUnselectable")
-            recreateProxyMenuItems()
+            Task {
+                await recreateProxyMenuItems()
+            }
         }
     }
 	
@@ -27,36 +29,34 @@ class MenuItemFactory {
 
     // MARK: - Public
 
-    static func refreshExistingMenuItems() {
-        ApiRequest.getMergedProxyData {
-            info in
-            if info?.proxiesMap.keys != cachedProxyData?.proxiesMap.keys {
-                // force update menu
-                refreshMenuItems(mergedData: info)
-                return
-            }
+    @MainActor
+    static func refreshExistingMenuItems() async {
+        let info = await ApiRequest.getMergedProxyData()
+        if info.proxiesMap.keys != cachedProxyData?.proxiesMap.keys {
+            await refreshMenuItems(mergedData: info)
+            return
+        }
 
-            for proxy in info?.proxies ?? [] {
-                NotificationCenter.default.post(name: .proxyUpdate(for: proxy.name), object: proxy, userInfo: nil)
-            }
+        for proxy in info.proxies {
+            NotificationCenter.default.post(name: .proxyUpdate(for: proxy.name), object: proxy, userInfo: nil)
         }
     }
 
-    static func recreateProxyMenuItems() {
-        ApiRequest.getMergedProxyData {
-            proxyInfo in
-            cachedProxyData = proxyInfo
-            refreshMenuItems(mergedData: proxyInfo)
-        }
+    @MainActor
+    static func recreateProxyMenuItems() async {
+        let proxyInfo = await ApiRequest.getMergedProxyData()
+        cachedProxyData = proxyInfo
+        await refreshMenuItems(mergedData: proxyInfo)
     }
 
-    static func recreateRuleProvidersMenuItems() {
-        ApiRequest.requestRuleProviderList {
-            refreshRuleProviderMenuItems($0.allProviders.map({ $0.value }))
-        }
+    @MainActor
+    static func recreateRuleProvidersMenuItems() async {
+		let resp = await ApiRequest.requestRuleProviderList()
+		refreshRuleProviderMenuItems(resp.allProviders.map({ $0.value }))
     }
 
-    static func refreshMenuItems(mergedData proxyInfo: ClashProxyResp?) {
+    @MainActor
+    static func refreshMenuItems(mergedData proxyInfo: ClashProxyResp?) async {
         let leftPadding = AppDelegate.shared.hasMenuSelected()
         guard let proxyInfo = proxyInfo else { return }
 
@@ -110,10 +110,10 @@ class MenuItemFactory {
         updateProxyList(withMenus: items)
 
         refreshProxyProviderMenuItems(mergedData: proxyInfo)
-        recreateRuleProvidersMenuItems()
+        await recreateRuleProvidersMenuItems()
     }
 
-    static func generateSwitchConfigMenuItems(complete: @escaping (([NSMenuItem]) -> Void)) {
+    static func generateSwitchConfigMenuItems() async -> [NSMenuItem] {
         let generateMenuItem: ((String) -> NSMenuItem) = {
             config in
             let item = NSMenuItem(title: config, action: #selector(MenuItemFactory.actionSelectConfig(sender:)), keyEquivalent: "")
@@ -123,16 +123,18 @@ class MenuItemFactory {
         }
 
         if RemoteControlManager.selectConfig != nil {
-            complete([])
-            return
+            return []
         }
 
         if ICloudManager.shared.useiCloud.value {
-            ICloudManager.shared.getConfigFilesList {
-                complete($0.map { generateMenuItem($0) })
+            let list = await withCheckedContinuation { continuation in
+                ICloudManager.shared.getConfigFilesList {
+                    continuation.resume(returning: $0)
+                }
             }
+            return list.map { generateMenuItem($0) }
         } else {
-            complete(ConfigManager.getConfigFilesList().map { generateMenuItem($0) })
+            return ConfigManager.getConfigFilesList().map { generateMenuItem($0) }
         }
     }
 
@@ -292,7 +294,9 @@ extension MenuItemFactory {
     @objc static func optionUseViewRenderMenuItemTap(sender: NSMenuItem) {
         useViewToRenderProxy = !useViewToRenderProxy
         updateUseViewRenderMenuItem(sender)
-        recreateProxyMenuItems()
+        Task {
+            await recreateProxyMenuItems()
+        }
     }
 }
 
@@ -410,11 +414,8 @@ extension MenuItemFactory {
         let type = ApiRequest.ProviderType(rawValue: sender.tag)!
         let s = "Update All \(type.logString()) Providers"
         Logger.log(s)
-        ApiRequest.updateAllProviders(for: type) {
-            Logger.log("\(s) \($0) failed")
-            let info = $0 == 0 ? "Success" : "\($0) failed"
-			UserNotificationCenter.shared.post(title: s, info: info)
-            recreateProxyMenuItems()
+        Task {
+            await updateAllProviders(for: type, logTitle: s)
         }
     }
 
@@ -424,12 +425,27 @@ extension MenuItemFactory {
 
         let log = "Update \(type.logString()) Provider \(name)"
         Logger.log(log)
-        ApiRequest.updateProvider(for: type, name: name) {
-            let info = $0 ? "Success" : "Failed"
-            Logger.log("\(log) info")
-			UserNotificationCenter.shared.post(title: log, info: info)
-            recreateProxyMenuItems()
+        Task {
+            await updateProvider(named: name, type: type, logTitle: log)
         }
+    }
+
+    @MainActor
+    private static func updateAllProviders(for type: ApiRequest.ProviderType, logTitle: String) async {
+        let failures = await ApiRequest.updateAllProviders(for: type)
+		Logger.log("\(logTitle) \(failures) failed")
+		let info = failures == 0 ? "Success" : "\(failures) failed"
+		UserNotificationCenter.shared.post(title: logTitle, info: info)
+        await recreateProxyMenuItems()
+    }
+
+    @MainActor
+    private static func updateProvider(named name: String, type: ApiRequest.ProviderType, logTitle: String) async {
+        let success = await ApiRequest.updateProvider(for: type, name: name)
+		let info = success ? "Success" : "Failed"
+		Logger.log("\(logTitle) info")
+		UserNotificationCenter.shared.post(title: logTitle, info: info)
+        await recreateProxyMenuItems()
     }
 }
 
@@ -440,33 +456,43 @@ extension MenuItemFactory {
         guard let proxyGroup = sender.menu?.title else { return }
         let proxyName = sender.proxyName
 
-        ApiRequest.updateProxyGroup(group: proxyGroup, selectProxy: proxyName) { success in
-            if success {
-                for items in sender.menu?.items ?? [NSMenuItem]() {
-                    items.state = .off
-                }
-                sender.state = .on
-                // remember select proxy
-                let newModel = SavedProxyModel(group: proxyGroup, selected: proxyName, config: ConfigManager.selectConfigName)
-                ConfigManager.selectedProxyRecords.removeAll { model -> Bool in
-                    return model.key == newModel.key
-                }
-                ConfigManager.selectedProxyRecords.append(newModel)
-                // terminal Connections for this group
-                ConnectionManager.closeConnection(for: proxyGroup)
-                // refresh menu items
-                MenuItemFactory.refreshExistingMenuItems()
-            }
+        Task {
+            await selectProxy(group: proxyGroup, name: proxyName, sender: sender)
         }
     }
 
     @objc static func actionSelectConfig(sender: NSMenuItem) {
         let config = sender.title
-        AppDelegate.shared.updateConfig(configName: config, showNotification: false) {
-            err in
-            if err == nil {
-                ConnectionManager.closeAllConnection()
+        Task {
+            await selectConfig(named: config)
+        }
+    }
+
+    @MainActor
+    private static func selectProxy(group proxyGroup: String, name proxyName: String, sender: ProxyMenuItem) async {
+        let success = await ApiRequest.updateProxyGroup(group: proxyGroup, selectProxy: proxyName)
+        if success {
+            for items in sender.menu?.items ?? [NSMenuItem]() {
+                items.state = .off
             }
+            sender.state = .on
+
+            let newModel = SavedProxyModel(group: proxyGroup, selected: proxyName, config: ConfigManager.selectConfigName)
+            ConfigManager.selectedProxyRecords.removeAll { model -> Bool in
+                return model.key == newModel.key
+            }
+            ConfigManager.selectedProxyRecords.append(newModel)
+
+            await ConnectionManager.closeConnection(for: proxyGroup)
+            await refreshExistingMenuItems()
+        }
+    }
+
+    @MainActor
+    private static func selectConfig(named config: String) async {
+        let err = await AppDelegate.shared.updateConfig(configName: config, showNotification: false)
+        if err == nil {
+            await ConnectionManager.closeAllConnection()
         }
     }
 

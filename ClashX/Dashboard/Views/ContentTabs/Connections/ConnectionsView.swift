@@ -35,7 +35,9 @@ struct ConnectionsView: View {
 	}
 	
 	func stopConns() {
-		ApiRequest.closeAllConnection()
+		Task {
+			await ApiRequest.closeAllConnection()
+		}
 	}
 }
 

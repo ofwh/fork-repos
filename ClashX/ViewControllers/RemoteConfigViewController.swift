@@ -135,9 +135,9 @@ extension RemoteConfigViewController {
     func requestUpdate(config: RemoteConfigModel) {
         guard !config.updating else { return }
         config.updating = true
-        RemoteConfigManager.updateConfig(config: config) {
-            [weak self, weak config] errorString in
+        Task { @MainActor [weak self, weak config] in
             guard let self = self, let config = config else { return }
+            let errorString = await RemoteConfigManager.updateConfig(config: config)
             config.updating = false
             if let errorString = errorString {
                 let alert = NSAlert()
@@ -149,9 +149,9 @@ extension RemoteConfigViewController {
                 RemoteConfigManager.shared.saveConfigs()
 
                 if config == self.latestAddedConfig {
-                    AppDelegate.shared.updateConfig(configName: config.name)
+                    _ = await AppDelegate.shared.updateConfig(configName: config.name)
                 } else if config.name == ConfigManager.selectConfigName {
-                    AppDelegate.shared.updateConfig()
+                    _ = await AppDelegate.shared.updateConfig()
                 }
             }
             self.tableView.reloadDataKeepingSelection()

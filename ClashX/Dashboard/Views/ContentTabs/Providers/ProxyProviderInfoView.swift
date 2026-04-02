@@ -27,7 +27,9 @@ struct ProxyProviderInfoView: View {
 					title2: "",
 					iconName: "arrow.clockwise",
 					inProgress: $isUpdating) {
-						update()
+						Task {
+							await update()
+						}
 					}
 			}
 		}
@@ -68,17 +70,16 @@ struct ProxyProviderInfoView: View {
 		.foregroundColor(.secondary)
 	}
 	
-	func update() {
+	@MainActor
+	func update() async {
 		isUpdating = true
 		let name = provider.name
-		ApiRequest.updateProvider(for: .proxy, name: name) { _ in
-			ApiRequest.requestProxyProviderList() { resp in
-				if let p = resp.allProviders[provider.name] {
-					provider.updateInfo(DBProxyProvider(provider: p))
-				}
-				isUpdating = false
-			}
+		_ = await ApiRequest.updateProvider(for: .proxy, name: name)
+		let resp = await ApiRequest.requestProxyProviderList()
+		if let p = resp.allProviders[provider.name] {
+			provider.updateInfo(DBProxyProvider(provider: p))
 		}
+		isUpdating = false
 	}
 }
 
