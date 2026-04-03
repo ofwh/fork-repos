@@ -12,6 +12,8 @@
 		013B21FB2F7E95E0009B30CB /* DGCharts in Frameworks */ = {isa = PBXBuildFile; productRef = 013B21FA2F7E95E0009B30CB /* DGCharts */; };
 		013B21FD2F7EC4F9009B30CB /* ProxyConfigHelperXPCTransport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 013B21FC2F7EC4F9009B30CB /* ProxyConfigHelperXPCTransport.swift */; };
 		013B21FE2F7EC551009B30CB /* ProxyConfigHelperXPCTransport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 013B21FC2F7EC4F9009B30CB /* ProxyConfigHelperXPCTransport.swift */; };
+		013B21FF2F7FB18A009B30CB /* Task+Sleep.swift in Sources */ = {isa = PBXBuildFile; fileRef = A15E90002E5C9A1100C0FFEE /* Task+Sleep.swift */; };
+		013B22002F7FB3DC009B30CB /* Command.swift in Sources */ = {isa = PBXBuildFile; fileRef = 49FEC6682AD9369C00BAD9F5 /* Command.swift */; };
 		0162E74F2864B819007218A6 /* MetaTask.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0162E74E2864B819007218A6 /* MetaTask.swift */; };
 		0197255A2CA15D6400C14E49 /* UserNotificationCenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 019725592CA15D6400C14E49 /* UserNotificationCenter.swift */; };
 		0197255C2CA15FC600C14E49 /* NSWorkspace+openFile.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0197255B2CA15FC600C14E49 /* NSWorkspace+openFile.swift */; };
@@ -79,10 +81,10 @@
 		01F335D72AD10D0B0048AF77 /* DateFormatter+.swift in Sources */ = {isa = PBXBuildFile; fileRef = F939724D23A4DB0600FE5A3F /* DateFormatter+.swift */; };
 		01F335D82AD10D0B0048AF77 /* ClashConnection.swift in Sources */ = {isa = PBXBuildFile; fileRef = F915A4612366ADEF004840BE /* ClashConnection.swift */; };
 		01F335D92AD10D0B0048AF77 /* ConnectionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = F977FAAD23669D6400C17F1F /* ConnectionManager.swift */; };
-		01F335DB2BD10D0B0048AF77 /* ConfigReloadManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 01F335DA2CD10D0B0048AF77 /* ConfigReloadManager.swift */; };
-		01F335DA2BD10D0B0048AF77 /* ProxyHealthCheckManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 01F335D92BD10D0B0048AF77 /* ProxyHealthCheckManager.swift */; };
 		01F335DA2AD10D0B0048AF77 /* StatusItemView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 495340B220DE68C300B0D3FF /* StatusItemView.swift */; };
+		01F335DA2BD10D0B0048AF77 /* ProxyHealthCheckManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 01F335D92BD10D0B0048AF77 /* ProxyHealthCheckManager.swift */; };
 		01F335DB2AD10D0B0048AF77 /* SystemProxyManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = F935B2FB23085515009E4D33 /* SystemProxyManager.swift */; };
+		01F335DB2BD10D0B0048AF77 /* ConfigReloadManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 01F335DA2CD10D0B0048AF77 /* ConfigReloadManager.swift */; };
 		01F335DC2AD10D0B0048AF77 /* LaunchAtLogin.swift in Sources */ = {isa = PBXBuildFile; fileRef = 495A44D220D267D000888A0A /* LaunchAtLogin.swift */; };
 		01F335DD2AD10D0B0048AF77 /* Combine+Ext.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4991D2312A565E6A00978143 /* Combine+Ext.swift */; };
 		01F335DE2AD10D0B0048AF77 /* DebugSettingViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 49281C7F2A1F01FA00F60935 /* DebugSettingViewController.swift */; };
@@ -179,7 +181,6 @@
 		01F3363E2AD10D0B0048AF77 /* country.mmdb.gz in Resources */ = {isa = PBXBuildFile; fileRef = 01B2274A29B845F100FE35C9 /* country.mmdb.gz */; };
 		01F336402AD10D0B0048AF77 /* com.metacubex.ClashX.ProxyConfigHelper in Copy Files */ = {isa = PBXBuildFile; fileRef = F9A7C0692306E874007163C7 /* com.metacubex.ClashX.ProxyConfigHelper */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		01FBC6312B9C2B0800810BFF /* ClashProcess.swift in Sources */ = {isa = PBXBuildFile; fileRef = 01FBC62F2B9C2B0800810BFF /* ClashProcess.swift */; };
-		491E6203258A424D00313AEF /* CommonUtils.m in Sources */ = {isa = PBXBuildFile; fileRef = 491E61FD258A424500313AEF /* CommonUtils.m */; };
 		A15E90012E5C9A1100C0FFEE /* Task+Sleep.swift in Sources */ = {isa = PBXBuildFile; fileRef = A15E90002E5C9A1100C0FFEE /* Task+Sleep.swift */; };
 		F935B2FA23083EE6009E4D33 /* ProxySettingTool.m in Sources */ = {isa = PBXBuildFile; fileRef = F935B2F923083EE6009E4D33 /* ProxySettingTool.m */; };
 /* End PBXBuildFile section */
@@ -230,7 +231,6 @@
 		019725592CA15D6400C14E49 /* UserNotificationCenter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserNotificationCenter.swift; sourceTree = "<group>"; };
 		0197255B2CA15FC600C14E49 /* NSWorkspace+openFile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "NSWorkspace+openFile.swift"; sourceTree = "<group>"; };
 		019A239528657A7A00AE5698 /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
-		01F335D92BD10D0B0048AF77 /* ProxyHealthCheckManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProxyHealthCheckManager.swift; sourceTree = "<group>"; };
 		01B009AC2854533200B93618 /* geoip.dat.gz */ = {isa = PBXFileReference; lastKnownFileType = archive.gzip; path = geoip.dat.gz; sourceTree = "<group>"; };
 		01B009AD2854533300B93618 /* geosite.dat.gz */ = {isa = PBXFileReference; lastKnownFileType = archive.gzip; path = geosite.dat.gz; sourceTree = "<group>"; };
 		01B1CB092A2E20C10073EA34 /* DashboardManager.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = DashboardManager.swift; sourceTree = "<group>"; };
@@ -284,6 +284,8 @@
 		01E33AB429B5C5E300FD1006 /* menu_icon@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "menu_icon@2x.png"; sourceTree = "<group>"; };
 		01EF335F2B98D03B00D1DBD9 /* ProxyConfigHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProxyConfigHelper.swift; sourceTree = "<group>"; };
 		01EF33612B98D3A700D1DBD9 /* ProxyConfigRemoteProcessProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProxyConfigRemoteProcessProtocol.swift; sourceTree = "<group>"; };
+		01F335D92BD10D0B0048AF77 /* ProxyHealthCheckManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProxyHealthCheckManager.swift; sourceTree = "<group>"; };
+		01F335DA2CD10D0B0048AF77 /* ConfigReloadManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConfigReloadManager.swift; sourceTree = "<group>"; };
 		01F336442AD10D0B0048AF77 /* ClashX Meta.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "ClashX Meta.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		01FBC62F2B9C2B0800810BFF /* ClashProcess.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClashProcess.swift; sourceTree = "<group>"; };
 		2753484F2A3082FD0077B458 /* TunModeSettingCommand.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TunModeSettingCommand.swift; sourceTree = "<group>"; };
@@ -291,8 +293,6 @@
 		4905A2C92A20841B00AEDA2E /* NSView+Layout.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "NSView+Layout.swift"; sourceTree = "<group>"; };
 		4908087A29F8F3FF007A4944 /* libresolv.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = libresolv.tbd; path = usr/lib/libresolv.tbd; sourceTree = SDKROOT; };
 		4913C82221157D0200F6B87C /* Notification.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Notification.swift; sourceTree = "<group>"; };
-		491E61FC258A424500313AEF /* CommonUtils.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = CommonUtils.h; sourceTree = "<group>"; };
-		491E61FD258A424500313AEF /* CommonUtils.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = CommonUtils.m; sourceTree = "<group>"; };
 		49228456270AADE20027A4B6 /* RemoteConfigUpdateIntervalSettingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemoteConfigUpdateIntervalSettingView.swift; sourceTree = "<group>"; };
 		49281C7F2A1F01FA00F60935 /* DebugSettingViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DebugSettingViewController.swift; sourceTree = "<group>"; };
 		4929F67E258CE04700A435F6 /* Settings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Settings.swift; sourceTree = "<group>"; };
@@ -357,7 +357,6 @@
 		49CF3B3520CD75DF001EBF94 /* ClashX-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "ClashX-Bridging-Header.h"; sourceTree = "<group>"; };
 		49CF3B5B20CE8068001EBF94 /* ClashResourceManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClashResourceManager.swift; sourceTree = "<group>"; };
 		49CF3B6420CEE06C001EBF94 /* ConfigManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConfigManager.swift; sourceTree = "<group>"; };
-		01F335DA2CD10D0B0048AF77 /* ConfigReloadManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConfigReloadManager.swift; sourceTree = "<group>"; };
 		49D176A62355FE680093DD7B /* NetworkChangeNotifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkChangeNotifier.swift; sourceTree = "<group>"; };
 		49D176A8235614340093DD7B /* ProxyGroupSpeedTestMenuItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProxyGroupSpeedTestMenuItem.swift; sourceTree = "<group>"; };
 		49D176AA23575BB20093DD7B /* ProxyGroupMenuItemView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProxyGroupMenuItemView.swift; sourceTree = "<group>"; };
@@ -870,8 +869,6 @@
 				0162E74E2864B819007218A6 /* MetaTask.swift */,
 				01CA6BBF2B6A1B3100E386D6 /* MetaServer.swift */,
 				01BC9ABD2928E5C600F9B177 /* MetaDNS.swift */,
-				491E61FC258A424500313AEF /* CommonUtils.h */,
-				491E61FD258A424500313AEF /* CommonUtils.m */,
 				F935B2F823083EE6009E4D33 /* ProxySettingTool.h */,
 				F935B2F923083EE6009E4D33 /* ProxySettingTool.m */,
 				0162E74D2864B818007218A6 /* com.metacubex.ClashX.ProxyConfigHelper-Bridging-Header.h */,
@@ -1165,10 +1162,11 @@
 				0162E74F2864B819007218A6 /* MetaTask.swift in Sources */,
 				01EF33602B98D03B00D1DBD9 /* ProxyConfigHelper.swift in Sources */,
 				019A239628657A7A00AE5698 /* main.swift in Sources */,
-				491E6203258A424D00313AEF /* CommonUtils.m in Sources */,
+				013B21FF2F7FB18A009B30CB /* Task+Sleep.swift in Sources */,
 				01BC9ABE2928EB5A00F9B177 /* MetaDNS.swift in Sources */,
 				01CA6BC12B6A1B3100E386D6 /* MetaServer.swift in Sources */,
 				013B21FD2F7EC4F9009B30CB /* ProxyConfigHelperXPCTransport.swift in Sources */,
+				013B22002F7FB3DC009B30CB /* Command.swift in Sources */,
 				F935B2FA23083EE6009E4D33 /* ProxySettingTool.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

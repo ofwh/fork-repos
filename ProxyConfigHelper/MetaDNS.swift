@@ -103,11 +103,11 @@ class MetaDNS: NSObject {
     }
     
     
-    @objc func flushDnsCache() {
+    func flushDnsCache() async {
         if #available(OSX 10.15, *) {
-            CommonUtils.runCommand("/usr/bin/dscacheutil", args: ["-flushcache"])
+            await Command(cmd: "/usr/bin/dscacheutil", args: ["-flushcache"]).run()
         }
-        CommonUtils.runCommand("/usr/bin/killall", args: ["-HUP", "mDNSResponder"])
+        await Command(cmd: "/usr/bin/killall", args: ["-HUP", "mDNSResponder"]).run()
         
         print("flushDnsCache")
     }

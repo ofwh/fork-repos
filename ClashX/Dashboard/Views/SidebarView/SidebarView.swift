@@ -10,10 +10,9 @@ struct SidebarView: View {
 	
 	@StateObject var clashApiDatasStorage = ClashApiDatasStorage()
 	
-	private let timer = Timer.publish(every: 1, on: .main, in: .default).autoconnect()
-	
 	@State private var sidebarSelectionName: SidebarItem? = .overview
 	@State private var updateConnectionsTask: Task<Void, Never>?
+	@State private var pollingTask: Task<Void, Never>?
 	
     var body: some View {
 		Group {
@@ -31,18 +30,30 @@ struct SidebarView: View {
 			clashApiDatasStorage.connsStorage.conns.removeAll()
 			
 			updateConnections()
+			startPollingConnections()
 		}
 		.onChange(of: sidebarSelectionName) { newValue in
 			sidebarItemChanged(newValue)
 		}
-		.onReceive(timer, perform: { _ in
-			updateConnections()
-		})
 		.onDisappear {
+			pollingTask?.cancel()
+			pollingTask = nil
 			updateConnectionsTask?.cancel()
 			updateConnectionsTask = nil
 		}
 
+	}
+
+	@MainActor
+	func startPollingConnections() {
+		pollingTask?.cancel()
+		pollingTask = Task {
+			while !Task.isCancelled {
+				try? await Task.sleep(seconds: 1)
+				guard !Task.isCancelled else { return }
+				await updateConnections()
+			}
+		}
 	}
 	
 	@MainActor

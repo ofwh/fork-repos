@@ -12,29 +12,37 @@ struct Command {
     let cmd: String
     let args: [String]
 
-    func run() -> String {
-        var output = ""
+    @discardableResult
+    func run() async -> String {
+        do {
+            let output = try await outputData()
+            return String(data: output, encoding: .utf8)?.trimmingCharacters(in: .newlines) ?? ""
+        } catch {
+            print("Error running command: \(error)")
+            return ""
+        }
+    }
 
+    func outputData() async throws -> Data {
         let task = Process()
-
         task.executableURL = URL(fileURLWithPath: cmd)
         task.arguments = args
 
-        let outpipe = Pipe()
-        task.standardOutput = outpipe
+        let outputPipe = Pipe()
+        task.standardOutput = outputPipe
+        task.standardError = Pipe()
 
-        do {
-            try task.run()
-            task.waitUntilExit()
-
-            let outdata = outpipe.fileHandleForReading.readDataToEndOfFile()
-            if let string = String(data: outdata, encoding: .utf8) {
-                output = string.trimmingCharacters(in: .newlines)
+        return try await withCheckedThrowingContinuation { continuation in
+            task.terminationHandler = { _ in
+                let outputData = outputPipe.fileHandleForReading.readDataToEndOfFile()
+                continuation.resume(returning: outputData)
             }
-        } catch {
-            print("Error running command: \(error)")
-        }
 
-        return output
+            do {
+                try task.run()
+            } catch {
+                continuation.resume(throwing: error)
+            }
+        }
     }
 }

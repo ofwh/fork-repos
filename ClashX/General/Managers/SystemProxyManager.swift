@@ -44,7 +44,7 @@ class SystemProxyManager: NSObject {
             Logger.log("enableProxy fail: \(port) \(socksPort)", level: .error)
             return
         }
-        if SSIDSuspendTool.shared.shouldSuspend() {
+        if await SSIDSuspendTool.shared.shouldSuspend() {
             Logger.log("not enableProxy due to ssid in disabled list", level: .info)
             return
         }

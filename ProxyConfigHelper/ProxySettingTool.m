@@ -9,7 +9,6 @@
 #import "ProxySettingTool.h"
 #import <SystemConfiguration/SystemConfiguration.h>
 #import <AppKit/AppKit.h>
-#import "CommonUtils.h"
 
 @interface ProxySettingTool()
 @property (nonatomic, assign) AuthorizationRef authRef;

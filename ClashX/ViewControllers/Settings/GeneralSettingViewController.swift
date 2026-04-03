@@ -47,7 +47,9 @@ class GeneralSettingViewController: NSViewController {
             .map { $0.components(separatedBy: ",").filter { !$0.isEmpty } }
             .subscribe { arr in
                 Settings.disableSSIDList = arr
-                SSIDSuspendTool.shared.update()
+                Task { @MainActor in
+                    await SSIDSuspendTool.shared.update()
+                }
             }.disposed(by: disposeBag)
 
         LaunchAtLogin.shared.isEnableVirable
@@ -136,7 +138,9 @@ class GeneralSettingViewController: NSViewController {
         }
         SSIDSuspendTool.shared.showNoticeOnNotPermission = true
         SSIDSuspendTool.shared.requestPermissionIfNeed()
-        SSIDSuspendTool.shared.update()
+        Task { @MainActor in
+            await SSIDSuspendTool.shared.update()
+        }
     }
 
     @IBAction func actionResetIgnoreList(_ sender: Any) {

@@ -212,27 +212,27 @@ private extension ProxyConfigHelper {
 
 	@MainActor
 	func stopMeta() async {
-		metaTask.stop()
+		await metaTask.stop()
 	}
 
 	@MainActor
 	func getUsedPorts() async -> String? {
-		metaTask.getUsedPorts()
+		await metaTask.getUsedPorts()
 	}
 
 	@MainActor
-	func updateTun(_ message: ProxyConfigHelperMessages.UpdateTun) {
+	func updateTun(_ message: ProxyConfigHelperMessages.UpdateTun) async {
 		metaDNS.setCustomDNS(message.dns)
 		if message.state {
 			metaDNS.hijackDNS()
 		} else {
 			metaDNS.revertDNS()
 		}
-		metaDNS.flushDnsCache()
+		await metaDNS.flushDnsCache()
 	}
 
 	@MainActor
-	func flushDnsCache() {
-		metaDNS.flushDnsCache()
+	func flushDnsCache() async {
+		await metaDNS.flushDnsCache()
 	}
 }

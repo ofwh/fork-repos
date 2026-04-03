@@ -12,6 +12,7 @@ final class ConfigReloadManager {
     static let shared = ConfigReloadManager()
 
     private var runAfterConfigReload = false
+    private var remoteControlResetTask: Task<Void, Never>?
 
     private init() {}
 
@@ -75,17 +76,15 @@ final class ConfigReloadManager {
         NotificationCenter.default.post(name: .reloadDashboard, object: nil)
     }
 
-    func setupRemoteControlStreamResetOnIPAddressChange(disposeBag: DisposeBag) {
-        NotificationCenter
-            .default
-            .rx
-            .notification(.systemNetworkStatusIPUpdate).map { _ in
-                NetworkChangeNotifier.getPrimaryIPAddress(allowIPV6: false)
-            }.bind { _ in
-                Task { @MainActor in
-                    ConfigReloadManager.shared.resetStreamApiIfRemoteControlEnabled()
-                }
-            }.disposed(by: disposeBag)
+    func setupRemoteControlStreamResetOnIPAddressChange(disposeBag _: DisposeBag) {
+        guard remoteControlResetTask == nil else { return }
+
+        remoteControlResetTask = Task { @MainActor in
+            for await _ in NetworkChangeNotifier.ipAddressStream(allowIPV6: false) {
+                guard !Task.isCancelled else { return }
+                ConfigReloadManager.shared.resetStreamApiIfRemoteControlEnabled()
+            }
+        }
     }
 
     @discardableResult

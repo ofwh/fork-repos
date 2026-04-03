@@ -11,6 +11,38 @@ import CoreWLAN
 import SystemConfiguration
 
 class NetworkChangeNotifier {
+    static func proxyChangeStream() -> AsyncStream<Void> {
+        AsyncStream(bufferingPolicy: .bufferingNewest(1)) { continuation in
+            let observer = NotificationCenter.default.addObserver(
+                forName: .systemNetworkStatusDidChange,
+                object: nil,
+                queue: nil
+            ) { _ in
+                continuation.yield(())
+            }
+
+            continuation.onTermination = { _ in
+                NotificationCenter.default.removeObserver(observer)
+            }
+        }
+    }
+
+    static func ipAddressStream(allowIPV6: Bool = false) -> AsyncStream<String?> {
+        AsyncStream(bufferingPolicy: .bufferingNewest(1)) { continuation in
+            let observer = NotificationCenter.default.addObserver(
+                forName: .systemNetworkStatusIPUpdate,
+                object: nil,
+                queue: nil
+            ) { _ in
+                continuation.yield(getPrimaryIPAddress(allowIPV6: allowIPV6))
+            }
+
+            continuation.onTermination = { _ in
+                NotificationCenter.default.removeObserver(observer)
+            }
+        }
+    }
+
     static func start() async {
         try? await Task.sleep(seconds: 0.5)
         Thread {

@@ -12,6 +12,7 @@ final class ProxyHealthCheckManager {
     static let shared = ProxyHealthCheckManager()
 
     private var isSpeedTesting = false
+    private var ipAddressChangeTask: Task<Void, Never>?
 
     private init() {}
 
@@ -47,24 +48,30 @@ final class ProxyHealthCheckManager {
         }
     }
 
-    func setupHealthCheckOnIPAddressChange(disposeBag: DisposeBag) {
-        NotificationCenter
-            .default
-            .rx
-            .notification(.systemNetworkStatusIPUpdate).map { _ in
-                NetworkChangeNotifier.getPrimaryIPAddress(allowIPV6: false)
+    func setupHealthCheckOnIPAddressChange(disposeBag _: DisposeBag) {
+        guard ipAddressChangeTask == nil else { return }
+
+        ipAddressChangeTask = Task { @MainActor in
+            var previousIPAddress = NetworkChangeNotifier.getPrimaryIPAddress(allowIPV6: false)
+            var debounceTask: Task<Void, Never>?
+
+            defer {
+                debounceTask?.cancel()
             }
-            .startWith(NetworkChangeNotifier.getPrimaryIPAddress(allowIPV6: false))
-            .distinctUntilChanged()
-            .skip(1)
-            .filter { $0 != nil }
-            .observe(on: MainScheduler.instance)
-            .debounce(.seconds(5), scheduler: MainScheduler.instance)
-            .bind { _ in
-                Task { @MainActor in
+
+            for await currentIPAddress in NetworkChangeNotifier.ipAddressStream(allowIPV6: false) {
+                guard !Task.isCancelled else { return }
+                guard let currentIPAddress, currentIPAddress != previousIPAddress else { continue }
+
+                previousIPAddress = currentIPAddress
+                debounceTask?.cancel()
+                debounceTask = Task { @MainActor in
+                    try? await Task.sleep(seconds: 5)
+                    guard !Task.isCancelled else { return }
                     await ProxyHealthCheckManager.shared.healthCheckOnNetworkChange()
                 }
-            }.disposed(by: disposeBag)
+            }
+        }
     }
 
     func runSpeedTest() async {

@@ -34,7 +34,10 @@ class SSIDSuspendTool: NSObject {
                 .debounce(.seconds(1), scheduler: MainScheduler.instance)
                 .delay(.seconds(1), scheduler: MainScheduler.instance)
                 .bind { [weak self] _ in
-                    self?.update()
+                    guard let self else { return }
+                    Task { @MainActor in
+                        await self.update()
+                    }
                 }.disposed(by: disposeBag)
         } catch let err {
             Logger.log(String(describing: err), level: .warning)
@@ -45,7 +48,10 @@ class SSIDSuspendTool: NSObject {
                 .observe(on: MainScheduler.instance)
                 .delay(.seconds(2), scheduler: MainScheduler.instance)
                 .bind { [weak self] _ in
-                    self?.update()
+                    guard let self else { return }
+                    Task { @MainActor in
+                        await self.update()
+                    }
                 }.disposed(by: disposeBag)
         }
         ConfigManager.shared
@@ -63,7 +69,9 @@ class SSIDSuspendTool: NSObject {
                 }
             }.disposed(by: disposeBag)
 
-        update()
+        Task { @MainActor in
+            await update()
+        }
     }
 
     func requestPermissionIfNeed() {
@@ -88,26 +96,24 @@ class SSIDSuspendTool: NSObject {
         }
     }
 
-    func update() {
-        if shouldSuspend() {
-            ConfigManager.shared.proxyShouldPaused.accept(true)
-        } else {
-            ConfigManager.shared.proxyShouldPaused.accept(false)
-        }
+    @MainActor
+    func update() async {
+        ConfigManager.shared.proxyShouldPaused.accept(await shouldSuspend())
     }
 
-    func shouldSuspend() -> Bool {
-        if let currentSSID = getCurrentSSID() {
-            return Settings.disableSSIDList.contains(currentSSID)
-        } else {
+    @MainActor
+    func shouldSuspend() async -> Bool {
+        guard let currentSSID = await getCurrentSSID() else {
             return false
         }
+        return Settings.disableSSIDList.contains(currentSSID)
     }
 
-    private func getCurrentSSID() -> String? {
+    @MainActor
+    private func getCurrentSSID() async -> String? {
         if #available(macOS 14, *) {
             if locationManager.authorizationStatus != .authorized {
-                let info = Command(cmd: "/System/Library/PrivateFrameworks/Apple80211.framework/Resources/airport", args: ["-I"]).run()
+                let info = await Command(cmd: "/System/Library/PrivateFrameworks/Apple80211.framework/Resources/airport", args: ["-I"]).run()
                 let ssid = info.components(separatedBy: "\n")
                     .lazy
                     .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
