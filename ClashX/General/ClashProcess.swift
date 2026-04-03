@@ -57,9 +57,8 @@ actor ClashProcess {
 			return (nil, "Paths error")
 		}
 		
-		// alpha core
-		if let _ = verifyCoreFile(alphaCorePath.path) {
-			if ConfigManager.useAlphaCore {
+		if ConfigManager.useAlphaCore {
+			if let _ = verifyCoreFile(alphaCorePath.path) {
 				return (alphaCorePath.path, nil)
 			}
 		}
