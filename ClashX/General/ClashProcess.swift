@@ -298,7 +298,9 @@ actor ClashProcess {
 		
 		UserDefaults.standard.set(true, forKey: udString)
 		
-		UserNotificationCenter.shared.postNotificationAlert(title: "Update Tips", info: info)
+		Task {
+			await UserNotificationCenter.shared.postNotificationAlert(title: "Update Tips", info: info)
+		}
 	}
 	
 // MARK: launch path

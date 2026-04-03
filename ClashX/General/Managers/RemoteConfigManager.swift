@@ -78,59 +78,68 @@ class RemoteConfigManager {
     @objc func autoUpdateCheck() {
         guard RemoteConfigManager.autoUpdateEnable else { return }
         Logger.log("Tigger config auto update check")
-        updateCheck()
+        Task {
+            await updateCheck()
+        }
     }
 
-    func updateCheck(ignoreTimeLimit: Bool = false, showNotification: Bool = false) {
+    func updateCheck(ignoreTimeLimit: Bool = false, showNotification: Bool = false) async {
         let currentConfigName = ConfigManager.selectConfigName
 
-        let group = DispatchGroup()
+        await withTaskGroup(of: Void.self) { group in
+            configs.forEach { config in
+                guard !config.updating else { return }
+                let timeLimitNoMantians = Date().timeIntervalSince(config.updateTime ?? Date(timeIntervalSince1970: 0)) < Settings.configAutoUpdateInterval
 
-        for config in configs {
-            if config.updating { continue }
-            let timeLimitNoMantians = Date().timeIntervalSince(config.updateTime ?? Date(timeIntervalSince1970: 0)) < Settings.configAutoUpdateInterval
-
-            if timeLimitNoMantians && !ignoreTimeLimit {
-                Logger.log("[Auto Upgrade] Bypassing \(config.name) due to time check")
-                continue
-            }
-            Logger.log("[Auto Upgrade] Requesting \(config.name)")
-            let isCurrentConfig = config.name == currentConfigName
-            config.updating = true
-            group.enter()
-            Task { @MainActor [weak config] in
-                guard let config = config else { return }
-                let error = await RemoteConfigManager.updateConfig(config: config)
-
-                config.updating = false
-                group.leave()
-                if error == nil {
-                    config.updateTime = Date()
+                guard !timeLimitNoMantians || ignoreTimeLimit else {
+                    Logger.log("[Auto Upgrade] Bypassing \(config.name) due to time check")
+                    return
                 }
-
-                if isCurrentConfig {
-                    if let error = error {
-                        if showNotification {
-                            UserNotificationCenter.shared.post(title: NSLocalizedString("Remote Config Update Fail", comment: ""),
-                                      info: "\(config.name): \(error)")
-                        }
-
-                    } else {
-                        if showNotification {
-                            let info = "\(config.name): \(NSLocalizedString("Succeed!", comment: ""))"
-                            UserNotificationCenter.shared.post(title: NSLocalizedString("Remote Config Update", comment: ""), info: info)
-                        }
-                        _ = await AppDelegate.shared.updateConfig(showNotification: false)
-                    }
+                Logger.log("[Auto Upgrade] Requesting \(config.name)")
+                let isCurrentConfig = config.name == currentConfigName
+                config.updating = true
+                group.addTask { [weak self, weak config] in
+                    guard let self, let config else { return }
+                    let error = await RemoteConfigManager.updateConfig(config: config)
+                    await self.handleUpdateCheckResult(for: config, isCurrentConfig: isCurrentConfig, error: error, showNotification: showNotification)
                 }
-                Logger.log("[Auto Upgrade] Finish \(config.name) result: \(error ?? "succeed")")
             }
         }
 
-        group.notify(queue: .main) {
-            [weak self] in
-            self?.saveConfigs()
+        saveConfigs()
+    }
+
+    @MainActor
+    private func handleUpdateCheckResult(for config: RemoteConfigModel,
+                                         isCurrentConfig: Bool,
+                                         error: String?,
+                                         showNotification: Bool) async {
+        config.updating = false
+        if error == nil {
+            config.updateTime = Date()
         }
+
+        guard isCurrentConfig else {
+            Logger.log("[Auto Upgrade] Finish \(config.name) result: \(error ?? "succeed")")
+            return
+        }
+
+        if let error {
+            if showNotification {
+                UserNotificationCenter.shared.post(title: NSLocalizedString("Remote Config Update Fail", comment: ""),
+                                                   info: "\(config.name): \(error)")
+            }
+            Logger.log("[Auto Upgrade] Finish \(config.name) result: \(error)")
+            return
+        }
+
+        if showNotification {
+            let info = "\(config.name): \(NSLocalizedString("Succeed!", comment: ""))"
+            UserNotificationCenter.shared.post(title: NSLocalizedString("Remote Config Update", comment: ""), info: info)
+        }
+
+        _ = await AppDelegate.shared.updateConfig(showNotification: false)
+        Logger.log("[Auto Upgrade] Finish \(config.name) result: \(error ?? "succeed")")
     }
 
     static func getRemoteConfigData(config: RemoteConfigModel) async -> (String?, String?) {

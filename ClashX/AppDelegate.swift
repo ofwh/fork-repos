@@ -115,7 +115,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 		
         // install proxy helper
         _ = ClashResourceManager.check()
-        Task { @MainActor in
+        Task {
             await PrivilegedHelperManager.shared.checkInstall()
         }
         ConfigFileManager.copySampleConfigIfNeed()
@@ -155,7 +155,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         if NetworkChangeNotifier.isCurrentSystemSetToClash(looser: true) ||
             NetworkChangeNotifier.hasInterfaceProxySetToClash() {
             Logger.log("Need Reset Proxy Setting again", level: .error)
-            SystemProxyManager.shared.disableProxy()
+            Task {
+                await SystemProxyManager.shared.disableProxy()
+            }
         }
     }
 
@@ -272,7 +274,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                 if old?.usedHttpPort != config.usedHttpPort || old?.usedSocksPort != config.usedSocksPort {
                     Logger.log("port config updated,new: \(config.usedHttpPort),\(config.usedSocksPort)")
                     if ConfigManager.shared.proxyPortAutoSet {
-                        SystemProxyManager.shared.enableProxy(port: config.usedHttpPort, socksPort: config.usedSocksPort)
+                        Task {
+                            await SystemProxyManager.shared.enableProxy(port: config.usedHttpPort, socksPort: config.usedSocksPort)
+                        }
                     }
                 }
 
@@ -403,17 +407,16 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         }
     }
 
-    func updateConfigFiles() {
+    @MainActor
+    func updateConfigFiles() async {
         guard let menu = configSeparatorLine.menu else { return }
-        Task { @MainActor in
-            let items = await MenuItemFactory.generateSwitchConfigMenuItems()
-            let lineIndex = menu.items.firstIndex(of: self.configSeparatorLine)!
-            for _ in 0 ..< lineIndex {
-                menu.removeItem(at: 0)
-            }
-            for item in items.reversed() {
-                menu.insertItem(item, at: 0)
-            }
+        let items = await MenuItemFactory.generateSwitchConfigMenuItems()
+        let lineIndex = menu.items.firstIndex(of: self.configSeparatorLine)!
+        for _ in 0 ..< lineIndex {
+            menu.removeItem(at: 0)
+        }
+        for item in items.reversed() {
+            menu.insertItem(item, at: 0)
         }
     }
 
@@ -499,8 +502,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         if !NetworkChangeNotifier.isCurrentSystemSetToClash() {
             let rawProxy = NetworkChangeNotifier.getRawProxySetting()
             Logger.log("Resting proxy setting, current:\(rawProxy)", level: .warning)
-            SystemProxyManager.shared.disableProxy()
-            SystemProxyManager.shared.enableProxy()
+            Task {
+                await SystemProxyManager.shared.disableProxy()
+                await SystemProxyManager.shared.enableProxy()
+            }
         }
 
         if RemoteControlManager.selectConfig != nil {
@@ -569,7 +574,9 @@ extension AppDelegate: ClashProcessDelegate {
 	
 	func clashConfigUpdated() {
 		if ConfigManager.shared.restoreSystemProxy {
-			SystemProxyManager.shared.enableProxy()
+            Task {
+                await SystemProxyManager.shared.enableProxy()
+            }
 		}
 		
 		if ConfigManager.shared.restoreTunProxy {
@@ -578,7 +585,7 @@ extension AppDelegate: ClashProcessDelegate {
                 try? await PrivilegedHelperManager.shared.request(ProxyConfigHelperMessages.UpdateTun(state: true, dns: ConfigManager.metaTunDNS))
             }
 		} else {
-            Task { @MainActor in
+            Task {
                 await self.syncConfigWithTun(true)
             }
 		}
@@ -631,11 +638,8 @@ extension AppDelegate {
     }
 
     @IBAction func actionAllowFromLan(_ sender: NSMenuItem) {
-        Task { @MainActor [weak self] in
-            await ApiRequest.updateAllowLan(allow: !ConfigManager.allowConnectFromLan)
-            guard let self = self else { return }
-            await self.syncConfig()
-            ConfigManager.allowConnectFromLan = !ConfigManager.allowConnectFromLan
+        Task {
+            await updateAllowLanSetting()
         }
     }
 
@@ -655,18 +659,19 @@ extension AppDelegate {
         default:
             return
         }
-        switchProxyMode(mode: mode)
+        Task {
+            await switchProxyMode(mode: mode)
+        }
     }
 
-    func switchProxyMode(mode: ClashProxyMode) {
+    @MainActor
+    func switchProxyMode(mode: ClashProxyMode) async {
         let config = ConfigManager.shared.currentConfig?.copy()
         config?.mode = mode
-        Task { @MainActor in
-            _ = await ApiRequest.updateOutBoundMode(mode: mode)
-            ConfigManager.shared.currentConfig = config
-            ConfigManager.selectOutBoundMode = mode
-            await MenuItemFactory.recreateProxyMenuItems()
-        }
+		_ = await ApiRequest.updateOutBoundMode(mode: mode)
+		ConfigManager.shared.currentConfig = config
+		ConfigManager.selectOutBoundMode = mode
+		await MenuItemFactory.recreateProxyMenuItems()
     }
 
     @IBAction func actionShowNetSpeedIndicator(_ sender: NSMenuItem) {
@@ -683,18 +688,26 @@ extension AppDelegate {
             ConfigManager.shared.proxyPortAutoSet = true
             // clear then reset.
             canSaveProxy = false
-            SystemProxyManager.shared.disableProxy(port: 0, socksPort: 0, forceDisable: true)
+            Task {
+                await SystemProxyManager.shared.disableProxy(port: 0, socksPort: 0, forceDisable: true)
+            }
         } else {
             ConfigManager.shared.proxyPortAutoSet = !ConfigManager.shared.proxyPortAutoSet
         }
 
         if ConfigManager.shared.proxyPortAutoSet {
             if canSaveProxy {
-                SystemProxyManager.shared.saveProxy()
+                Task {
+                    await SystemProxyManager.shared.saveProxy()
+                }
             }
-            SystemProxyManager.shared.enableProxy()
+            Task {
+                await SystemProxyManager.shared.enableProxy()
+            }
         } else {
-            SystemProxyManager.shared.disableProxy()
+            Task {
+                await SystemProxyManager.shared.disableProxy()
+            }
         }
     }
 
@@ -711,33 +724,8 @@ extension AppDelegate {
     }
 
     @IBAction func actionSpeedTest(_ sender: Any) {
-        if isSpeedTesting {
-			UserNotificationCenter.shared.postSpeedTestingNotice()
-            return
-        }
-		UserNotificationCenter.shared.postSpeedTestBeginNotice()
-
-        isSpeedTesting = true
-
-        Task { @MainActor [weak self] in
-            let resp = await ApiRequest.getMergedProxyData()
-
-            await withTaskGroup(of: Void.self) { group in
-                for (name, _) in resp.enclosingProviderResp?.providers ?? [:] {
-                    group.addTask {
-                        await ApiRequest.healthCheck(proxy: name)
-                    }
-                }
-
-                for p in resp.proxiesMap["GLOBAL"]?.all ?? [] {
-                    group.addTask {
-                        _ = await ApiRequest.getProxyDelay(proxyName: p)
-                    }
-                }
-            }
-
-			UserNotificationCenter.shared.postSpeedTestFinishNotice()
-            self?.isSpeedTesting = false
+		Task {
+			await runSpeedTest()
         }
     }
 
@@ -803,7 +791,7 @@ extension AppDelegate {
     }
 
     @IBAction func actionUpdateConfig(_ sender: AnyObject) {
-        Task { @MainActor in
+        Task {
             _ = await updateConfig()
         }
     }
@@ -821,7 +809,9 @@ extension AppDelegate {
     }
 
     @IBAction func actionUpdateRemoteConfig(_ sender: Any) {
-        RemoteConfigManager.shared.updateCheck(ignoreTimeLimit: true, showNotification: true)
+        Task {
+            await RemoteConfigManager.shared.updateCheck(ignoreTimeLimit: true, showNotification: true)
+        }
     }
 
     @IBAction func actionSetUpdateInterval(_ sender: Any) {
@@ -837,11 +827,8 @@ extension AppDelegate {
     @IBAction func actionSetTunMode(_ sender: NSMenuItem?) {
         let enable = tunModeMenuItem.state != .on
 		tunModeMenuItem.isEnabled = false
-        Task { @MainActor in
-            await ApiRequest.updateTun(enable: enable)
-            await self.syncConfigWithTun()
-			self.tunModeMenuItem.state = enable ? .on : .off
-			self.tunModeMenuItem.isEnabled = true
+        Task {
+            await setTunMode(enabled: enable)
         }
     }
 
@@ -851,29 +838,13 @@ extension AppDelegate {
 			
 			timer.fireDate = .init(timeIntervalSinceNow: 5)
 			
-            Task { @MainActor [weak self] in
-                let rules = await ApiRequest.getRules()
-                guard self?.updateGeoTimer != nil else { return }
-                if let rule = rules.first,
-                   rule.payload == ClashMetaConfig.initRulePayload {
-                    Logger.log("Update GEO Finished.")
-					if let self {
-						_ = await self.updateConfig(showNotification: false)
-					}
-					UserNotificationCenter.shared.post(title: "Update GEO Databases Finished.", info: "")
-					
-                    timer.invalidate()
-                    self?.updateGeoTimer = nil
-                } else {
-                    timer.fireDate = .init(timeIntervalSinceNow: 0.5)
-                }
+            Task { [weak self] in
+                await self?.pollGeoUpdate(with: timer)
             }
 		}
 		
-        Task { @MainActor in
-            _ = await ApiRequest.updateGEO()
-            UserNotificationCenter.shared.post(title: NSLocalizedString("Updating GEO Databases...", comment: ""), info: NSLocalizedString("Good luck to you  🙃", comment: ""))
-            self.updateGeoTimer?.fire()
+        Task {
+            await startGeoUpdate()
         }
     }
 
@@ -886,9 +857,8 @@ extension AppDelegate {
 
     @IBAction func updateSniffing(_ sender: NSMenuItem) {
         let enable = sender.state != .on
-        Task { @MainActor in
-            await ApiRequest.updateSniffing(enable: enable)
-            sender.state = enable ? .on : .off
+        Task {
+            await setSniffing(enable: enable, sender: sender)
         }
     }
 }
@@ -952,13 +922,93 @@ extension AppDelegate {
         for item in copy {
             guard item.config == ConfigManager.selectConfigName else { continue }
             Logger.log("Auto selecting \(item.group) \(item.selected)", level: .debug)
-            Task { @MainActor in
-                let success = await ApiRequest.updateProxyGroup(group: item.group, selectProxy: item.selected)
-                if !success {
-                    ConfigManager.selectedProxyRecords.removeAll { model -> Bool in
-                        return model.key == item.key
-                    }
+            Task {
+                await restoreSelectedProxy(item)
+            }
+        }
+    }
+
+    @MainActor
+    func updateAllowLanSetting() async {
+        let allow = !ConfigManager.allowConnectFromLan
+        await ApiRequest.updateAllowLan(allow: allow)
+        await syncConfig()
+        ConfigManager.allowConnectFromLan = allow
+    }
+
+    @MainActor
+    func runSpeedTest() async {
+        if isSpeedTesting {
+            UserNotificationCenter.shared.postSpeedTestingNotice()
+            return
+        }
+        UserNotificationCenter.shared.postSpeedTestBeginNotice()
+        isSpeedTesting = true
+
+        let resp = await ApiRequest.getMergedProxyData()
+
+        await withTaskGroup(of: Void.self) { group in
+            for (name, _) in resp.enclosingProviderResp?.providers ?? [:] {
+                group.addTask {
+                    await ApiRequest.healthCheck(proxy: name)
                 }
+            }
+
+            for p in resp.proxiesMap["GLOBAL"]?.all ?? [] {
+                group.addTask {
+                    _ = await ApiRequest.getProxyDelay(proxyName: p)
+                }
+            }
+        }
+
+        UserNotificationCenter.shared.postSpeedTestFinishNotice()
+        isSpeedTesting = false
+    }
+
+    @MainActor
+    func setTunMode(enabled: Bool) async {
+        await ApiRequest.updateTun(enable: enabled)
+        await syncConfigWithTun()
+        tunModeMenuItem.state = enabled ? .on : .off
+        tunModeMenuItem.isEnabled = true
+    }
+
+    @MainActor
+    func setSniffing(enable: Bool, sender: NSMenuItem) async {
+        await ApiRequest.updateSniffing(enable: enable)
+        sender.state = enable ? .on : .off
+    }
+
+    @MainActor
+    func pollGeoUpdate(with timer: Timer) async {
+        let rules = await ApiRequest.getRules()
+        guard updateGeoTimer != nil else { return }
+        if let rule = rules.first,
+           rule.payload == ClashMetaConfig.initRulePayload {
+            Logger.log("Update GEO Finished.")
+            _ = await updateConfig(showNotification: false)
+            UserNotificationCenter.shared.post(title: "Update GEO Databases Finished.", info: "")
+
+            timer.invalidate()
+            updateGeoTimer = nil
+        } else {
+            timer.fireDate = .init(timeIntervalSinceNow: 0.5)
+        }
+    }
+
+    @MainActor
+    func startGeoUpdate() async {
+        _ = await ApiRequest.updateGEO()
+        UserNotificationCenter.shared.post(title: NSLocalizedString("Updating GEO Databases...", comment: ""), info: NSLocalizedString("Good luck to you  🙃", comment: ""))
+        updateGeoTimer?.fire()
+    }
+
+    @MainActor
+    func restoreSelectedProxy(_ item: SavedProxyModel) async {
+        let success = await ApiRequest.updateProxyGroup(group: item.group, selectProxy: item.selected)
+        if !success {
+            ConfigManager.selectedProxyRecords.removeAll { model -> Bool in
+                return model.key == item.key
             }
         }
     }
@@ -1010,8 +1060,8 @@ extension AppDelegate {
 extension AppDelegate: NSMenuDelegate {
     func menuNeedsUpdate(_ menu: NSMenu) {
         guard ConfigManager.shared.isRunning else { return }
-        updateConfigFiles()
-        Task { @MainActor in
+		Task {
+			await updateConfigFiles()
             await MenuItemFactory.refreshExistingMenuItems()
             await syncConfig()
         }
@@ -1065,7 +1115,7 @@ extension AppDelegate {
                 NotificationCenter.default.post(name: Notification.Name(rawValue: "didGetUrl"), object: nil, userInfo: userInfo)
             }
         } else if host == "update-config" {
-            Task { @MainActor in
+            Task {
                 _ = await updateConfig()
             }
         }

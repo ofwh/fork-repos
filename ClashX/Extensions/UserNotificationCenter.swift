@@ -19,7 +19,7 @@ class UserNotificationCenter: NSObject {
 	}
 	
 	func post(title: String, info: String, identifier: String? = nil, notiOnly: Bool = true) {
-		Task { @MainActor in
+		Task {
 			do {
 				let notificationCenter = UNUserNotificationCenter.current()
 				let settings = await notificationCenter.notificationSettings()
@@ -27,7 +27,7 @@ class UserNotificationCenter: NSObject {
 				switch settings.authorizationStatus {
 				case .denied:
 					guard !notiOnly else { return }
-					postNotificationAlert(title: title, info: info, identifier: identifier)
+					await postNotificationAlert(title: title, info: info, identifier: identifier)
 				case .authorized, .provisional:
 					postNotification(title: title, info: info, identifier: identifier)
 				case .notDetermined:
@@ -37,7 +37,7 @@ class UserNotificationCenter: NSObject {
 						postNotification(title: title, info: info, identifier: identifier)
 					} else {
 						guard !notiOnly else { return }
-						postNotificationAlert(title: title, info: info, identifier: identifier)
+						await postNotificationAlert(title: title, info: info, identifier: identifier)
 					}
 				@unknown default:
 					postNotification(title: title, info: info, identifier: identifier)
@@ -65,13 +65,14 @@ class UserNotificationCenter: NSObject {
 		notificationCenter.add(request) { error in
 			if let err = error {
 				Logger.log("send noti fail: \(String(describing: err))")
-				DispatchQueue.main.async {
-					self.postNotificationAlert(title: title, info: info, identifier: identifier)
+				Task {
+					await self.postNotificationAlert(title: title, info: info, identifier: identifier)
 				}
 			}
 		}
 	}
 	
+	@MainActor
 	func postNotificationAlert(title: String, info: String, identifier: String? = nil) {
 		if Settings.disableNoti {
 			return
@@ -99,7 +100,9 @@ class UserNotificationCenter: NSObject {
 	
 	func postMetaErrorNotice(msg: String) {
 		let message = "Meta Core: \(msg)"
-		postNotificationAlert(title: NSLocalizedString("Start Meta Fail!", comment: ""), info: message)
+		Task {
+			await postNotificationAlert(title: NSLocalizedString("Start Meta Fail!", comment: ""), info: message)
+		}
 	}
 	
 	func postConfigErrorNotice(msg: String) {
@@ -107,7 +110,9 @@ class UserNotificationCenter: NSObject {
 		Paths.configFileName(for: ConfigManager.selectConfigName)
 		
 		let message = "\(configName): \(msg)"
-		postNotificationAlert(title: NSLocalizedString("Config loading Fail!", comment: ""), info: message)
+		Task {
+			await postNotificationAlert(title: NSLocalizedString("Config loading Fail!", comment: ""), info: message)
+		}
 	}
 	
 	func postSpeedTestBeginNotice() {
@@ -131,7 +136,9 @@ class UserNotificationCenter: NSObject {
 	}
 	
 	func postUpdateNotice(msg: String) {
-		postNotificationAlert(title: "Update ClashX Meta", info: msg)
+		Task {
+			await postNotificationAlert(title: "Update ClashX Meta", info: msg)
+		}
 	}
 }
 
@@ -150,7 +157,7 @@ extension UserNotificationCenter: UNUserNotificationCenterDelegate {
 	func handleNotificationActive(with identifier: String) {
 		switch identifier {
 		case "postConfigFileChangeDetectionNotice":
-			Task { @MainActor in
+			Task {
 				_ = await AppDelegate.shared.updateConfig()
 			}
 		default:

@@ -118,7 +118,7 @@ class RemoteControlManager {
         }
         ClashProxy.cleanCache()
         AppDelegate.shared.resetStreamApi()
-        Task { @MainActor in
+        Task {
             await AppDelegate.shared.syncConfig()
             await MenuItemFactory.recreateProxyMenuItems()
         }

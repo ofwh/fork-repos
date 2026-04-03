@@ -23,11 +23,11 @@ class ClashApiDatasStorage: NSObject, ObservableObject {
 
 	override init() {
 		super.init()
-		uiUpdateTask = Task { @MainActor [weak self] in
+		uiUpdateTask = Task { [weak self] in
 			while !Task.isCancelled {
 				try? await Task.sleep(seconds: 1)
 				guard let self else { return }
-				flushPendingUpdates()
+				await flushPendingUpdates()
 			}
 		}
 	}

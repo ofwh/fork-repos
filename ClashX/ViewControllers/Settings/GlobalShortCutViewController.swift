@@ -45,15 +45,21 @@ enum KeyboardShortCutManager {
         }
 
         KeyboardShortcuts.onKeyUp(for: .modeDirect) {
-            AppDelegate.shared.switchProxyMode(mode: .direct)
+            Task {
+                await AppDelegate.shared.switchProxyMode(mode: .direct)
+            }
         }
 
         KeyboardShortcuts.onKeyUp(for: .modeRule) {
-            AppDelegate.shared.switchProxyMode(mode: .rule)
+            Task {
+                await AppDelegate.shared.switchProxyMode(mode: .rule)
+            }
         }
 
         KeyboardShortcuts.onKeyUp(for: .modeGlobal) {
-            AppDelegate.shared.switchProxyMode(mode: .global)
+            Task {
+                await AppDelegate.shared.switchProxyMode(mode: .global)
+            }
         }
 
         KeyboardShortcuts.onKeyUp(for: .log) {

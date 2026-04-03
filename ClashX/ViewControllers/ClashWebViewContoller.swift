@@ -12,16 +12,16 @@ import RxSwift
 import WebKit
 
 enum WebCacheCleaner {
-    static func clean() {
-        Task { @MainActor in
-            HTTPCookieStorage.shared.removeCookies(since: Date.distantPast)
-            Logger.log("[WebCacheCleaner] All cookies deleted")
-            
-            let types = WKWebsiteDataStore.allWebsiteDataTypes()
-            let records = await WKWebsiteDataStore.default().dataRecords(ofTypes: types)
-            await WKWebsiteDataStore.default().removeData(ofTypes: types, for: records)
-            Logger.log("[WebCacheCleaner] All records deleted")
-        }
+    @MainActor
+    static func clean() async {
+        HTTPCookieStorage.shared.removeCookies(since: Date.distantPast)
+        Logger.log("[WebCacheCleaner] All cookies deleted")
+		
+        let dataStore = WKWebsiteDataStore.default()
+        let types = WKWebsiteDataStore.allWebsiteDataTypes()
+        let records = await dataStore.dataRecords(ofTypes: types)
+        await dataStore.removeData(ofTypes: types, for: records)
+        Logger.log("[WebCacheCleaner] All records deleted")
     }
 }
 

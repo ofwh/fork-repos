@@ -35,7 +35,8 @@ enum TerminalConfirmAction {
             shouldWait = true
             group.enter()
 
-            SystemProxyManager.shared.disableProxy(forceDisable: ConfigManager.shared.isProxySetByOtherVariable.value) {
+            Task {
+                await SystemProxyManager.shared.disableProxy(forceDisable: ConfigManager.shared.isProxySetByOtherVariable.value)
                 group.leave()
             }
 		} else {

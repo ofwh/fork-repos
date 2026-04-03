@@ -54,10 +54,12 @@ class SSIDSuspendTool: NSObject {
             .distinctUntilChanged()
             .filter { _ in ConfigManager.shared.proxyPortAutoSet }
             .bind { pause in
-                if pause {
-                    SystemProxyManager.shared.disableProxy()
-                } else {
-                    SystemProxyManager.shared.enableProxy()
+                Task {
+                    if pause {
+                        await SystemProxyManager.shared.disableProxy()
+                    } else {
+                        await SystemProxyManager.shared.enableProxy()
+                    }
                 }
             }.disposed(by: disposeBag)
 
