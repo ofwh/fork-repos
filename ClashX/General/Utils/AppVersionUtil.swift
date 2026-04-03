@@ -12,6 +12,10 @@ class AppVersionUtil: NSObject {
     private static let shared = AppVersionUtil()
 
     private static let kLastVersionNumberKey = "com.clashX.lastVersionNumber"
+    private static let kConfigFolderMigrationTipKey = "ClashX_Meta_1.3.0_UpdateTips"
+    private static let configFolderMigrationTipInfo = "Config Floder migrated from\n~/.config/clash to\n~/.config/clash.meta"
+    private static let configFolderMigrationVersion = "1.3.0"
+    private static var hasHandledPostLaunchUpdateTips = false
 
     private let lastVersionNumber: String?
 
@@ -43,19 +47,25 @@ class AppVersionUtil: NSObject {
 
 extension AppVersionUtil {
     static func showUpgradeAlert() {
-        if let lastVersion = shared.lastVersionNumber, hasVersionChanged {
-            Task {
-                await WebCacheCleaner.clean()
-            }
-            guard lastVersion.compare("1.30.0", options: .numeric) == .orderedAscending else { return }
-            let alert = NSAlert()
-            alert.messageText = NSLocalizedString("This version of ClashX contains a break change due to clash core 1.0 released. Check if your config is not working properly.", comment: "")
-            alert.alertStyle = .informational
-            alert.addButton(withTitle: NSLocalizedString("OK", comment: ""))
-            alert.addButton(withTitle: NSLocalizedString("Details", comment: ""))
-            if alert.runModal() == .alertSecondButtonReturn {
-                NSWorkspace.shared.open(URL(string: "https://github.com/Dreamacro/clash/wiki/breaking-changes-in-1.0.0")!)
-            }
+        guard !hasHandledPostLaunchUpdateTips,
+              let lastVersion = shared.lastVersionNumber,
+              hasVersionChanged else { return }
+
+        hasHandledPostLaunchUpdateTips = true
+        Task {
+            await WebCacheCleaner.clean()
         }
+
+        guard lastVersion.compare(configFolderMigrationVersion, options: .numeric) == .orderedAscending,
+              !UserDefaults.standard.bool(forKey: kConfigFolderMigrationTipKey) else { return }
+
+        UserDefaults.standard.set(true, forKey: kConfigFolderMigrationTipKey)
+
+        let alert = NSAlert()
+        alert.messageText = NSLocalizedString("Update Tips", comment: "")
+        alert.informativeText = configFolderMigrationTipInfo
+        alert.alertStyle = .informational
+        alert.addButton(withTitle: NSLocalizedString("OK", comment: ""))
+        alert.runModal()
     }
 }

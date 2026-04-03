@@ -148,7 +148,6 @@ actor ClashProcess {
 			await delegate?.clashApiUpdated(res)
 			try await pushInitConfig()
 			Logger.log("Init config file success.")
-			showUpdateNotification("ClashX_Meta_1.3.0_UpdateTips", info: "Config Floder migrated from\n~/.config/clash to\n~/.config/clash.meta")
 		} catch {
 			await handleStartError(error, didStartCore: didStartCore)
 		}
@@ -290,16 +289,6 @@ actor ClashProcess {
 			ICloudManager.shared.getUrl { url in
 				continuation.resume(returning: url)
 			}
-		}
-	}
-	
-	private func showUpdateNotification(_ udString: String, info: String) {
-		guard !UserDefaults.standard.bool(forKey: udString) else { return }
-		
-		UserDefaults.standard.set(true, forKey: udString)
-		
-		Task {
-			await UserNotificationCenter.shared.postNotificationAlert(title: "Update Tips", info: info)
 		}
 	}
 	
