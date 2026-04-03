@@ -58,4 +58,15 @@ class ConfigFileManager {
             try? FileManager.default.copyItem(atPath: path, toPath: kDefaultConfigFilePath)
         }
     }
+
+    func openConfigFolder() {
+        if ICloudManager.shared.useiCloud.value {
+            ICloudManager.shared.getUrl { url in
+                guard let url else { return }
+                NSWorkspace.shared.open(url)
+            }
+        } else {
+            NSWorkspace.shared.openFilePath(kConfigFolderPath)
+        }
+    }
 }

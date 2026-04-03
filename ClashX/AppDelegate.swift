@@ -84,10 +84,13 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         statusMenu.delegate = self
         setupStatusMenuItemData()
         DispatchQueue.main.async {
-            self.postFinishLaunching()
+            Task { @MainActor in
+                self.postFinishLaunching()
+            }
         }
     }
 
+    @MainActor
     func postFinishLaunching() {
         Logger.log("postFinishLaunching")
         defer {
@@ -116,13 +119,13 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         ConfigFileManager.copySampleConfigIfNeed()
 
         // claer not existed selected model
-        removeUnExistProxyGroups()
+        ConfigReloadManager.shared.removeUnExistProxyGroups()
         setupData()
         Task { @MainActor in
             ConfigReloadManager.shared.prepareInitialAllowLanSync()
         }
 
-        updateLoggingLevel()
+        ConfigReloadManager.shared.updateLoggingLevel(menuItems: logLevelMenuItem.submenu?.items ?? [])
 
         // start watch config file change
         ConfigManager.watchCurrentConfigFile()
@@ -264,13 +267,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
                 self.proxyModeMenuItem.title = "\(NSLocalizedString("Proxy Mode", comment: "")) (\(config.mode.name))"
 
-                if old?.usedHttpPort != config.usedHttpPort || old?.usedSocksPort != config.usedSocksPort {
-                    Logger.log("port config updated,new: \(config.usedHttpPort),\(config.usedSocksPort)")
-                    if ConfigManager.shared.proxyPortAutoSet {
-                        Task {
-                            await SystemProxyManager.shared.enableProxy(port: config.usedHttpPort, socksPort: config.usedSocksPort)
-                        }
-                    }
+                Task {
+                    await SystemProxyManager.shared.updateProxyPortsIfNeeded(oldConfig: old, newConfig: config)
                 }
 
                 self.httpPortMenuItem.title = "Http Port: \(config.usedHttpPort)"
@@ -322,6 +320,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
     }
 
+    @MainActor
     func setupNetworkNotifier() {
         DispatchQueue.main.asyncAfter(deadline: .now() + 5) {
             NetworkChangeNotifier.start()
@@ -348,20 +347,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             name: NSWorkspace.didWakeNotification, object: nil
         )
 
-        NotificationCenter
-            .default
-            .rx
-            .notification(.systemNetworkStatusIPUpdate).map { _ in
-                NetworkChangeNotifier.getPrimaryIPAddress(allowIPV6: false)
-            }
-            .startWith(NetworkChangeNotifier.getPrimaryIPAddress(allowIPV6: false))
-            .distinctUntilChanged()
-            .skip(1)
-            .filter { $0 != nil }
-            .observe(on: MainScheduler.instance)
-            .debounce(.seconds(5), scheduler: MainScheduler.instance).bind { [weak self] _ in
-                self?.healthCheckOnNetworkChange()
-            }.disposed(by: disposeBag)
+        ProxyHealthCheckManager.shared.setupHealthCheckOnIPAddressChange(disposeBag: disposeBag)
 
         ConfigManager.shared
             .isProxySetByOtherVariable
@@ -373,21 +359,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             .bind { _ in
                 let rawProxy = NetworkChangeNotifier.getRawProxySetting()
                 Logger.log("proxy changed to no clashX setting: \(rawProxy)", level: .warning)
-				UserNotificationCenter.shared.postProxyChangeByOtherAppNotice()
+                UserNotificationCenter.shared.postProxyChangeByOtherAppNotice()
             }.disposed(by: disposeBag)
 
-        NotificationCenter
-            .default
-            .rx
-            .notification(.systemNetworkStatusIPUpdate).map { _ in
-                NetworkChangeNotifier.getPrimaryIPAddress(allowIPV6: false)
-            }.bind { [weak self] _ in
-                if RemoteControlManager.selectConfig != nil {
-                    Task { @MainActor in
-                        ConfigReloadManager.shared.resetStreamApi()
-                    }
-                }
-            }.disposed(by: disposeBag)
+        ConfigReloadManager.shared.setupRemoteControlStreamResetOnIPAddressChange(disposeBag: disposeBag)
     }
 
     func updateProxyList(withMenus menus: [NSMenuItem]) {
@@ -415,39 +390,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         }
     }
 
-    func updateLoggingLevel() {
-        Task {
-            _ = await ApiRequest.updateLogLevel(level: ConfigManager.selectLoggingApiLevel)
-        }
-        for item in logLevelMenuItem.submenu?.items ?? [] {
-            item.state = item.title.lowercased() == ConfigManager.selectLoggingApiLevel.rawValue ? .on : .off
-        }
-        NotificationCenter.default.post(name: .reloadDashboard, object: nil)
-    }
-
     @objc func resetProxySettingOnWakeupFromSleep() {
-        guard !ConfigManager.shared.isProxySetByOtherVariable.value,
-              ConfigManager.shared.proxyPortAutoSet else { return }
-        guard NetworkChangeNotifier.getPrimaryInterface() != nil else { return }
-        if !NetworkChangeNotifier.isCurrentSystemSetToClash() {
-            let rawProxy = NetworkChangeNotifier.getRawProxySetting()
-            Logger.log("Resting proxy setting, current:\(rawProxy)", level: .warning)
-            Task {
-                await SystemProxyManager.shared.disableProxy()
-                await SystemProxyManager.shared.enableProxy()
-            }
-        }
-
-        if RemoteControlManager.selectConfig != nil {
-            Task { @MainActor in
-                ConfigReloadManager.shared.resetStreamApi()
-            }
-        }
-    }
-
-    @objc func healthCheckOnNetworkChange() {
         Task {
-            await ProxyHealthCheckManager.shared.healthCheckOnNetworkChange()
+            await SystemProxyManager.shared.resetProxySettingOnWakeupFromSleep()
         }
     }
 }
@@ -639,16 +584,7 @@ extension AppDelegate {
 
 extension AppDelegate {
     @IBAction func openConfigFolder(_ sender: Any) {
-        if ICloudManager.shared.useiCloud.value {
-            ICloudManager.shared.getUrl {
-                url in
-                if let url = url {
-                    NSWorkspace.shared.open(url)
-                }
-            }
-        } else {
-            NSWorkspace.shared.openFilePath(kConfigFolderPath)
-        }
+        ConfigFileManager.shared.openConfigFolder()
     }
 
     @IBAction func actionUpdateConfig(_ sender: AnyObject) {
@@ -660,7 +596,7 @@ extension AppDelegate {
     @IBAction func actionSetLogLevel(_ sender: NSMenuItem) {
         let level = ClashLogLevel(rawValue: sender.title.lowercased()) ?? .unknow
         ConfigManager.selectLoggingApiLevel = level
-        updateLoggingLevel()
+        ConfigReloadManager.shared.updateLoggingLevel(menuItems: logLevelMenuItem.submenu?.items ?? [])
         ConfigReloadManager.shared.resetStreamApi()
     }
 
@@ -771,26 +707,6 @@ extension AppDelegate {
 // MARK: Memory
 
 extension AppDelegate {
-    func removeUnExistProxyGroups() {
-        let action: (([String]) -> Void) = { list in
-            let unexists = ConfigManager.selectedProxyRecords.filter {
-                !list.contains($0.config)
-            }
-            ConfigManager.selectedProxyRecords.removeAll {
-                unexists.contains($0)
-            }
-        }
-
-        if ICloudManager.shared.useiCloud.value {
-            ICloudManager.shared.getConfigFilesList { list in
-                action(list)
-            }
-        } else {
-            let list = ConfigManager.getConfigFilesList()
-            action(list)
-        }
-    }
-
     func hasMenuSelected() -> Bool {
         if #available(macOS 11, *) {
             return statusMenu.items.contains { $0.state == .on }

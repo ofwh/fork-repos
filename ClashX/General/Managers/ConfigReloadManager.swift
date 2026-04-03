@@ -4,6 +4,8 @@
 //
 
 import Cocoa
+import RxCocoa
+import RxSwift
 
 @MainActor
 final class ConfigReloadManager {
@@ -43,6 +45,11 @@ final class ConfigReloadManager {
         ApiRequest.shared.resetStreamApis()
     }
 
+    func resetStreamApiIfRemoteControlEnabled() {
+        guard RemoteControlManager.selectConfig != nil else { return }
+        resetStreamApi()
+    }
+
     func updateAllowLanSetting() async -> Bool {
         let allow = !ConfigManager.allowConnectFromLan
         await ApiRequest.updateAllowLan(allow: allow)
@@ -58,6 +65,29 @@ final class ConfigReloadManager {
 
     func setSniffing(enable: Bool) async {
         await ApiRequest.updateSniffing(enable: enable)
+    }
+
+    func updateLoggingLevel(menuItems: [NSMenuItem]) {
+        Task {
+            _ = await ApiRequest.updateLogLevel(level: ConfigManager.selectLoggingApiLevel)
+        }
+        menuItems.forEach {
+            $0.state = $0.title.lowercased() == ConfigManager.selectLoggingApiLevel.rawValue ? .on : .off
+        }
+        NotificationCenter.default.post(name: .reloadDashboard, object: nil)
+    }
+
+    func setupRemoteControlStreamResetOnIPAddressChange(disposeBag: DisposeBag) {
+        NotificationCenter
+            .default
+            .rx
+            .notification(.systemNetworkStatusIPUpdate).map { _ in
+                NetworkChangeNotifier.getPrimaryIPAddress(allowIPV6: false)
+            }.bind { _ in
+                Task { @MainActor in
+                    ConfigReloadManager.shared.resetStreamApiIfRemoteControlEnabled()
+                }
+            }.disposed(by: disposeBag)
     }
 
     @discardableResult
@@ -122,6 +152,25 @@ final class ConfigReloadManager {
         _ = await ApiRequest.updateOutBoundMode(mode: ConfigManager.selectOutBoundMode)
         await ConnectionManager.closeAllConnection()
         await syncConfig()
+    }
+
+    func removeUnExistProxyGroups() {
+        let action: (([String]) -> Void) = { list in
+            let unexists = ConfigManager.selectedProxyRecords.filter {
+                !list.contains($0.config)
+            }
+            ConfigManager.selectedProxyRecords.removeAll {
+                unexists.contains($0)
+            }
+        }
+
+        if ICloudManager.shared.useiCloud.value {
+            ICloudManager.shared.getConfigFilesList { list in
+                action(list)
+            }
+        } else {
+            action(ConfigManager.getConfigFilesList())
+        }
     }
 
     private func selectAllowLanWithMenory() async {

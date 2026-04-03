@@ -4,6 +4,8 @@
 //
 
 import Cocoa
+import RxCocoa
+import RxSwift
 
 @MainActor
 final class ProxyHealthCheckManager {
@@ -43,6 +45,26 @@ final class ProxyHealthCheckManager {
             Logger.log("Start auto health check for provider \(provider)")
             await healthCheck(proxy: provider)
         }
+    }
+
+    func setupHealthCheckOnIPAddressChange(disposeBag: DisposeBag) {
+        NotificationCenter
+            .default
+            .rx
+            .notification(.systemNetworkStatusIPUpdate).map { _ in
+                NetworkChangeNotifier.getPrimaryIPAddress(allowIPV6: false)
+            }
+            .startWith(NetworkChangeNotifier.getPrimaryIPAddress(allowIPV6: false))
+            .distinctUntilChanged()
+            .skip(1)
+            .filter { $0 != nil }
+            .observe(on: MainScheduler.instance)
+            .debounce(.seconds(5), scheduler: MainScheduler.instance)
+            .bind { _ in
+                Task { @MainActor in
+                    await ProxyHealthCheckManager.shared.healthCheckOnNetworkChange()
+                }
+            }.disposed(by: disposeBag)
     }
 
     func runSpeedTest() async {

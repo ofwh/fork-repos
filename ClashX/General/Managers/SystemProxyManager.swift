@@ -122,4 +122,31 @@ class SystemProxyManager: NSObject {
             await disableProxy()
         }
     }
+
+    func updateProxyPortsIfNeeded(oldConfig: ClashConfig?, newConfig: ClashConfig) async {
+        guard oldConfig?.usedHttpPort != newConfig.usedHttpPort ||
+                oldConfig?.usedSocksPort != newConfig.usedSocksPort else { return }
+
+        Logger.log("port config updated,new: \(newConfig.usedHttpPort),\(newConfig.usedSocksPort)")
+
+        guard ConfigManager.shared.proxyPortAutoSet else { return }
+        await enableProxy(port: newConfig.usedHttpPort, socksPort: newConfig.usedSocksPort)
+    }
+
+    func resetProxySettingOnWakeupFromSleep() async {
+        guard !ConfigManager.shared.isProxySetByOtherVariable.value,
+              ConfigManager.shared.proxyPortAutoSet else { return }
+        guard NetworkChangeNotifier.getPrimaryInterface() != nil else { return }
+
+        if !NetworkChangeNotifier.isCurrentSystemSetToClash() {
+            let rawProxy = NetworkChangeNotifier.getRawProxySetting()
+            Logger.log("Resting proxy setting, current:\(rawProxy)", level: .warning)
+            await disableProxy()
+            await enableProxy()
+        }
+
+        await MainActor.run {
+            ConfigReloadManager.shared.resetStreamApiIfRemoteControlEnabled()
+        }
+    }
 }
