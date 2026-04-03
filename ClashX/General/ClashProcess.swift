@@ -285,11 +285,7 @@ actor ClashProcess {
 	}
 
 	private func iCloudURL() async -> URL? {
-		await withCheckedContinuation { continuation in
-			ICloudManager.shared.getUrl { url in
-				continuation.resume(returning: url)
-			}
-		}
+		await ICloudManager.shared.getUrl()
 	}
 	
 // MARK: launch path

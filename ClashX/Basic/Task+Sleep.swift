@@ -9,8 +9,4 @@ public extension Task where Success == Never, Failure == Never {
     static func sleep(seconds: TimeInterval) async throws {
         try await sleep(nanoseconds: UInt64((seconds * 1_000_000_000).rounded()))
     }
-
-    static func sleep(milliseconds: TimeInterval) async throws {
-        try await sleep(seconds: milliseconds / 1_000)
-    }
 }

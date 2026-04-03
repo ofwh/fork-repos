@@ -83,19 +83,18 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         statusItemView.updateSize(width: statusItemLengthWithSpeed)
         statusMenu.delegate = self
         setupStatusMenuItemData()
-        DispatchQueue.main.async {
-            Task { @MainActor in
-                self.postFinishLaunching()
-            }
+        Task { @MainActor in
+            await self.postFinishLaunching()
         }
     }
 
     @MainActor
-    func postFinishLaunching() {
+    func postFinishLaunching() async {
         Logger.log("postFinishLaunching")
         defer {
             statusItem.menu = statusMenu
-            DispatchQueue.main.asyncAfter(deadline: .now() + 8) {
+            Task { @MainActor in
+                try? await Task.sleep(seconds: 8)
                 self.checkMenuIconVisable()
             }
         }
@@ -104,7 +103,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             self.dashboardMenuItem.isHidden = true
             self.connectionsMenuItem.isHidden = true
         }
-        AppVersionUtil.showUpgradeAlert()
+        await AppVersionUtil.showUpgradeAlert()
         ICloudManager.shared.setup()
 
         if WebPortalManager.hasWebProtal {
@@ -113,36 +112,36 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 		
         // install proxy helper
         _ = ClashResourceManager.check()
-        Task {
             await PrivilegedHelperManager.shared.checkInstall()
-        }
         ConfigFileManager.copySampleConfigIfNeed()
 
         // claer not existed selected model
-        ConfigReloadManager.shared.removeUnExistProxyGroups()
+        await ConfigReloadManager.shared.removeUnExistProxyGroups()
         setupData()
-        Task { @MainActor in
-            ConfigReloadManager.shared.prepareInitialAllowLanSync()
-        }
+        ConfigReloadManager.shared.prepareInitialAllowLanSync()
 
-        ConfigReloadManager.shared.updateLoggingLevel(menuItems: logLevelMenuItem.submenu?.items ?? [])
+        await ConfigReloadManager.shared.updateLoggingLevel(menuItems: logLevelMenuItem.submenu?.items ?? [])
 
         // start watch config file change
-        ConfigManager.watchCurrentConfigFile()
+        await ConfigManager.watchCurrentConfigFile()
 
-        RemoteConfigManager.shared.autoUpdateCheck()
+        await RemoteConfigManager.shared.autoUpdateCheckIfNeeded()
 
         setupNetworkNotifier()
         registCrashLogger()
         KeyboardShortCutManager.setup()
-        RemoteControlManager.setupMenuItem(separator: externalControlSeparator)
+        await RemoteControlManager.setupMenuItem(separator: externalControlSeparator)
     }
 
     
     
     
+    @MainActor
     func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
-        return TerminalConfirmAction.run()
+        Task {
+            await TerminalConfirmAction.run(app: sender)
+        }
+        return .terminateLater
     }
 
     func applicationWillTerminate(_ aNotification: Notification) {
@@ -322,8 +321,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
     @MainActor
     func setupNetworkNotifier() {
-        DispatchQueue.main.asyncAfter(deadline: .now() + 5) {
-            NetworkChangeNotifier.start()
+        Task { @MainActor in
+            try? await Task.sleep(seconds: 5)
+            await NetworkChangeNotifier.start()
         }
 
         NotificationCenter
@@ -414,7 +414,7 @@ extension AppDelegate: ClashProcessDelegate {
 		alert.addButton(withTitle: NSLocalizedString("Quit", comment: ""))
 		alert.runModal()
 
-		DispatchQueue.main.async {
+        Task { @MainActor in
 			NSApplication.shared.terminate(nil)
 		}
 	}
@@ -584,7 +584,9 @@ extension AppDelegate {
 
 extension AppDelegate {
     @IBAction func openConfigFolder(_ sender: Any) {
-        ConfigFileManager.shared.openConfigFolder()
+        Task { @MainActor in
+            await ConfigFileManager.shared.openConfigFolder()
+        }
     }
 
     @IBAction func actionUpdateConfig(_ sender: AnyObject) {
@@ -596,8 +598,10 @@ extension AppDelegate {
     @IBAction func actionSetLogLevel(_ sender: NSMenuItem) {
         let level = ClashLogLevel(rawValue: sender.title.lowercased()) ?? .unknow
         ConfigManager.selectLoggingApiLevel = level
-        ConfigReloadManager.shared.updateLoggingLevel(menuItems: logLevelMenuItem.submenu?.items ?? [])
-        ConfigReloadManager.shared.resetStreamApi()
+        Task { @MainActor in
+            await ConfigReloadManager.shared.updateLoggingLevel(menuItems: logLevelMenuItem.submenu?.items ?? [])
+            ConfigReloadManager.shared.resetStreamApi()
+        }
     }
 
     @IBAction func actionAutoUpdateRemoteConfig(_ sender: Any) {
@@ -661,7 +665,8 @@ extension AppDelegate {
         #if DEBUG
             return
         #else
-            DispatchQueue.main.asyncAfter(deadline: .now() + 5) {
+            Task { @MainActor in
+                try? await Task.sleep(seconds: 5)
                 AppCenter.start(withAppSecret: "dce6e9a3-b6e3-4fd2-9f2d-35c767a99663", services: [
                     Analytics.self,
                     Crashes.self
@@ -697,7 +702,8 @@ extension AppDelegate {
                 }
 				UserNotificationCenter.shared.post(title: "Fail on launch protect", info: "You origin Config has been renamed", notiOnly: false)
             }
-            DispatchQueue.global().asyncAfter(deadline: DispatchTime.now() + Double(Int64(5 * Double(NSEC_PER_SEC))) / Double(NSEC_PER_SEC)) {
+            Task {
+                try? await Task.sleep(seconds: 5)
                 x.set(0, forKey: "launch_fail_times")
             }
         #endif
@@ -772,7 +778,8 @@ extension AppDelegate {
 
             remoteConfigAutoupdateMenuItem.menu?.performActionForItem(at: 0)
 
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+            Task { @MainActor in
+                try? await Task.sleep(seconds: 0.2)
                 NotificationCenter.default.post(name: Notification.Name(rawValue: "didGetUrl"), object: nil, userInfo: userInfo)
             }
         } else if host == "update-config" {

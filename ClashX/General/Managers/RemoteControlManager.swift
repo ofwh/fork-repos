@@ -58,13 +58,13 @@ class RemoteControlManager {
         return []
     }
 
-    static func setupMenuItem(separator: NSMenuItem) {
+    @MainActor
+    static func setupMenuItem(separator: NSMenuItem) async {
         menuSeparator = separator
         updateMenuItems()
         updateDropDownMenuItems()
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-            RemoteControlManager.recoverSelection()
-        }
+        try? await Task.sleep(seconds: 0.5)
+        RemoteControlManager.recoverSelection()
     }
 
     private static func recoverSelection() {

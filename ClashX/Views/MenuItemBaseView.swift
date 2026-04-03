@@ -154,7 +154,7 @@ class MenuItemBaseView: NSView {
     }
 
     override func mouseUp(with event: NSEvent) {
-        DispatchQueue.main.async {
+        Task { @MainActor in
             self.didClickView()
         }
     }

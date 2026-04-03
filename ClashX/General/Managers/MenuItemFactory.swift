@@ -127,11 +127,7 @@ class MenuItemFactory {
         }
 
         if ICloudManager.shared.useiCloud.value {
-            let list = await withCheckedContinuation { continuation in
-                ICloudManager.shared.getConfigFilesList {
-                    continuation.resume(returning: $0)
-                }
-            }
+            let list = await ICloudManager.shared.getConfigFilesList()
             return list.map { generateMenuItem($0) }
         } else {
             return ConfigManager.getConfigFilesList().map { generateMenuItem($0) }

@@ -67,10 +67,8 @@ final class ConfigReloadManager {
         await ApiRequest.updateSniffing(enable: enable)
     }
 
-    func updateLoggingLevel(menuItems: [NSMenuItem]) {
-        Task {
-            _ = await ApiRequest.updateLogLevel(level: ConfigManager.selectLoggingApiLevel)
-        }
+    func updateLoggingLevel(menuItems: [NSMenuItem]) async {
+        _ = await ApiRequest.updateLogLevel(level: ConfigManager.selectLoggingApiLevel)
         menuItems.forEach {
             $0.state = $0.title.lowercased() == ConfigManager.selectLoggingApiLevel.rawValue ? .on : .off
         }
@@ -154,7 +152,7 @@ final class ConfigReloadManager {
         await syncConfig()
     }
 
-    func removeUnExistProxyGroups() {
+    func removeUnExistProxyGroups() async {
         let action: (([String]) -> Void) = { list in
             let unexists = ConfigManager.selectedProxyRecords.filter {
                 !list.contains($0.config)
@@ -164,13 +162,13 @@ final class ConfigReloadManager {
             }
         }
 
-        if ICloudManager.shared.useiCloud.value {
-            ICloudManager.shared.getConfigFilesList { list in
-                action(list)
-            }
+        let list = if ICloudManager.shared.useiCloud.value {
+            await ICloudManager.shared.getConfigFilesList()
         } else {
-            action(ConfigManager.getConfigFilesList())
+            ConfigManager.getConfigFilesList()
         }
+
+        action(list)
     }
 
     private func selectAllowLanWithMenory() async {

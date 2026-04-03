@@ -46,15 +46,14 @@ class AppVersionUtil: NSObject {
 }
 
 extension AppVersionUtil {
-    static func showUpgradeAlert() {
+    @MainActor
+    static func showUpgradeAlert() async {
         guard !hasHandledPostLaunchUpdateTips,
               let lastVersion = shared.lastVersionNumber,
               hasVersionChanged else { return }
 
         hasHandledPostLaunchUpdateTips = true
-        Task {
-            await WebCacheCleaner.clean()
-        }
+        await WebCacheCleaner.clean()
 
         guard lastVersion.compare(configFolderMigrationVersion, options: .numeric) == .orderedAscending,
               !UserDefaults.standard.bool(forKey: kConfigFolderMigrationTipKey) else { return }

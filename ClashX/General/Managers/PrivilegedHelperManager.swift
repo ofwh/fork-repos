@@ -37,7 +37,6 @@ final class PrivilegedHelperManager {
     private let useLegacyInstall = true
     private var connection: NSXPCConnection?
     private var _helper: ProxyConfigRemoteProcessProtocol?
-    private var helperStatusTimer: Timer?
 
     static let machServiceName = "com.metacubex.ClashX.ProxyConfigHelper"
     static let shared = PrivilegedHelperManager()
@@ -227,34 +226,29 @@ final class PrivilegedHelperManager {
 
         let timeout: TimeInterval = 15
         let time = Date()
-        return await withCheckedContinuation { continuation in
-            var didFinish = false
-
-            func finish(_ status: HelperStatus) {
-                guard !didFinish else { return }
-                didFinish = true
-                helperStatusTimer?.invalidate()
-                helperStatusTimer = nil
-                continuation.resume(returning: status)
-            }
-
-            helperStatusTimer = Timer.scheduledTimer(withTimeInterval: timeout, repeats: false) { _ in
+        return await withTaskGroup(of: HelperStatus.self, returning: HelperStatus.self) { group in
+            group.addTask {
+                try? await Task.sleep(seconds: timeout)
                 Logger.log("check helper timeout time: \(timeout)")
-                finish(.noFound)
+                return .noFound
             }
 
-            Task {
+            group.addTask {
                 do {
                     let installedHelperVersion: String = try await self.request(ProxyConfigHelperMessages.GetVersion())
                     Logger.log("helper version \(installedHelperVersion) require version \(helperVersion)", level: .debug)
                     let versionMatch = installedHelperVersion == helperVersion
                     let interval = Date().timeIntervalSince(time)
                     Logger.log("check helper using time: \(interval)")
-                    finish(versionMatch ? .installed : .needUpdate)
+                    return versionMatch ? .installed : .needUpdate
                 } catch {
-                    finish(.noFound)
+                    return .noFound
                 }
             }
+
+            let status = await group.next() ?? .noFound
+            group.cancelAll()
+            return status
         }
     }
 

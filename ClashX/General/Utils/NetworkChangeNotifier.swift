@@ -11,15 +11,14 @@ import CoreWLAN
 import SystemConfiguration
 
 class NetworkChangeNotifier {
-    static func start() {
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-            Thread {
-                startProxiesWatch()
-            }.start()
-            Thread {
-                startIPChangeWatch()
-            }.start()
-        }
+    static func start() async {
+        try? await Task.sleep(seconds: 0.5)
+        Thread {
+            startProxiesWatch()
+        }.start()
+        Thread {
+            startIPChangeWatch()
+        }.start()
     }
 
     private static func startProxiesWatch() {
@@ -62,7 +61,8 @@ class NetworkChangeNotifier {
     @objc static func onWakeNote(note: NSNotification) {
         NotificationCenter.default.post(name: .systemNetworkStatusIPUpdate, object: nil)
 
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
+        Task { @MainActor in
+            try? await Task.sleep(seconds: 1)
             NotificationCenter.default.post(name: .systemNetworkStatusDidChange, object: nil)
         }
     }

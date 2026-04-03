@@ -12,7 +12,8 @@ class ClashResourceManager {
         case geoip = "geoip.dat"
     }
 
-    private var updateGeoTimer: Timer?
+    @MainActor
+    private var updateGeoTask: Task<Void, Never>?
 
     private init() {}
 
@@ -87,25 +88,30 @@ class ClashResourceManager {
 extension ClashResourceManager {
     @MainActor
     func updateGeoDatabases() async {
-        guard updateGeoTimer == nil else { return }
-
-        updateGeoTimer = Timer.scheduledTimer(withTimeInterval: 500, repeats: true) { [weak self] timer in
-            timer.fireDate = .init(timeIntervalSinceNow: 5)
-
-            Task { [weak self] in
-                await self?.pollGeoUpdate(with: timer)
-            }
-        }
+        guard updateGeoTask == nil else { return }
 
         _ = await ApiRequest.updateGEO()
         UserNotificationCenter.shared.post(title: NSLocalizedString("Updating GEO Databases...", comment: ""), info: NSLocalizedString("Good luck to you  🙃", comment: ""))
-        updateGeoTimer?.fire()
+
+        updateGeoTask = Task { @MainActor [weak self] in
+            guard let self else { return }
+            defer {
+                self.updateGeoTask = nil
+            }
+
+            while !Task.isCancelled {
+                if await self.pollGeoUpdate() {
+                    return
+                }
+                try? await Task.sleep(seconds: 0.5)
+            }
+        }
     }
 
     @MainActor
-    private func pollGeoUpdate(with timer: Timer) async {
+    private func pollGeoUpdate() async -> Bool {
         let rules = await ApiRequest.getRules()
-        guard updateGeoTimer != nil else { return }
+        guard updateGeoTask != nil else { return true }
 
         if let rule = rules.first,
            rule.payload == ClashMetaConfig.initRulePayload {
@@ -113,10 +119,9 @@ extension ClashResourceManager {
             await ConfigReloadManager.shared.updateConfig(showNotification: false)
             UserNotificationCenter.shared.post(title: "Update GEO Databases Finished.", info: "")
 
-            timer.invalidate()
-            updateGeoTimer = nil
+            return true
         } else {
-            timer.fireDate = .init(timeIntervalSinceNow: 0.5)
+            return false
         }
     }
 

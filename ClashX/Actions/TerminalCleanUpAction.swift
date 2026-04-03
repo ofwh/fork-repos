@@ -11,74 +11,105 @@ import Foundation
 import RxSwift
 
 enum TerminalConfirmAction {
-    static func run() -> NSApplication.TerminateReply {
+    @MainActor
+    static func run(app: NSApplication) async {
         guard confirmAction() else {
-            return .terminateCancel
+            await replyShouldCancelTermination(app: app)
+            return
         }
-        let group = DispatchGroup()
-        var shouldWait = false
-		
-		ConfigManager.shared.restoreTunProxy = ConfigManager.shared.isTunModeVariable.value
 
-        Task {
-            try? await PrivilegedHelperManager.shared.request(ProxyConfigHelperMessages.StopMeta())
-            try? await PrivilegedHelperManager.shared.request(ProxyConfigHelperMessages.UpdateTun(state: false, dns: ConfigManager.metaTunDNS))
-        }
-		
-		try? FileManager.default.removeItem(atPath: Paths.tempPath() + "/cacheConfigs")
-        try? FileManager.default.removeItem(atPath: Paths.localConfigPath(for: kSafeConfigName))
-		
-        if ConfigManager.shared.proxyPortAutoSet && !ConfigManager.shared.isProxySetByOtherVariable.value || NetworkChangeNotifier.isCurrentSystemSetToClash(looser: true) ||
-            NetworkChangeNotifier.hasInterfaceProxySetToClash() {
-            Logger.log("ClashX quit need clean proxy setting")
-			ConfigManager.shared.restoreSystemProxy = true
-            shouldWait = true
-            group.enter()
+        ConfigManager.shared.restoreTunProxy = ConfigManager.shared.isTunModeVariable.value
 
-            Task {
-                await SystemProxyManager.shared.disableProxy(forceDisable: ConfigManager.shared.isProxySetByOtherVariable.value)
-                group.leave()
-            }
-		} else {
-			ConfigManager.shared.restoreSystemProxy = false
-		}
+        async let stopMetaAndDisableTunTask = stopMetaAndDisableTun()
 
-        if !shouldWait {
+        removeTempFiles()
+
+        guard let forceDisable = forceDisableForProxyCleanup() else {
+            _ = await stopMetaAndDisableTunTask
+            ConfigManager.shared.restoreSystemProxy = false
             Logger.log("ClashX quit without clean waiting")
-            return .terminateNow
+            await replyShouldTerminate(app: app, initialDelay: 0)
+            return
         }
 
+        Logger.log("ClashX quit need clean proxy setting")
+        ConfigManager.shared.restoreSystemProxy = true
+
+        prepareForTerminationWait()
+
+        _ = await stopMetaAndDisableTunTask
+        Logger.log("ClashX quit wait for clean up")
+        let finished = await performProxyCleanup(forceDisable: forceDisable)
+        if finished {
+            Logger.log("ClashX quit after clean up finish")
+            await replyShouldTerminate(app: app, initialDelay: 0.2)
+        } else {
+            Logger.log("ClashX quit after clean up timeout")
+            await replyShouldTerminate(app: app, initialDelay: 0)
+        }
+    }
+
+    private static func stopMetaAndDisableTun() async {
+        try? await PrivilegedHelperManager.shared.request(ProxyConfigHelperMessages.StopMeta())
+        try? await PrivilegedHelperManager.shared.request(ProxyConfigHelperMessages.UpdateTun(state: false, dns: ConfigManager.metaTunDNS))
+    }
+
+    private static func removeTempFiles() {
+        try? FileManager.default.removeItem(atPath: Paths.tempPath() + "/cacheConfigs")
+        try? FileManager.default.removeItem(atPath: Paths.localConfigPath(for: kSafeConfigName))
+    }
+
+    private static func forceDisableForProxyCleanup() -> Bool? {
+        let shouldCleanSystemProxy =
+            (ConfigManager.shared.proxyPortAutoSet && !ConfigManager.shared.isProxySetByOtherVariable.value) ||
+            NetworkChangeNotifier.isCurrentSystemSetToClash(looser: true) ||
+            NetworkChangeNotifier.hasInterfaceProxySetToClash()
+
+        guard shouldCleanSystemProxy else { return nil }
+        return ConfigManager.shared.isProxySetByOtherVariable.value
+    }
+
+    private static func prepareForTerminationWait() {
         if let statusItem = AppDelegate.shared.statusItem, statusItem.menu != nil {
             statusItem.menu = nil
         }
         AppDelegate.shared.disposeBag = DisposeBag()
-
-        DispatchQueue.global(qos: .default).async {
-            let res = group.wait(timeout: .now() + 5)
-            switch res {
-            case .success:
-                Logger.log("ClashX quit after clean up finish")
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
-                    NSApp.reply(toApplicationShouldTerminate: true)
-                }
-                DispatchQueue.global().asyncAfter(deadline: .now() + 1) {
-                    NSApp.reply(toApplicationShouldTerminate: true)
-                }
-            case .timedOut:
-                Logger.log("ClashX quit after clean up timeout")
-                DispatchQueue.main.async {
-                    NSApp.reply(toApplicationShouldTerminate: true)
-                }
-                DispatchQueue.global().asyncAfter(deadline: .now() + 1) {
-                    NSApp.reply(toApplicationShouldTerminate: true)
-                }
-            }
-        }
-
-        Logger.log("ClashX quit wait for clean up")
-        return .terminateLater
     }
 
+    private static func performProxyCleanup(forceDisable: Bool) async -> Bool {
+        await withTaskGroup(of: Bool.self, returning: Bool.self) { group in
+            group.addTask {
+                await SystemProxyManager.shared.disableProxy(forceDisable: forceDisable)
+                return true
+            }
+
+            group.addTask {
+                try? await Task.sleep(seconds: 5)
+                return false
+            }
+
+            let result = await group.next() ?? false
+            group.cancelAll()
+            return result
+        }
+    }
+
+    @MainActor
+    private static func replyShouldTerminate(app: NSApplication, initialDelay: TimeInterval) async {
+        if initialDelay > 0 {
+            try? await Task.sleep(seconds: initialDelay)
+        }
+        app.reply(toApplicationShouldTerminate: true)
+        try? await Task.sleep(seconds: 1)
+        app.reply(toApplicationShouldTerminate: true)
+    }
+
+    @MainActor
+    private static func replyShouldCancelTermination(app: NSApplication) async {
+        app.reply(toApplicationShouldTerminate: false)
+    }
+
+    @MainActor
     static func confirmAction() -> Bool {
         if NSApp.activationPolicy() == .regular {
             let alert = NSAlert()

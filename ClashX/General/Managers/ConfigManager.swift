@@ -49,17 +49,17 @@ class ConfigManager {
         }
         set {
             UserDefaults.standard.set(newValue, forKey: "selectConfigName")
-            watchCurrentConfigFile()
+            Task {
+                await watchCurrentConfigFile()
+            }
         }
     }
 
-    static func watchCurrentConfigFile() {
+    static func watchCurrentConfigFile() async {
         if ICloudManager.shared.useiCloud.value {
-            ICloudManager.shared.getUrl { url in
-                guard let url = url else { return }
-                let configUrl = url.appendingPathComponent(Paths.configFileName(for: selectConfigName))
-                ConfigFileManager.shared.watchFile(path: configUrl.path)
-            }
+            guard let url = await ICloudManager.shared.getUrl() else { return }
+            let configUrl = url.appendingPathComponent(Paths.configFileName(for: selectConfigName))
+            ConfigFileManager.shared.watchFile(path: configUrl.path)
         } else {
             ConfigFileManager.shared.watchFile(path: Paths.localConfigPath(for: selectConfigName))
         }
@@ -184,18 +184,14 @@ class ConfigManager {
         }
     }
 
-    static func getConfigPath(configName: String, complete: ((String) -> Void)? = nil) {
+    static func getConfigPath(configName: String) async -> String? {
         if ICloudManager.shared.useiCloud.value {
-            ICloudManager.shared.getUrl { url in
-                guard let url = url else {
-                    return
-                }
-                let configPath = url.appendingPathComponent(Paths.configFileName(for: configName)).path
-                complete?(configPath)
+            guard let url = await ICloudManager.shared.getUrl() else {
+                return nil
             }
+            return url.appendingPathComponent(Paths.configFileName(for: configName)).path
         } else {
-            let filePath = Paths.localConfigPath(for: configName)
-            complete?(filePath)
+            return Paths.localConfigPath(for: configName)
         }
     }
 }

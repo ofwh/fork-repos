@@ -32,8 +32,6 @@ class ApiRequest {
 
     private lazy var logQueue = DispatchQueue(label: "com.ClashX.core.log")
 
-    static let clashRequestQueue = DispatchQueue(label: "com.clashx.clashRequestQueue")
-
     @objc enum ProviderType: Int {
         case rule, proxy
 
@@ -81,20 +79,13 @@ class ApiRequest {
     }
 
     static func findConfigPath(configName: String) async -> String? {
-        await withCheckedContinuation { continuation in
-            if ICloudManager.shared.useiCloud.value {
-                ICloudManager.shared.getUrl { url in
-                    guard let url = url else {
-                        continuation.resume(returning: nil)
-                        return
-                    }
-                    let configPath = url.appendingPathComponent(Paths.configFileName(for: configName)).path
-                    continuation.resume(returning: configPath)
-                }
-            } else {
-                let filePath = Paths.localConfigPath(for: configName)
-                continuation.resume(returning: filePath)
+        if ICloudManager.shared.useiCloud.value {
+            guard let url = await ICloudManager.shared.getUrl() else {
+                return nil
             }
+            return url.appendingPathComponent(Paths.configFileName(for: configName)).path
+        } else {
+            return Paths.localConfigPath(for: configName)
         }
     }
 
@@ -137,9 +128,9 @@ class ApiRequest {
 	private var loggingWebSocketRetryDelay: TimeInterval = 1
 	private var memoryWebSocketRetryDelay: TimeInterval = 1
 	
-	private var trafficWebSocketRetryTimer: Timer?
-	private var loggingWebSocketRetryTimer: Timer?
-	private var memoryWebSocketRetryTimer: Timer?
+    private var trafficWebSocketRetryTask: Task<Void, Never>?
+    private var loggingWebSocketRetryTask: Task<Void, Never>?
+    private var memoryWebSocketRetryTask: Task<Void, Never>?
     
     private var logRateLimiter = LogRateLimiter {
         let alert = NSAlert()
@@ -633,29 +624,25 @@ extension ApiRequest {
 	}
 
     func resetLogStreamApi() {
-        loggingWebSocketRetryTimer?.invalidate()
-        loggingWebSocketRetryTimer = nil
+        cancelLoggingRetryTask()
         loggingWebSocketRetryDelay = 1
         requestLog()
     }
 
     func resetTrafficStreamApi() {
-        trafficWebSocketRetryTimer?.invalidate()
-        trafficWebSocketRetryTimer = nil
+        cancelTrafficRetryTask()
         trafficWebSocketRetryDelay = 1
         requestTrafficInfo()
     }
 	
 	func resetMemoryStreamApi() {
-		memoryWebSocketRetryTimer?.invalidate()
-		memoryWebSocketRetryTimer = nil
+		cancelMemoryRetryTask()
 		memoryWebSocketRetryDelay = 1
 		requestMemoryInfo()
 	}
 
     private func requestTrafficInfo() {
-        trafficWebSocketRetryTimer?.invalidate()
-        trafficWebSocketRetryTimer = nil
+        cancelTrafficRetryTask()
         trafficWebSocket?.disconnect(forceTimeout: 0.5)
 
         let socket = WebSocket(url: URL(string: ConfigManager.apiUrl.appending("/traffic"))!)
@@ -669,8 +656,7 @@ extension ApiRequest {
     }
 
     private func requestLog() {
-        loggingWebSocketRetryTimer?.invalidate()
-        loggingWebSocketRetryTimer = nil
+        cancelLoggingRetryTask()
         loggingWebSocket?.disconnect(forceTimeout: 1)
 
         let uriString = "/logs?level=".appending(ConfigManager.selectLoggingApiLevel.rawValue)
@@ -685,8 +671,7 @@ extension ApiRequest {
     }
 	
 	private func requestMemoryInfo() {
-		memoryWebSocketRetryTimer?.invalidate()
-		memoryWebSocketRetryTimer = nil
+        cancelMemoryRetryTask()
 		memoryWebSocket?.disconnect(forceTimeout: 1)
 		
 		let socket = WebSocket(url: URL(string: ConfigManager.apiUrl.appending("/memory"))!)
@@ -698,18 +683,14 @@ extension ApiRequest {
 		memoryWebSocket = socket
 	}
 
-    private func notifyStreamStatusChanged() {
-        Task {
-            await delegate?.streamStatusChanged()
-            await dashboardDelegate?.streamStatusChanged()
-        }
+    private func notifyStreamStatusChanged() async {
+        await delegate?.streamStatusChanged()
+        await dashboardDelegate?.streamStatusChanged()
     }
 
-    private func notifyTrafficUpdate(up: Int, down: Int) {
-        Task {
-            await delegate?.didUpdateTraffic(up: up, down: down)
-            await dashboardDelegate?.didUpdateTraffic(up: up, down: down)
-        }
+    private func notifyTrafficUpdate(up: Int, down: Int) async {
+        await delegate?.didUpdateTraffic(up: up, down: down)
+        await dashboardDelegate?.didUpdateTraffic(up: up, down: down)
     }
 
     private func notifyLog(log: String, level: String) async {
@@ -717,12 +698,61 @@ extension ApiRequest {
         await dashboardDelegate?.didGetLog(log: log, level: level)
     }
 
-    private func notifyMemoryUpdate(memory: Int64) {
-        Task {
-            await delegate?.didUpdateMemory(memory: memory)
-            await dashboardDelegate?.didUpdateMemory(memory: memory)
-        }
+    private func notifyMemoryUpdate(memory: Int64) async {
+        await delegate?.didUpdateMemory(memory: memory)
+        await dashboardDelegate?.didUpdateMemory(memory: memory)
     }
+
+    private func cancelTrafficRetryTask() {
+        trafficWebSocketRetryTask?.cancel()
+        trafficWebSocketRetryTask = nil
+    }
+
+    private func cancelLoggingRetryTask() {
+        loggingWebSocketRetryTask?.cancel()
+        loggingWebSocketRetryTask = nil
+    }
+
+	private func cancelMemoryRetryTask() {
+		memoryWebSocketRetryTask?.cancel()
+		memoryWebSocketRetryTask = nil
+    }
+
+    private func scheduleTrafficRetry() {
+        let retryDelay = trafficWebSocketRetryDelay
+        cancelTrafficRetryTask()
+        trafficWebSocketRetryTask = Task { [weak self] in
+            try? await Task.sleep(seconds: retryDelay)
+            guard let self, !Task.isCancelled else { return }
+            if self.trafficWebSocket?.isConnected == true { return }
+            self.requestTrafficInfo()
+        }
+        trafficWebSocketRetryDelay *= 2
+    }
+
+    private func scheduleLoggingRetry() {
+        let retryDelay = loggingWebSocketRetryDelay
+        cancelLoggingRetryTask()
+        loggingWebSocketRetryTask = Task { [weak self] in
+            try? await Task.sleep(seconds: retryDelay)
+            guard let self, !Task.isCancelled else { return }
+            if self.loggingWebSocket?.isConnected == true { return }
+            self.requestLog()
+        }
+        loggingWebSocketRetryDelay *= 2
+    }
+
+	private func scheduleMemoryRetry() {
+		let retryDelay = memoryWebSocketRetryDelay
+        cancelMemoryRetryTask()
+		memoryWebSocketRetryTask = Task { [weak self] in
+			try? await Task.sleep(seconds: retryDelay)
+			guard let self, !Task.isCancelled else { return }
+			if self.memoryWebSocket?.isConnected == true { return }
+			self.requestMemoryInfo()
+		}
+		memoryWebSocketRetryDelay *= 2
+	}
 }
 
 extension ApiRequest: WebSocketDelegate {
@@ -734,7 +764,9 @@ extension ApiRequest: WebSocketDelegate {
 			Logger.log("trafficWebSocket did Connect", level: .debug)
 			
 			ConfigManager.shared.isRunning = true
-            notifyStreamStatusChanged()
+            Task {
+                await notifyStreamStatusChanged()
+            }
 		case loggingWebSocket:
 			loggingWebSocketRetryDelay = 1
 			Logger.log("loggingWebSocket did Connect", level: .debug)
@@ -750,7 +782,9 @@ extension ApiRequest: WebSocketDelegate {
 		
 		if (socket as? WebSocket) == trafficWebSocket {
 			ConfigManager.shared.isRunning = false
-            notifyStreamStatusChanged()
+            Task {
+                await notifyStreamStatusChanged()
+            }
 		}
 		
 		guard let err = error else {
@@ -764,35 +798,13 @@ extension ApiRequest: WebSocketDelegate {
 		switch webSocket {
 		case trafficWebSocket:
 			Logger.log("trafficWebSocket did disconnect", level: .debug)
-			
-			trafficWebSocketRetryTimer?.invalidate()
-			trafficWebSocketRetryTimer =
-				Timer.scheduledTimer(withTimeInterval: trafficWebSocketRetryDelay, repeats: false, block: {
-					[weak self] _ in
-					if self?.trafficWebSocket?.isConnected == true { return }
-					self?.requestTrafficInfo()
-				})
-			trafficWebSocketRetryDelay *= 2
+            scheduleTrafficRetry()
 		case loggingWebSocket:
 			Logger.log("loggingWebSocket did disconnect", level: .debug)
-			loggingWebSocketRetryTimer =
-				Timer.scheduledTimer(withTimeInterval: loggingWebSocketRetryDelay, repeats: false, block: {
-					[weak self] _ in
-					if self?.loggingWebSocket?.isConnected == true { return }
-					self?.requestLog()
-				})
-			loggingWebSocketRetryDelay *= 2
+            scheduleLoggingRetry()
 		case memoryWebSocket:
 			Logger.log("memoryWebSocket did disconnect", level: .debug)
-			
-			memoryWebSocketRetryTimer =
-				Timer.scheduledTimer(withTimeInterval: memoryWebSocketRetryDelay, repeats: false, block: {
-					[weak self] _ in
-					if self?.memoryWebSocket?.isConnected == true { return }
-					self?.requestMemoryInfo()
-				})
-			
-			memoryWebSocketRetryDelay *= 2
+            scheduleMemoryRetry()
 		default:
 			return
 		}
@@ -805,14 +817,18 @@ extension ApiRequest: WebSocketDelegate {
 		
 		switch webSocket {
 		case trafficWebSocket:
-            notifyTrafficUpdate(up: json["up"].intValue, down: json["down"].intValue)
+            Task {
+                await notifyTrafficUpdate(up: json["up"].intValue, down: json["down"].intValue)
+            }
 		case loggingWebSocket:
             Task {
                 guard await logRateLimiter.processLog() else { return }
                 await notifyLog(log: json["payload"].stringValue, level: json["type"].string ?? "info")
             }
 		case memoryWebSocket:
-            notifyMemoryUpdate(memory: json["inuse"].int64Value)
+            Task {
+                await notifyMemoryUpdate(memory: json["inuse"].int64Value)
+            }
 		default:
 			return
 		}

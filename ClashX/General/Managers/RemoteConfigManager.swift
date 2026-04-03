@@ -76,11 +76,15 @@ class RemoteConfigManager {
     }
 
     @objc func autoUpdateCheck() {
+        Task {
+            await autoUpdateCheckIfNeeded()
+        }
+    }
+
+    func autoUpdateCheckIfNeeded() async {
         guard RemoteConfigManager.autoUpdateEnable else { return }
         Logger.log("Tigger config auto update check")
-        Task {
-            await updateCheck()
-        }
+        await updateCheck()
     }
 
     func updateCheck(ignoreTimeLimit: Bool = false, showNotification: Bool = false) async {
@@ -187,12 +191,7 @@ class RemoteConfigManager {
 
         let savePath: String?
         if ICloudManager.shared.useiCloud.value {
-            savePath = await withCheckedContinuation { continuation in
-                ICloudManager.shared.getUrl { url in
-                    let saveUrl = url?.appendingPathComponent(Paths.configFileName(for: config.name))
-                    continuation.resume(returning: saveUrl?.path)
-                }
-            }
+            savePath = await ICloudManager.shared.getUrl()?.appendingPathComponent(Paths.configFileName(for: config.name)).path
         } else {
             savePath = Paths.localConfigPath(for: config.name)
         }

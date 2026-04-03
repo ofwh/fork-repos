@@ -79,7 +79,8 @@ class SSIDSuspendTool: NSObject {
                 locationManager.requestAlwaysAuthorization()
             } else if locationManager.authorizationStatus != .authorized {
                 if showNoticeOnNotPermission {
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                    Task { @MainActor in
+                        try? await Task.sleep(seconds: 0.1)
                         self.openLocationSettings()
                     }
                 }

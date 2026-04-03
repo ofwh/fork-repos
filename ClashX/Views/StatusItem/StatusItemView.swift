@@ -33,7 +33,9 @@ class StatusItemView: NSView, StatusItemViewProtocol {
                 button.imagePosition = .imageOverlaps
             } else {
                 Logger.log("button = nil")
-                ConfigFileManager.shared.openConfigFolder()
+                Task { @MainActor in
+                    await ConfigFileManager.shared.openConfigFolder()
+                }
             }
             view.updateViewStatus(enableProxy: false)
             return view

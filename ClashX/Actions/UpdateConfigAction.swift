@@ -19,8 +19,9 @@ enum UpdateConfigAction {
         alert.addButton(withTitle: NSLocalizedString("OK", comment: ""))
         NSApp.activate(ignoringOtherApps: true)
         if alert.runModal() == .alertFirstButtonReturn {
-            ConfigManager.getConfigPath(configName: configName) {
-                NSWorkspace.shared.open(URL(fileURLWithPath: $0))
+            Task { @MainActor in
+                guard let path = await ConfigManager.getConfigPath(configName: configName) else { return }
+                NSWorkspace.shared.open(URL(fileURLWithPath: path))
             }
         }
     }

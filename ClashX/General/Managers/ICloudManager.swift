@@ -10,11 +10,54 @@ import Cocoa
 import RxCocoa
 import RxSwift
 
+private actor ICloudFileSystem {
+    func getDocumentsURL() -> URL? {
+        guard let containerURL = FileManager.default.url(forUbiquityContainerIdentifier: nil) else {
+            return nil
+        }
+
+        let documentsURL = containerURL.appendingPathComponent("Documents", isDirectory: true)
+        do {
+            try FileManager.default.createDirectory(at: documentsURL, withIntermediateDirectories: true, attributes: nil)
+            return documentsURL
+        } catch {
+            Logger.log("\(error)")
+            return nil
+        }
+    }
+
+    func getConfigFilesList() -> [String] {
+        guard let documentsURL = getDocumentsURL(),
+              let fileURLs = try? FileManager.default.contentsOfDirectory(atPath: documentsURL.path) else {
+            return []
+        }
+
+        return fileURLs
+            .filter { String($0.split(separator: ".").last ?? "") == "yaml" }
+            .map { $0.split(separator: ".").dropLast().joined(separator: ".") }
+    }
+
+    func ensureDefaultConfigIfNeeded(sampleConfigPath: String, defaultConfigPath: String) -> Bool {
+        guard let documentsURL = getDocumentsURL() else {
+            return false
+        }
+
+        let files = try? FileManager.default.contentsOfDirectory(atPath: documentsURL.path)
+        guard files?.isEmpty == true else {
+            return true
+        }
+
+        try? FileManager.default.copyItem(atPath: sampleConfigPath, toPath: defaultConfigPath)
+        try? FileManager.default.copyItem(atPath: sampleConfigPath, toPath: documentsURL.appendingPathComponent("config.yaml").path)
+        return true
+    }
+}
+
 class ICloudManager {
     static let shared = ICloudManager()
-    private let queue = DispatchQueue(label: "com.clashx.icloud")
     private var metaQuery: NSMetadataQuery?
     private var enableMenuItem: NSMenuItem?
+    private let fileSystem = ICloudFileSystem()
     private(set) var icloudAvailable = false {
         didSet { useiCloud.accept(userEnableiCloud && icloudAvailable) }
     }
@@ -34,39 +77,28 @@ class ICloudManager {
         addNotification()
         useiCloud.distinctUntilChanged().filter { $0 }.subscribe {
             [weak self] _ in
-            self?.checkiCloud()
+            Task { @MainActor in
+                await self?.checkiCloud()
+            }
         }.disposed(by: disposeBag)
 
         icloudAvailable = isICloudAvailable()
         useiCloud.accept(userEnableiCloud && icloudAvailable)
     }
 
-    func getConfigFilesList(configs: @escaping (([String]) -> Void)) {
-        getUrl { url in
-            guard let url = url,
-                  let fileURLs = try? FileManager.default.contentsOfDirectory(atPath: url.path) else {
-                configs([])
-                return
-            }
-            let list = fileURLs
-                .filter { String($0.split(separator: ".").last ?? "") == "yaml" }
-                .map { $0.split(separator: ".").dropLast().joined(separator: ".") }
-            configs(list)
-        }
+    func getConfigFilesList() async -> [String] {
+        await fileSystem.getConfigFilesList()
     }
 
-    private func checkiCloud() {
-        getUrl { url in
-            guard let url = url else {
-                self.icloudAvailable = false
-                return
-            }
-            let files = try? FileManager.default.contentsOfDirectory(atPath: url.path)
-            if files?.isEmpty == true {
-                let path = Bundle.main.path(forResource: "sampleConfig", ofType: "yaml")!
-                try? FileManager.default.copyItem(atPath: path, toPath: kDefaultConfigFilePath)
-                try? FileManager.default.copyItem(atPath: Bundle.main.path(forResource: "sampleConfig", ofType: "yaml")!, toPath: url.appendingPathComponent("config.yaml").path)
-            }
+    @MainActor
+    private func checkiCloud() async {
+        guard let sampleConfigPath = Bundle.main.path(forResource: "sampleConfig", ofType: "yaml") else {
+            return
+        }
+
+        guard await fileSystem.ensureDefaultConfigIfNeeded(sampleConfigPath: sampleConfigPath, defaultConfigPath: kDefaultConfigFilePath) else {
+            self.icloudAvailable = false
+            return
         }
     }
 
@@ -74,30 +106,8 @@ class ICloudManager {
         return FileManager.default.ubiquityIdentityToken != nil
     }
 
-    func getUrl(complete: ((URL?) -> Void)? = nil) {
-        queue.async {
-            guard var url = FileManager.default.url(forUbiquityContainerIdentifier: nil) else {
-                DispatchQueue.main.async {
-                    complete?(nil)
-                }
-                return
-            }
-            url.appendPathComponent("Documents")
-            do {
-                if !FileManager.default.fileExists(atPath: url.path) {
-                    try FileManager.default.createDirectory(at: url, withIntermediateDirectories: false, attributes: nil)
-                }
-                DispatchQueue.main.async {
-                    complete?(url)
-                }
-            } catch let err {
-                Logger.log("\(err)")
-                DispatchQueue.main.async {
-                    complete?(nil)
-                }
-                return
-            }
-        }
+    func getUrl() async -> URL? {
+        await fileSystem.getDocumentsURL()
     }
 
     private func addNotification() {
