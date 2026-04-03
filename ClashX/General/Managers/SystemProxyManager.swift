@@ -98,4 +98,28 @@ class SystemProxyManager: NSObject {
             Logger.log("restoreProxy failed: \(error)", level: .error)
         }
     }
+
+    func toggleProxyPortAutoSet() async {
+        var shouldSaveProxy = true
+
+        if ConfigManager.shared.proxyPortAutoSet && ConfigManager.shared.proxyShouldPaused.value {
+            ConfigManager.shared.proxyPortAutoSet = false
+        } else if ConfigManager.shared.isProxySetByOtherVariable.value {
+            ConfigManager.shared.isProxySetByOtherVariable.accept(false)
+            ConfigManager.shared.proxyPortAutoSet = true
+            shouldSaveProxy = false
+            await disableProxy(port: 0, socksPort: 0, forceDisable: true)
+        } else {
+            ConfigManager.shared.proxyPortAutoSet.toggle()
+        }
+
+        if ConfigManager.shared.proxyPortAutoSet {
+            if shouldSaveProxy {
+                await saveProxy()
+            }
+            await enableProxy()
+        } else {
+            await disableProxy()
+        }
+    }
 }

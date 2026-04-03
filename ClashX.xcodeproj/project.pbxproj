@@ -79,6 +79,7 @@
 		01F335D72AD10D0B0048AF77 /* DateFormatter+.swift in Sources */ = {isa = PBXBuildFile; fileRef = F939724D23A4DB0600FE5A3F /* DateFormatter+.swift */; };
 		01F335D82AD10D0B0048AF77 /* ClashConnection.swift in Sources */ = {isa = PBXBuildFile; fileRef = F915A4612366ADEF004840BE /* ClashConnection.swift */; };
 		01F335D92AD10D0B0048AF77 /* ConnectionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = F977FAAD23669D6400C17F1F /* ConnectionManager.swift */; };
+		01F335DA2BD10D0B0048AF77 /* ProxyHealthCheckManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 01F335D92BD10D0B0048AF77 /* ProxyHealthCheckManager.swift */; };
 		01F335DA2AD10D0B0048AF77 /* StatusItemView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 495340B220DE68C300B0D3FF /* StatusItemView.swift */; };
 		01F335DB2AD10D0B0048AF77 /* SystemProxyManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = F935B2FB23085515009E4D33 /* SystemProxyManager.swift */; };
 		01F335DC2AD10D0B0048AF77 /* LaunchAtLogin.swift in Sources */ = {isa = PBXBuildFile; fileRef = 495A44D220D267D000888A0A /* LaunchAtLogin.swift */; };
@@ -228,6 +229,7 @@
 		019725592CA15D6400C14E49 /* UserNotificationCenter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserNotificationCenter.swift; sourceTree = "<group>"; };
 		0197255B2CA15FC600C14E49 /* NSWorkspace+openFile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "NSWorkspace+openFile.swift"; sourceTree = "<group>"; };
 		019A239528657A7A00AE5698 /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
+		01F335D92BD10D0B0048AF77 /* ProxyHealthCheckManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProxyHealthCheckManager.swift; sourceTree = "<group>"; };
 		01B009AC2854533200B93618 /* geoip.dat.gz */ = {isa = PBXFileReference; lastKnownFileType = archive.gzip; path = geoip.dat.gz; sourceTree = "<group>"; };
 		01B009AD2854533300B93618 /* geosite.dat.gz */ = {isa = PBXFileReference; lastKnownFileType = archive.gzip; path = geosite.dat.gz; sourceTree = "<group>"; };
 		01B1CB092A2E20C10073EA34 /* DashboardManager.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = DashboardManager.swift; sourceTree = "<group>"; };
@@ -613,6 +615,7 @@
 				49CF3B5B20CE8068001EBF94 /* ClashResourceManager.swift */,
 				49CF3B6420CEE06C001EBF94 /* ConfigManager.swift */,
 				495BFB8721919B9800C8779D /* RemoteConfigManager.swift */,
+				01F335D92BD10D0B0048AF77 /* ProxyHealthCheckManager.swift */,
 				4952C3BE2115C7CA004A4FA8 /* MenuItemFactory.swift */,
 				F935B2FB23085515009E4D33 /* SystemProxyManager.swift */,
 				F977FAAD23669D6400C17F1F /* ConnectionManager.swift */,
@@ -1026,6 +1029,7 @@
 				01F335D72AD10D0B0048AF77 /* DateFormatter+.swift in Sources */,
 				01F335D82AD10D0B0048AF77 /* ClashConnection.swift in Sources */,
 				01F335D92AD10D0B0048AF77 /* ConnectionManager.swift in Sources */,
+				01F335DA2BD10D0B0048AF77 /* ProxyHealthCheckManager.swift in Sources */,
 				01F335DA2AD10D0B0048AF77 /* StatusItemView.swift in Sources */,
 				01F335DB2AD10D0B0048AF77 /* SystemProxyManager.swift in Sources */,
 				01F335DC2AD10D0B0048AF77 /* LaunchAtLogin.swift in Sources */,

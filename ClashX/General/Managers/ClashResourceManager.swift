@@ -4,11 +4,17 @@ import Foundation
 import Gzip
 
 class ClashResourceManager {
+    static let shared = ClashResourceManager()
+
     enum RuleFiles: String {
         case mmdb = "country.mmdb"
         case geosite = "geosite.dat"
         case geoip = "geoip.dat"
     }
+
+    private var updateGeoTimer: Timer?
+
+    private init() {}
 
     static func check() -> Bool {
         checkConfigDir()
@@ -79,6 +85,41 @@ class ClashResourceManager {
 }
 
 extension ClashResourceManager {
+    @MainActor
+    func updateGeoDatabases() async {
+        guard updateGeoTimer == nil else { return }
+
+        updateGeoTimer = Timer.scheduledTimer(withTimeInterval: 500, repeats: true) { [weak self] timer in
+            timer.fireDate = .init(timeIntervalSinceNow: 5)
+
+            Task { [weak self] in
+                await self?.pollGeoUpdate(with: timer)
+            }
+        }
+
+        _ = await ApiRequest.updateGEO()
+        UserNotificationCenter.shared.post(title: NSLocalizedString("Updating GEO Databases...", comment: ""), info: NSLocalizedString("Good luck to you  🙃", comment: ""))
+        updateGeoTimer?.fire()
+    }
+
+    @MainActor
+    private func pollGeoUpdate(with timer: Timer) async {
+        let rules = await ApiRequest.getRules()
+        guard updateGeoTimer != nil else { return }
+
+        if let rule = rules.first,
+           rule.payload == ClashMetaConfig.initRulePayload {
+            Logger.log("Update GEO Finished.")
+            _ = await AppDelegate.shared.updateConfig(showNotification: false)
+            UserNotificationCenter.shared.post(title: "Update GEO Databases Finished.", info: "")
+
+            timer.invalidate()
+            updateGeoTimer = nil
+        } else {
+            timer.fireDate = .init(timeIntervalSinceNow: 0.5)
+        }
+    }
+
     static func updateGeoIP() {
         guard let url = showCustomAlert() else { return }
         AF.download(url, to: { _, _ in

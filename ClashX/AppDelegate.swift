@@ -56,12 +56,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
     var disposeBag = DisposeBag()
     var statusItemView: StatusItemViewProtocol!
-    var isSpeedTesting = false
 
-    var runAfterConfigReload: (() -> Void)?
-	
-	var updateGeoTimer: Timer?
-	
+    private var runAfterConfigReload = false
+
     let clashProcess = ClashProcess()
 
     func applicationWillFinishLaunching(_ notification: Notification) {
@@ -123,11 +120,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         // claer not existed selected model
         removeUnExistProxyGroups()
         setupData()
-        runAfterConfigReload = { [weak self] in
-            Task {
-                await self?.selectAllowLanWithMenory()
-            }
-        }
+        runAfterConfigReload = true
 
         updateLoggingLevel()
 
@@ -476,8 +469,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
         await syncConfigWithTun()
         resetStreamApi()
-        runAfterConfigReload?()
-        runAfterConfigReload = nil
+        await syncInitialAllowLanIfNeeded()
         if showNotification {
 			UserNotificationCenter.shared.post(
 				title: NSLocalizedString("Reload Config Succeed", comment: ""),
@@ -515,28 +507,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
     @objc func healthCheckOnNetworkChange() {
         Task {
-            let proxyResp = await ApiRequest.getMergedProxyData()
-
-            var providers = Set<ClashProxyName>()
-
-            let groups = proxyResp.proxyGroups.filter(\.type.isAutoGroup)
-            for group in groups {
-                group.all?.compactMap {
-                    proxyResp.proxiesMap[$0]?.enclosingProvider?.name
-                }.forEach {
-                    providers.insert($0)
-                }
-            }
-
-            for group in groups {
-                Logger.log("Start auto health check for group \(group.name)")
-                await ApiRequest.healthCheck(proxy: group.name)
-            }
-
-            for provider in providers {
-                Logger.log("Start auto health check for provider \(provider)")
-                await ApiRequest.healthCheck(proxy: provider)
-            }
+            await ProxyHealthCheckManager.shared.healthCheckOnNetworkChange()
         }
     }
 }
@@ -573,34 +544,32 @@ extension AppDelegate: ClashProcessDelegate {
 	}
 	
 	func clashConfigUpdated() {
-		if ConfigManager.shared.restoreSystemProxy {
-            Task {
-                await SystemProxyManager.shared.enableProxy()
-            }
-		}
-		
-		if ConfigManager.shared.restoreTunProxy {
-            Task {
-                await ApiRequest.updateTun(enable: true)
-                try? await PrivilegedHelperManager.shared.request(ProxyConfigHelperMessages.UpdateTun(state: true, dns: ConfigManager.metaTunDNS))
-            }
-		} else {
-            Task {
-                await self.syncConfigWithTun(true)
-            }
-		}
-		
-		SSIDSuspendTool.shared.setup()
-		
-		resetStreamApi()
-		runAfterConfigReload?()
-		runAfterConfigReload = nil
-		selectProxyGroupWithMemory()
-        Task {
-            await MenuItemFactory.recreateProxyMenuItems()
+        Task { [weak self] in
+            await self?.handleClashConfigUpdated()
         }
-		NotificationCenter.default.post(name: .reloadDashboard, object: nil)
 	}
+
+    @MainActor
+    private func handleClashConfigUpdated() async {
+        if ConfigManager.shared.restoreSystemProxy {
+            await SystemProxyManager.shared.enableProxy()
+        }
+
+        if ConfigManager.shared.restoreTunProxy {
+            await ApiRequest.updateTun(enable: true)
+            try? await PrivilegedHelperManager.shared.request(ProxyConfigHelperMessages.UpdateTun(state: true, dns: ConfigManager.metaTunDNS))
+        } else {
+            await syncConfigWithTun(true)
+        }
+
+        SSIDSuspendTool.shared.setup()
+
+        resetStreamApi()
+        await syncInitialAllowLanIfNeeded()
+        selectProxyGroupWithMemory()
+        await MenuItemFactory.recreateProxyMenuItems()
+        NotificationCenter.default.post(name: .reloadDashboard, object: nil)
+    }
 	
 	func clashStartError(_ error: Error) {
 		let unc = UserNotificationCenter.shared
@@ -679,35 +648,8 @@ extension AppDelegate {
     }
 
     @IBAction func actionSetSystemProxy(_ sender: Any?) {
-        var canSaveProxy = true
-        if ConfigManager.shared.proxyPortAutoSet && ConfigManager.shared.proxyShouldPaused.value {
-            ConfigManager.shared.proxyPortAutoSet = false
-        } else if ConfigManager.shared.isProxySetByOtherVariable.value {
-            // should reset proxy to clashx
-            ConfigManager.shared.isProxySetByOtherVariable.accept(false)
-            ConfigManager.shared.proxyPortAutoSet = true
-            // clear then reset.
-            canSaveProxy = false
-            Task {
-                await SystemProxyManager.shared.disableProxy(port: 0, socksPort: 0, forceDisable: true)
-            }
-        } else {
-            ConfigManager.shared.proxyPortAutoSet = !ConfigManager.shared.proxyPortAutoSet
-        }
-
-        if ConfigManager.shared.proxyPortAutoSet {
-            if canSaveProxy {
-                Task {
-                    await SystemProxyManager.shared.saveProxy()
-                }
-            }
-            Task {
-                await SystemProxyManager.shared.enableProxy()
-            }
-        } else {
-            Task {
-                await SystemProxyManager.shared.disableProxy()
-            }
+        Task {
+            await SystemProxyManager.shared.toggleProxyPortAutoSet()
         }
     }
 
@@ -725,7 +667,7 @@ extension AppDelegate {
 
     @IBAction func actionSpeedTest(_ sender: Any) {
 		Task {
-			await runSpeedTest()
+			await ProxyHealthCheckManager.shared.runSpeedTest()
         }
     }
 
@@ -833,18 +775,8 @@ extension AppDelegate {
     }
 
     @IBAction func updateGEO(_ sender: NSMenuItem) {
-		guard updateGeoTimer == nil else { return }
-		updateGeoTimer = Timer.scheduledTimer(withTimeInterval: 500, repeats: true) { [weak self] timer in
-			
-			timer.fireDate = .init(timeIntervalSinceNow: 5)
-			
-            Task { [weak self] in
-                await self?.pollGeoUpdate(with: timer)
-            }
-		}
-		
         Task {
-            await startGeoUpdate()
+            await ClashResourceManager.shared.updateGeoDatabases()
         }
     }
 
@@ -937,35 +869,6 @@ extension AppDelegate {
     }
 
     @MainActor
-    func runSpeedTest() async {
-        if isSpeedTesting {
-            UserNotificationCenter.shared.postSpeedTestingNotice()
-            return
-        }
-        UserNotificationCenter.shared.postSpeedTestBeginNotice()
-        isSpeedTesting = true
-
-        let resp = await ApiRequest.getMergedProxyData()
-
-        await withTaskGroup(of: Void.self) { group in
-            for (name, _) in resp.enclosingProviderResp?.providers ?? [:] {
-                group.addTask {
-                    await ApiRequest.healthCheck(proxy: name)
-                }
-            }
-
-            for p in resp.proxiesMap["GLOBAL"]?.all ?? [] {
-                group.addTask {
-                    _ = await ApiRequest.getProxyDelay(proxyName: p)
-                }
-            }
-        }
-
-        UserNotificationCenter.shared.postSpeedTestFinishNotice()
-        isSpeedTesting = false
-    }
-
-    @MainActor
     func setTunMode(enabled: Bool) async {
         await ApiRequest.updateTun(enable: enabled)
         await syncConfigWithTun()
@@ -977,30 +880,6 @@ extension AppDelegate {
     func setSniffing(enable: Bool, sender: NSMenuItem) async {
         await ApiRequest.updateSniffing(enable: enable)
         sender.state = enable ? .on : .off
-    }
-
-    @MainActor
-    func pollGeoUpdate(with timer: Timer) async {
-        let rules = await ApiRequest.getRules()
-        guard updateGeoTimer != nil else { return }
-        if let rule = rules.first,
-           rule.payload == ClashMetaConfig.initRulePayload {
-            Logger.log("Update GEO Finished.")
-            _ = await updateConfig(showNotification: false)
-            UserNotificationCenter.shared.post(title: "Update GEO Databases Finished.", info: "")
-
-            timer.invalidate()
-            updateGeoTimer = nil
-        } else {
-            timer.fireDate = .init(timeIntervalSinceNow: 0.5)
-        }
-    }
-
-    @MainActor
-    func startGeoUpdate() async {
-        _ = await ApiRequest.updateGEO()
-        UserNotificationCenter.shared.post(title: NSLocalizedString("Updating GEO Databases...", comment: ""), info: NSLocalizedString("Good luck to you  🙃", comment: ""))
-        updateGeoTimer?.fire()
     }
 
     @MainActor
@@ -1044,6 +923,13 @@ extension AppDelegate {
     func selectAllowLanWithMenory() async {
         await ApiRequest.updateAllowLan(allow: ConfigManager.allowConnectFromLan)
         await syncConfig()
+    }
+
+    @MainActor
+    private func syncInitialAllowLanIfNeeded() async {
+        guard runAfterConfigReload else { return }
+        runAfterConfigReload = false
+        await selectAllowLanWithMenory()
     }
 
     func hasMenuSelected() -> Bool {

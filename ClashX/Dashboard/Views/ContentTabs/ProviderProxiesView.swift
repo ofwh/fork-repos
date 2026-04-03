@@ -114,7 +114,7 @@ struct ProviderProxiesView: View {
 	@MainActor
 	func startHealthCheck() async {
 		isTesting = true
-		await ApiRequest.healthCheck(proxy: provider.name)
+		await ProxyHealthCheckManager.shared.healthCheck(proxy: provider.name)
 		await updateProvider()
 		isTesting = false
 	}

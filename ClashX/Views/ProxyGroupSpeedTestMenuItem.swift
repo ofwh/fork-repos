@@ -45,7 +45,7 @@ class ProxyGroupSpeedTestMenuItem: NSMenuItem {
     @objc func healthCheck() {
         guard testType == .reTest else { return }
 		Task {
-			_ = await ApiRequest.getGroupDelay(groupName: proxyGroup.name)
+			_ = await ProxyHealthCheckManager.shared.getGroupDelay(groupName: proxyGroup.name)
 		}
         menu?.cancelTracking()
     }
@@ -99,7 +99,7 @@ private class ProxyGroupSpeedTestMenuItemView: MenuItemBaseView {
         enclosingMenuItem?.isEnabled = false
         setNeedsDisplay()
 
-        let delays = await ApiRequest.getGroupDelay(groupName: group.name)
+        let delays = await ProxyHealthCheckManager.shared.getGroupDelay(groupName: group.name)
         guard let menu = enclosingMenuItem else { return }
 
         group.all?.forEach { proxyName in

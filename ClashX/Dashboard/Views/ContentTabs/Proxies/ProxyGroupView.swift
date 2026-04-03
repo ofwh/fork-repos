@@ -122,7 +122,7 @@ struct ProxyGroupView: View {
 	@MainActor
 	func startBenchmark() async {
 		isTesting = true
-		let delays = await ApiRequest.getGroupDelay(groupName: proxyGroup.name)
+		let delays = await ProxyHealthCheckManager.shared.getGroupDelay(groupName: proxyGroup.name)
 		proxyGroup.proxies.enumerated().forEach {
 			var delay = 0
 			if let d = delays[$0.element.name], d != 0 {
