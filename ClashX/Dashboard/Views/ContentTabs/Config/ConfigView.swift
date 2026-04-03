@@ -241,7 +241,9 @@ struct ConfigView: View {
 			/*
 			ConfigItemView(name: "Reload") {
 				Button {
-					AppDelegate.shared.updateConfig()
+					Task {
+						await ConfigReloadManager.shared.updateConfig()
+					}
 				} label: {
 					Text("Reload config file")
 				}

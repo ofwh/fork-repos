@@ -110,7 +110,7 @@ extension ClashResourceManager {
         if let rule = rules.first,
            rule.payload == ClashMetaConfig.initRulePayload {
             Logger.log("Update GEO Finished.")
-            _ = await AppDelegate.shared.updateConfig(showNotification: false)
+            await ConfigReloadManager.shared.updateConfig(showNotification: false)
             UserNotificationCenter.shared.post(title: "Update GEO Databases Finished.", info: "")
 
             timer.invalidate()

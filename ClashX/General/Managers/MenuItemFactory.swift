@@ -490,7 +490,7 @@ extension MenuItemFactory {
 
     @MainActor
     private static func selectConfig(named config: String) async {
-        let err = await AppDelegate.shared.updateConfig(configName: config, showNotification: false)
+        let err = await ConfigReloadManager.shared.updateConfig(configName: config, showNotification: false)
         if err == nil {
             await ConnectionManager.closeAllConnection()
         }

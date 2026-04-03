@@ -155,9 +155,9 @@ extension RemoteConfigViewController {
             RemoteConfigManager.shared.saveConfigs()
 
             if config == latestAddedConfig {
-                _ = await AppDelegate.shared.updateConfig(configName: config.name)
+                await ConfigReloadManager.shared.updateConfig(configName: config.name)
             } else if config.name == ConfigManager.selectConfigName {
-                _ = await AppDelegate.shared.updateConfig()
+                await ConfigReloadManager.shared.updateConfig()
             }
         }
         tableView.reloadDataKeepingSelection()

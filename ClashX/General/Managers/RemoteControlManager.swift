@@ -117,9 +117,9 @@ class RemoteControlManager {
             ConfigManager.shared.overrideSecret = nil
         }
         ClashProxy.cleanCache()
-        AppDelegate.shared.resetStreamApi()
-        Task {
-            await AppDelegate.shared.syncConfig()
+        Task { @MainActor in
+            ConfigReloadManager.shared.resetStreamApi()
+            await ConfigReloadManager.shared.syncConfig()
             await MenuItemFactory.recreateProxyMenuItems()
         }
         updateDropDownMenuItems()

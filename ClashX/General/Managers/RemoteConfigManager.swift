@@ -138,7 +138,7 @@ class RemoteConfigManager {
             UserNotificationCenter.shared.post(title: NSLocalizedString("Remote Config Update", comment: ""), info: info)
         }
 
-        _ = await AppDelegate.shared.updateConfig(showNotification: false)
+        await ConfigReloadManager.shared.updateConfig(showNotification: false)
         Logger.log("[Auto Upgrade] Finish \(config.name) result: \(error ?? "succeed")")
     }
 

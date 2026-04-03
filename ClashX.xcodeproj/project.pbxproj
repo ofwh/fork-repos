@@ -79,6 +79,7 @@
 		01F335D72AD10D0B0048AF77 /* DateFormatter+.swift in Sources */ = {isa = PBXBuildFile; fileRef = F939724D23A4DB0600FE5A3F /* DateFormatter+.swift */; };
 		01F335D82AD10D0B0048AF77 /* ClashConnection.swift in Sources */ = {isa = PBXBuildFile; fileRef = F915A4612366ADEF004840BE /* ClashConnection.swift */; };
 		01F335D92AD10D0B0048AF77 /* ConnectionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = F977FAAD23669D6400C17F1F /* ConnectionManager.swift */; };
+		01F335DB2BD10D0B0048AF77 /* ConfigReloadManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 01F335DA2CD10D0B0048AF77 /* ConfigReloadManager.swift */; };
 		01F335DA2BD10D0B0048AF77 /* ProxyHealthCheckManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 01F335D92BD10D0B0048AF77 /* ProxyHealthCheckManager.swift */; };
 		01F335DA2AD10D0B0048AF77 /* StatusItemView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 495340B220DE68C300B0D3FF /* StatusItemView.swift */; };
 		01F335DB2AD10D0B0048AF77 /* SystemProxyManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = F935B2FB23085515009E4D33 /* SystemProxyManager.swift */; };
@@ -356,6 +357,7 @@
 		49CF3B3520CD75DF001EBF94 /* ClashX-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "ClashX-Bridging-Header.h"; sourceTree = "<group>"; };
 		49CF3B5B20CE8068001EBF94 /* ClashResourceManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClashResourceManager.swift; sourceTree = "<group>"; };
 		49CF3B6420CEE06C001EBF94 /* ConfigManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConfigManager.swift; sourceTree = "<group>"; };
+		01F335DA2CD10D0B0048AF77 /* ConfigReloadManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConfigReloadManager.swift; sourceTree = "<group>"; };
 		49D176A62355FE680093DD7B /* NetworkChangeNotifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkChangeNotifier.swift; sourceTree = "<group>"; };
 		49D176A8235614340093DD7B /* ProxyGroupSpeedTestMenuItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProxyGroupSpeedTestMenuItem.swift; sourceTree = "<group>"; };
 		49D176AA23575BB20093DD7B /* ProxyGroupMenuItemView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProxyGroupMenuItemView.swift; sourceTree = "<group>"; };
@@ -614,6 +616,7 @@
 				4952C3CF2117027C004A4FA8 /* ConfigFileManager.swift */,
 				49CF3B5B20CE8068001EBF94 /* ClashResourceManager.swift */,
 				49CF3B6420CEE06C001EBF94 /* ConfigManager.swift */,
+				01F335DA2CD10D0B0048AF77 /* ConfigReloadManager.swift */,
 				495BFB8721919B9800C8779D /* RemoteConfigManager.swift */,
 				01F335D92BD10D0B0048AF77 /* ProxyHealthCheckManager.swift */,
 				4952C3BE2115C7CA004A4FA8 /* MenuItemFactory.swift */,
@@ -1029,6 +1032,7 @@
 				01F335D72AD10D0B0048AF77 /* DateFormatter+.swift in Sources */,
 				01F335D82AD10D0B0048AF77 /* ClashConnection.swift in Sources */,
 				01F335D92AD10D0B0048AF77 /* ConnectionManager.swift in Sources */,
+				01F335DB2BD10D0B0048AF77 /* ConfigReloadManager.swift in Sources */,
 				01F335DA2BD10D0B0048AF77 /* ProxyHealthCheckManager.swift in Sources */,
 				01F335DA2AD10D0B0048AF77 /* StatusItemView.swift in Sources */,
 				01F335DB2AD10D0B0048AF77 /* SystemProxyManager.swift in Sources */,

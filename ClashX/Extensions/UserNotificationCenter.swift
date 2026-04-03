@@ -158,7 +158,7 @@ extension UserNotificationCenter: UNUserNotificationCenterDelegate {
 		switch identifier {
 		case "postConfigFileChangeDetectionNotice":
 			Task {
-				_ = await AppDelegate.shared.updateConfig()
+				await ConfigReloadManager.shared.updateConfig()
 			}
 		default:
 			break
