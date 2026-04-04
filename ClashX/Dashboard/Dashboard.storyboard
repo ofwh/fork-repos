@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<document type="com.apple.InterfaceBuilder3.Cocoa.Storyboard.XIB" version="3.0" toolsVersion="24765" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES" initialViewController="Hio-NQ-XYp">
+    <dependencies>
+        <deployment identifier="macosx"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="24765"/>
+        <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
+    </dependencies>
+    <scenes>
+        <!--Window Controller-->
+        <scene sceneID="7bL-QR-vJ2">
+            <objects>
+                <windowController showSeguePresentationStyle="single" id="Hio-NQ-XYp" customClass="DashboardWindowController" customModule="ClashX_Meta" customModuleProvider="target" sceneMemberID="viewController">
+                    <window key="window" title="Window" allowsToolTipsWhenApplicationIsInactive="NO" autorecalculatesKeyViewLoop="NO" releasedWhenClosed="NO" visibleAtLaunch="NO" frameAutosaveName="DashboardWindow" animationBehavior="default" id="LEE-Di-LVI">
+                        <windowStyleMask key="styleMask" titled="YES" closable="YES" miniaturizable="YES" resizable="YES"/>
+                        <rect key="contentRect" x="294" y="312" width="480" height="270"/>
+                        <rect key="screenRect" x="0.0" y="0.0" width="1920" height="1050"/>
+                        <view key="contentView" id="89c-Ag-ogm">
+                            <rect key="frame" x="0.0" y="0.0" width="480" height="270"/>
+                            <autoresizingMask key="autoresizingMask"/>
+                        </view>
+                    </window>
+                    <connections>
+                        <segue destination="QeG-MB-OIk" kind="relationship" relationship="window.shadowedContentViewController" id="Ekt-Oj-iWG"/>
+                    </connections>
+                </windowController>
+                <customObject id="hg8-98-It1" userLabel="First Responder" customClass="NSResponder" sceneMemberID="firstResponder"/>
+            </objects>
+            <point key="canvasLocation" x="70" y="-253"/>
+        </scene>
+        <!--Dashboard View Contoller-->
+        <scene sceneID="m43-M7-WYF">
+            <objects>
+                <customObject id="K8F-Hi-mUA" userLabel="First Responder" customClass="NSResponder" sceneMemberID="firstResponder"/>
+                <viewController id="QeG-MB-OIk" customClass="DashboardViewContoller" customModule="ClashX_Meta" customModuleProvider="target" sceneMemberID="viewController">
+                    <view key="view" id="YSX-Nl-x9S">
+                        <rect key="frame" x="0.0" y="0.0" width="480" height="270"/>
+                        <autoresizingMask key="autoresizingMask"/>
+                    </view>
+                </viewController>
+            </objects>
+            <point key="canvasLocation" x="70" y="180"/>
+        </scene>
+    </scenes>
+</document>

@@ -10,21 +10,35 @@ import Cocoa
 import SwiftUI
 
 public class DashboardWindowController: NSWindowController {
+    private static let storyboardName = NSStoryboard.Name("Dashboard")
+
     public var onWindowClose: (() -> Void)?
 
 	public static func create() -> DashboardWindowController {
-        let win = NSWindow()
-        win.center()
-        let wc = DashboardWindowController(window: win)
-        wc.contentViewController = DashboardViewContoller()
-        return wc
+		let controller = NSStoryboard(name: storyboardName, bundle: Bundle.main)
+			.instantiateInitialController()
+
+		guard let controller = controller as? DashboardWindowController else {
+			fatalError("Failed to instantiate DashboardWindowController from Dashboard.storyboard")
+		}
+
+		return controller
     }
+
+	public override func windowDidLoad() {
+		super.windowDidLoad()
+
+		guard let window else { return }
+		window.delegate = self
+		window.styleMask.insert(.fullSizeContentView)
+		window.isOpaque = false
+		window.title = "Dashboard"
+	}
 
 	public override func showWindow(_ sender: Any?) {
         super.showWindow(sender)
         NSApp.activate(ignoringOtherApps: true)
         window?.makeKeyAndOrderFront(self)
-        window?.delegate = self
     }
 	
 	public func set(_ apiURL: String, secret: String? = nil) {
@@ -38,33 +52,10 @@ extension DashboardWindowController: NSWindowDelegate {
 	public func windowWillClose(_ notification: Notification) {
         NSApp.setActivationPolicy(.accessory)
         onWindowClose?()
-        if let contentVC = contentViewController as? DashboardViewContoller, let win = window {
-            if !win.styleMask.contains(.fullScreen) {
-                contentVC.lastSize = win.frame.size
-            }
-        }
     }
 }
 
 class DashboardViewContoller: NSViewController {
-    let contentView = NSHostingView(rootView: DashboardView())
-    let minSize = NSSize(width: 920, height: 580)
-    var lastSize: CGSize? {
-        set {
-            if let size = newValue {
-                UserDefaults.standard.set(NSStringFromSize(size), forKey: "ClashWebViewContoller.lastSize")
-            }
-        }
-        get {
-            if let str = UserDefaults.standard.value(forKey: "ClashWebViewContoller.lastSize") as? String {
-                return NSSizeFromString(str) as CGSize
-            }
-            return nil
-        }
-    }
-
-    let effectView = NSVisualEffectView()
-	
 	private let levels = [
 		ClashLogLevel.silent,
 		.error,
@@ -83,16 +74,8 @@ class DashboardViewContoller: NSViewController {
 	private var sidebarItemObserver: NSObjectProtocol?
 	private var searchStringObserver: NSObjectProtocol?
 
-	func createWindowController() -> NSWindowController {
-        let sb = NSStoryboard(name: "Main", bundle: Bundle.main)
-        let vc = sb.instantiateController(withIdentifier: "DashboardViewContoller") as! DashboardViewContoller
-        let wc = NSWindowController(window: NSWindow())
-        wc.contentViewController = vc
-        return wc
-    }
-
 	override func loadView() {
-        view = contentView
+		view = NSHostingView(rootView: DashboardView())
     }
 
 	override func viewDidLoad() {
@@ -137,35 +120,16 @@ class DashboardViewContoller: NSViewController {
 		super.viewWillAppear()
 		guard view.window?.toolbar == nil else { return }
 		
-		view.window?.styleMask.insert(.fullSizeContentView)
-		
-		view.window?.isOpaque = false
-		view.window?.styleMask.insert(.closable)
-		view.window?.styleMask.insert(.resizable)
-		view.window?.styleMask.insert(.miniaturizable)
-		
 		let toolbar = NSToolbar(identifier: .init("DashboardToolbar"))
 		toolbar.displayMode = .iconOnly
 		toolbar.delegate = self
 		
 		view.window?.toolbar = toolbar
-		view.window?.title = "Dashboard"
 		reinitToolbar([])
-		
-		view.window?.minSize = minSize
-		if let lastSize = lastSize, lastSize != .zero {
-			view.window?.setContentSize(lastSize)
-		}
-		view.window?.center()
+
 		if NSApp.activationPolicy() == .accessory {
 			NSApp.setActivationPolicy(.regular)
 		}
-		
-		
-		// Fix sidebar list highlight
-		let button = NSButton(frame: .zero)
-		view.window?.contentView?.addSubview(button)
-		view.window?.initialFirstResponder = button
 	}
 	
 	func reinitToolbar(_ items: [NSToolbarItem.Identifier]) {
@@ -244,11 +208,11 @@ extension DashboardViewContoller: NSSearchFieldDelegate {
     
 }
 
-extension DashboardViewContoller: NSToolbarDelegate, NSToolbarItemValidation {
+	extension DashboardViewContoller: NSToolbarDelegate, NSToolbarItemValidation {
 	
-	func validateToolbarItem(_ item: NSToolbarItem) -> Bool {
-		return true
-	}
+		func validateToolbarItem(_ item: NSToolbarItem) -> Bool {
+			return true
+		}
 	
 	func toolbar(_ toolbar: NSToolbar, itemForItemIdentifier itemIdentifier: NSToolbarItem.Identifier, willBeInsertedIntoToolbar flag: Bool) -> NSToolbarItem? {
 		

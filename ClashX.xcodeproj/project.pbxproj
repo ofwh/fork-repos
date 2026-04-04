@@ -14,6 +14,7 @@
 		013B21FE2F7EC551009B30CB /* ProxyConfigHelperXPCTransport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 013B21FC2F7EC4F9009B30CB /* ProxyConfigHelperXPCTransport.swift */; };
 		013B21FF2F7FB18A009B30CB /* Task+Sleep.swift in Sources */ = {isa = PBXBuildFile; fileRef = A15E90002E5C9A1100C0FFEE /* Task+Sleep.swift */; };
 		013B22002F7FB3DC009B30CB /* Command.swift in Sources */ = {isa = PBXBuildFile; fileRef = 49FEC6682AD9369C00BAD9F5 /* Command.swift */; };
+		013B22022F7FEA2D009B30CB /* Dashboard.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 013B22012F7FEA2D009B30CB /* Dashboard.storyboard */; };
 		0162E74F2864B819007218A6 /* MetaTask.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0162E74E2864B819007218A6 /* MetaTask.swift */; };
 		0197255A2CA15D6400C14E49 /* UserNotificationCenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 019725592CA15D6400C14E49 /* UserNotificationCenter.swift */; };
 		0197255C2CA15FC600C14E49 /* NSWorkspace+openFile.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0197255B2CA15FC600C14E49 /* NSWorkspace+openFile.swift */; };
@@ -222,6 +223,7 @@
 /* Begin PBXFileReference section */
 		0114F0CE2E5B60CB007C7AAC /* LogRateLimiter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LogRateLimiter.swift; sourceTree = "<group>"; };
 		013B21FC2F7EC4F9009B30CB /* ProxyConfigHelperXPCTransport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProxyConfigHelperXPCTransport.swift; sourceTree = "<group>"; };
+		013B22012F7FEA2D009B30CB /* Dashboard.storyboard */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; path = Dashboard.storyboard; sourceTree = "<group>"; };
 		015F1E90288E42A50052B20A /* ClashMetaConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClashMetaConfig.swift; sourceTree = "<group>"; };
 		0162E74D2864B818007218A6 /* com.metacubex.ClashX.ProxyConfigHelper-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "com.metacubex.ClashX.ProxyConfigHelper-Bridging-Header.h"; sourceTree = "<group>"; };
 		0162E74E2864B819007218A6 /* MetaTask.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MetaTask.swift; sourceTree = "<group>"; };
@@ -433,6 +435,7 @@
 				01BCDB1E2C9EE32F0028FA94 /* Extensions */,
 				01BCDAEF2C9ECD010028FA94 /* Views */,
 				01BCDAB92C9ECD010028FA94 /* DashboardViewContoller.swift */,
+				013B22012F7FEA2D009B30CB /* Dashboard.storyboard */,
 				01BCDABF2C9ECD010028FA94 /* ToolbarStore.swift */,
 			);
 			path = Dashboard;
@@ -992,6 +995,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				01F336322AD10D0B0048AF77 /* geosite.dat.gz in Resources */,
+				013B22022F7FEA2D009B30CB /* Dashboard.storyboard in Resources */,
 				01F336332AD10D0B0048AF77 /* dashboard in Resources */,
 				01F336342AD10D0B0048AF77 /* Localizable.strings in Resources */,
 				01F336352AD10D0B0048AF77 /* ProxySetting.sdef in Resources */,
