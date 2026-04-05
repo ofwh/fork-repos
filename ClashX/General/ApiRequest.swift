@@ -576,27 +576,8 @@ extension ApiRequest {
             }
         }()
 
-        #if PRO_VERSION
-            async let ruleNamesTask: [String] = {
-                do {
-                    let responseData = try await req("/providers/rules")
-                        .validate()
-                        .serializingData()
-                        .value
-                    let json = JSON(responseData)
-                    return json["providers"].dictionaryValue
-                        .filter { $0.value["vehicleType"] == "HTTP" }
-                        .map(\.key)
-                } catch {
-                    Logger.log(error.localizedDescription, level: .warning)
-                    return []
-                }
-            }()
 
-            return AllProviders(proxies: await proxyNamesTask, rules: await ruleNamesTask)
-        #else
-            return AllProviders(proxies: await proxyNamesTask, rules: [])
-        #endif
+        return AllProviders(proxies: await proxyNamesTask, rules: [])
     }
 
 	/*
