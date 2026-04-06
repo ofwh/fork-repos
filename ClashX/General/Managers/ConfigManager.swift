@@ -55,6 +55,7 @@ class ConfigManager {
         }
     }
 
+    @MainActor
     static func watchCurrentConfigFile() async {
         if ICloudManager.shared.useiCloud.value {
             guard let url = await ICloudManager.shared.getUrl() else { return }

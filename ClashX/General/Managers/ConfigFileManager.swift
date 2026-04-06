@@ -19,6 +19,7 @@ class ConfigFileManager {
         pause = true
     }
 
+    @MainActor
     func watchFile(path: String) {
         witness = Witness(paths: [path], flags: .FileEvents, latency: 0.3) {
             [weak self] events in
