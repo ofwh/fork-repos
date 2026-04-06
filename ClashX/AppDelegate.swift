@@ -10,6 +10,7 @@ import Alamofire
 import Cocoa
 import RxCocoa
 import RxSwift
+import Sparkle
 import SwiftyJSON
 import Yams
 
@@ -53,6 +54,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     @IBOutlet var ruleProvidersMenuItem: NSMenuItem!
     @IBOutlet var snifferMenuItem: NSMenuItem!
     @IBOutlet var flushFakeipCacheMenuItem: NSMenuItem!
+    @IBOutlet var updaterController: SPUStandardUpdaterController?
 
     var disposeBag = DisposeBag()
     var statusItemView: StatusItemViewProtocol!
@@ -61,6 +63,12 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
     func applicationWillFinishLaunching(_ notification: Notification) {
         Logger.log("applicationWillFinishLaunching")
+
+        #if DEBUG
+            updaterController?.updater.automaticallyChecksForUpdates = false
+            Logger.log("Sparkle auto checks disabled", level: .debug)
+        #endif
+
         signal(SIGPIPE, SIG_IGN)
         // crash recorder
         failLaunchProtect()
@@ -112,7 +120,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 		
         // install proxy helper
         _ = ClashResourceManager.check()
-            await PrivilegedHelperManager.shared.checkInstall()
+        await PrivilegedHelperManager.shared.checkInstall()
         ConfigFileManager.copySampleConfigIfNeed()
 
         // claer not existed selected model
