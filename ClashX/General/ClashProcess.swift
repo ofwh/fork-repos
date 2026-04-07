@@ -9,10 +9,10 @@ import Cocoa
 
 @MainActor
 protocol ClashProcessDelegate: AnyObject {
-	func clashLaunchPathNotFound(_ msg: String)
-	func clashApiUpdated(_ server: MetaServer)
-	func clashConfigUpdated()
-	func clashStartError(_ error: Error)
+	func clashProcess(_ process: ClashProcess, didFailToResolveLaunchPath message: String) async
+	func clashProcess(_ process: ClashProcess, didStartWith server: MetaServer) async
+	func clashProcessDidUpdateConfig(_ process: ClashProcess) async
+	func clashProcess(_ process: ClashProcess, didFailToStartWith error: Error) async
 }
 
 enum StartMetaError: Error {
@@ -120,7 +120,7 @@ actor ClashProcess {
 		guard let launchPath = paths.path else {
 			coreState = .stopped
 			let msg = paths.err ?? "Load internal Meta Core failed."
-			await delegate?.clashLaunchPathNotFound(msg)
+			await delegate?.clashProcess(self, didFailToResolveLaunchPath: msg)
 			return
 		}
 
@@ -144,7 +144,7 @@ actor ClashProcess {
 """, level: .info)
 			}
 
-			await delegate?.clashApiUpdated(res)
+			await delegate?.clashProcess(self, didStartWith: res)
 			try await pushInitConfig()
 			Logger.log("Init config file success.")
 		} catch {
@@ -155,7 +155,7 @@ actor ClashProcess {
 	private func handleStartError(_ error: Error, didStartCore: Bool) async {
 		Logger.log("\(error)", level: .error)
 		coreState = didStartCore ? .running : .stopped
-		await delegate?.clashStartError(error)
+		await delegate?.clashProcess(self, didFailToStartWith: error)
 	}
 
 	private func checkHelperVersion() async throws {
@@ -271,7 +271,7 @@ actor ClashProcess {
 			throw StartMetaError.pushConfigFailed(error)
 		}
 
-		await delegate?.clashConfigUpdated()
+		await delegate?.clashProcessDidUpdateConfig(self)
 	}
 
 	private func usedPorts() async -> String? {

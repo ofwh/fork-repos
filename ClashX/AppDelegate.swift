@@ -415,19 +415,16 @@ extension AppDelegate: ClashProcessDelegate {
         await clashProcess.startIfNeeded(delegate: self)
 	}
 	
-	func clashLaunchPathNotFound(_ msg: String) {
+    func clashProcess(_ process: ClashProcess, didFailToResolveLaunchPath message: String) async {
 		let alert = NSAlert()
-		alert.messageText = msg
+        alert.messageText = message
 		alert.alertStyle = .warning
 		alert.addButton(withTitle: NSLocalizedString("Quit", comment: ""))
 		alert.runModal()
-
-        Task { @MainActor in
 			NSApplication.shared.terminate(nil)
 		}
-	}
 
-	func clashApiUpdated(_ server: MetaServer) {
+    func clashProcess(_ process: ClashProcess, didStartWith server: MetaServer) async {
 		let port = server.externalController.components(separatedBy: ":").last ?? "9090"
 		ConfigManager.shared.apiPort = port
 		ConfigManager.shared.apiSecret = server.secret
@@ -436,13 +433,11 @@ extension AppDelegate: ClashProcessDelegate {
 		dashboardMenuItem.isEnabled = true
 	}
 	
-	func clashConfigUpdated() {
-        Task {
+    func clashProcessDidUpdateConfig(_ process: ClashProcess) async {
             await ConfigReloadManager.shared.handleClashConfigUpdated()
         }
-	}
 	
-	func clashStartError(_ error: Error) {
+    func clashProcess(_ process: ClashProcess, didFailToStartWith error: Error) async {
 		let unc = UserNotificationCenter.shared
         switch error {
         case StartMetaError.pushConfigFailed:

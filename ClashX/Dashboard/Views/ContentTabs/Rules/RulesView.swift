@@ -37,25 +37,23 @@ struct RulesView: View {
 		}
     }
 
-	@MainActor
 	func loadRules() async {
-		ruleItems.removeAll()
+		async let providerResponse = ApiRequest.requestRuleProviderList()
+		async let rulesResponse = ApiRequest.getRules()
 
-		let resp = await ApiRequest.requestRuleProviderList()
-		let ruleProviders = resp.allProviders.values.sorted {
-				$0.name < $1.name
-			}
-			.map(DBRuleProvider.init)
+		let providerRuleCounts = await providerResponse.allProviders.values.reduce(into: [ClashProviderName: Int]()) {
+			$0[$1.name] = $1.ruleCount
+		}
+		var items = await rulesResponse
 
-		var items = await ApiRequest.getRules()
-		items.enumerated().forEach {
-			guard let payload = $0.element.payload,
-				  let pd = ruleProviders.first(where: { $0.name == payload }) else { return }
-
-			items[$0.offset].size = pd.ruleCount
+		items.indices.forEach { index in
+			guard let payload = items[index].payload,
+				  let ruleCount = providerRuleCounts[payload] else { return }
+			items[index].size = ruleCount
 		}
 
-		ruleItems = items
+		guard !Task.isCancelled else { return }
+        ruleItems = items
 	}
 }
 

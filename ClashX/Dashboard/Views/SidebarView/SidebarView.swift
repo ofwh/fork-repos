@@ -44,19 +44,17 @@ struct SidebarView: View {
 
 	}
 
-	@MainActor
 	func startPollingConnections() {
 		pollingTask?.cancel()
 		pollingTask = Task {
 			while !Task.isCancelled {
 				try? await Task.sleep(seconds: 1)
 				guard !Task.isCancelled else { return }
-				await updateConnections()
+				updateConnections()
 			}
 		}
 	}
 	
-	@MainActor
 	func updateConnections() {
 		let previousTask = updateConnectionsTask
 		updateConnectionsTask = Task {
@@ -64,11 +62,10 @@ struct SidebarView: View {
 			guard !Task.isCancelled,
 				  let snap = await ApiRequest.getConnectionsSnapshot(),
 				  !Task.isCancelled else { return }
-			await applyConnectionsSnapshot(snap)
+			applyConnectionsSnapshot(snap)
 		}
 	}
 
-	@MainActor
 	func applyConnectionsSnapshot(_ snap: DBConnectionSnapShot) {
 		clashApiDatasStorage.overviewData.upTotal = snap.uploadTotal
 		clashApiDatasStorage.overviewData.downTotal = snap.downloadTotal
