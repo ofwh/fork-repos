@@ -122,19 +122,25 @@ class SSIDSuspendTool: NSObject {
     }
 
     private func getCurrentSSID() async -> String? {
-        if #available(macOS 14, *) {
-            if locationManager.authorizationStatus != .authorized {
-                let info = await Command(cmd: "/System/Library/PrivateFrameworks/Apple80211.framework/Resources/airport", args: ["-I"]).run()
-                let ssid = info.components(separatedBy: "\n")
-                    .lazy
-                    .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
-                    .first { $0.starts(with: "SSID:") }?
-                    .components(separatedBy: ":")
-                    .last?.trimmingCharacters(in: .whitespacesAndNewlines)
-                return ssid
-            }
+        guard locationManager.authorizationStatus != .authorized else {
+            return CWWiFiClient.shared().interface()?.ssid()
         }
-        return CWWiFiClient.shared().interface()?.ssid()
+        
+        if #available(macOS 14.4, *) {
+            // sudo wdutil info
+            // SSID : <redacted>
+            return nil
+        } else {
+            let info = await Command(cmd: "/System/Library/PrivateFrameworks/Apple80211.framework/Resources/airport", args: ["-I"]).run()
+            let ssid = info.components(separatedBy: "\n")
+                .lazy
+                .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+                .first { $0.starts(with: "SSID:") }?
+                .components(separatedBy: ":")
+                .last?.trimmingCharacters(in: .whitespacesAndNewlines)
+            return ssid
+        }
+        
     }
 
     private func openLocationSettings() {
