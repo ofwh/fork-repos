@@ -101,6 +101,7 @@ class ConfigManager {
     var proxyShouldPaused = BehaviorRelay<Bool>(value: false)
 
     var isTunModeVariable = BehaviorRelay<Bool>(value: false)
+    var isTunModeInConfig = false
 	
 	static let defaultTunDNS = "8.8.8.8"
 	

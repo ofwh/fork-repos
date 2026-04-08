@@ -21,7 +21,8 @@ class StatusItemView: NSView, StatusItemViewProtocol {
     var up: Int = 0
     var down: Int = 0
 
-    static func create(statusItem: NSStatusItem?) -> StatusItemView {
+    @MainActor
+    static func create(statusItem: NSStatusItem?) async -> StatusItemView {
         var topLevelObjects: NSArray?
         if Bundle.main.loadNibNamed("StatusItemView", owner: self, topLevelObjects: &topLevelObjects) {
             let view = (topLevelObjects!.first(where: { $0 is NSView }) as? StatusItemView)!
@@ -33,9 +34,7 @@ class StatusItemView: NSView, StatusItemViewProtocol {
                 button.imagePosition = .imageOverlaps
             } else {
                 Logger.log("button = nil")
-                Task { @MainActor in
-                    await ConfigFileManager.shared.openConfigFolder()
-                }
+                await ConfigFileManager.shared.openConfigFolder()
             }
             view.updateViewStatus(enableProxy: false)
             return view
@@ -55,6 +54,7 @@ class StatusItemView: NSView, StatusItemViewProtocol {
         frame = CGRect(x: 0, y: 0, width: width, height: 22)
     }
 
+    @MainActor
     func updateViewStatus(enableProxy: Bool) {
         if enableProxy {
             imageView.contentTintColor = NSColor.labelColor

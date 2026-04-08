@@ -85,13 +85,14 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         Logger.log("———————————————————————————————————————————————————————————")
         Logger.log("Appversion: \(AppVersionUtil.currentVersion) \(AppVersionUtil.currentBuild)")
         ProcessInfo.processInfo.disableSuddenTermination()
+        Task { @MainActor in
         // setup menu item first
         statusItem = NSStatusBar.system.statusItem(withLength: statusItemLengthWithSpeed)
-        statusItemView = StatusItemView.create(statusItem: statusItem)
+            statusItemView = await StatusItemView.create(statusItem: statusItem)
         statusItemView.updateSize(width: statusItemLengthWithSpeed)
         statusMenu.delegate = self
         setupStatusMenuItemData()
-        Task { @MainActor in
+            
             await self.postFinishLaunching()
         }
     }

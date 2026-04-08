@@ -68,6 +68,11 @@ class SystemProxyManager: NSObject {
         let socketPort = ConfigManager.shared.currentConfig?.usedSocksPort ?? 0
         await disableProxy(port: port, socksPort: socketPort, forceDisable: forceDisable)
     }
+    
+    func toggleTunProxy(enable: Bool) async {
+        await ApiRequest.updateTun(enable: enable)
+        try? await PrivilegedHelperManager.shared.request(ProxyConfigHelperMessages.UpdateTun(state: enable, dns: ConfigManager.metaTunDNS))
+    }
 
     func disableProxy(port: Int, socksPort: Int, forceDisable: Bool = false) async {
         Logger.log("disableProxy", level: .debug)

@@ -128,15 +128,16 @@ final class ConfigReloadManager {
         if ConfigManager.shared.restoreSystemProxy {
             await SystemProxyManager.shared.enableProxy()
         }
-
+        if let config = await ApiRequest.requestConfig() {
+            ConfigManager.shared.isTunModeInConfig = config.tun.enable
+        }
         if ConfigManager.shared.restoreTunProxy {
-            await ApiRequest.updateTun(enable: true)
-            try? await PrivilegedHelperManager.shared.request(ProxyConfigHelperMessages.UpdateTun(state: true, dns: ConfigManager.metaTunDNS))
+            await SystemProxyManager.shared.toggleTunProxy(enable: true)
         } else {
             await syncConfigWithTun(true)
         }
 
-        SSIDSuspendTool.shared.setup()
+        await SSIDSuspendTool.shared.setup()
 
         resetStreamApi()
         await syncInitialAllowLanIfNeeded()

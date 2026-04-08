@@ -13,6 +13,7 @@ import RxCocoa
 import RxSwift
 import AppKit
 
+@MainActor
 class SSIDSuspendTool: NSObject {
     static let shared = SSIDSuspendTool()
     private var ssidChangePublisher = PublishSubject<String>()
@@ -21,11 +22,11 @@ class SSIDSuspendTool: NSObject {
 
     var showNoticeOnNotPermission = false
 
-    func setup() {
+    func setup() async {
         if AppVersionUtil.hasVersionChanged {
             showNoticeOnNotPermission = true
         }
-        requestPermissionIfNeed()
+        await requestPermissionIfNeed()
         do {
             try CWWiFiClient.shared().startMonitoringEvent(with: .ssidDidChange)
             CWWiFiClient.shared().delegate = self
@@ -58,50 +59,61 @@ class SSIDSuspendTool: NSObject {
             .proxyShouldPaused
             .asObservable()
             .distinctUntilChanged()
-            .filter { _ in ConfigManager.shared.proxyPortAutoSet }
             .bind { pause in
                 Task {
-                    if pause {
-                        await SystemProxyManager.shared.disableProxy()
-                    } else {
-                        await SystemProxyManager.shared.enableProxy()
-                    }
+                    await self.updateProxys(pause: pause)
                 }
             }.disposed(by: disposeBag)
 
-        Task { @MainActor in
-            await update()
-        }
+        await update()
     }
 
-    func requestPermissionIfNeed() {
+    func requestPermissionIfNeed() async {
         defer {
             showNoticeOnNotPermission = false
         }
-        if #available(macOS 14, *) {
-            if Settings.disableSSIDList.isEmpty { return }
-            if locationManager.authorizationStatus == .notDetermined {
-                Logger.log("request location permission")
-                locationManager.desiredAccuracy = kCLLocationAccuracyReduced
-                locationManager.delegate = self
-                locationManager.requestAlwaysAuthorization()
-            } else if locationManager.authorizationStatus != .authorized {
-                if showNoticeOnNotPermission {
-                    Task { @MainActor in
-                        try? await Task.sleep(seconds: 0.1)
-                        self.openLocationSettings()
-                    }
-                }
+
+        if Settings.disableSSIDList.isEmpty { return }
+        if locationManager.authorizationStatus == .notDetermined {
+            Logger.log("request location permission")
+            locationManager.desiredAccuracy = kCLLocationAccuracyReduced
+            locationManager.delegate = self
+            locationManager.requestAlwaysAuthorization()
+        } else if locationManager.authorizationStatus != .authorized {
+            if showNoticeOnNotPermission {
+                try? await Task.sleep(seconds: 0.1)
+                self.openLocationSettings()
+            }
+        }
+        
+    }
+
+    func update() async {
+        ConfigManager.shared.proxyShouldPaused.accept(await shouldSuspend())
+    }
+    
+    func updateProxys(pause: Bool) async {
+        if let config = await ApiRequest.requestConfig(),
+           ConfigManager.shared.isTunModeInConfig {
+            if pause, config.tun.enable {
+                await SystemProxyManager.shared
+                    .toggleTunProxy(enable: false)
+            }
+            if !pause, !config.tun.enable {
+                await SystemProxyManager.shared
+                    .toggleTunProxy(enable: true)
+            }
+        }
+        
+        if ConfigManager.shared.proxyPortAutoSet {
+            if pause {
+                await SystemProxyManager.shared.disableProxy()
+            } else {
+                await SystemProxyManager.shared.enableProxy()
             }
         }
     }
 
-    @MainActor
-    func update() async {
-        ConfigManager.shared.proxyShouldPaused.accept(await shouldSuspend())
-    }
-
-    @MainActor
     func shouldSuspend() async -> Bool {
         guard let currentSSID = await getCurrentSSID() else {
             return false
@@ -109,7 +121,6 @@ class SSIDSuspendTool: NSObject {
         return Settings.disableSSIDList.contains(currentSSID)
     }
 
-    @MainActor
     private func getCurrentSSID() async -> String? {
         if #available(macOS 14, *) {
             if locationManager.authorizationStatus != .authorized {
@@ -133,7 +144,7 @@ class SSIDSuspendTool: NSObject {
     }
 }
 
-extension SSIDSuspendTool: CLLocationManagerDelegate {
+extension SSIDSuspendTool: @preconcurrency CLLocationManagerDelegate {
     func locationManager(_ manager: CLLocationManager, didChangeAuthorization status: CLAuthorizationStatus) {
         Logger.log("Location status: \(status.rawValue)")
         if status != .authorized, showNoticeOnNotPermission {
@@ -147,7 +158,7 @@ extension SSIDSuspendTool: CLLocationManagerDelegate {
     func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {}
 }
 
-extension SSIDSuspendTool: CWEventDelegate {
+extension SSIDSuspendTool: @preconcurrency CWEventDelegate {
     func ssidDidChangeForWiFiInterface(withName interfaceName: String) {
         ssidChangePublisher.onNext(interfaceName)
     }
