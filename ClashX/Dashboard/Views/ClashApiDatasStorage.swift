@@ -8,6 +8,7 @@ import Cocoa
 import SwiftUI
 import CocoaLumberjackSwift
 
+@MainActor
 class ClashApiDatasStorage: NSObject, ObservableObject {
 	private static let memoryFormatter = ByteCountFormatter()
 	
@@ -63,22 +64,18 @@ extension ClashApiDatasStorage: ApiRequestStreamDelegate {
 		await enqueueMemory(memoryString)
 	}
 
-	@MainActor
 	func enqueueTrafficUpdate(up: Int, down: Int) {
 		pendingTraffic = (up: up, down: down)
 	}
 
-	@MainActor
 	func enqueueLog(level: String, log: String) {
 		pendingLogs.append((level: level, log: log))
 	}
 
-	@MainActor
 	func enqueueMemory(_ value: String) {
 		pendingMemory = value
 	}
 
-	@MainActor
 	func flushPendingUpdates() {
 		if let traffic = pendingTraffic {
 			overviewData.down = traffic.down

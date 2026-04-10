@@ -111,8 +111,11 @@ class ApiRequest {
 		case traffic, logging, memory
 	}
 
+	@MainActor
 	private var streamTasks: [StreamType: Task<Void, Never>] = [:]
+	@MainActor
 	private var streamRetryTasks: [StreamType: Task<Void, Never>] = [:]
+	@MainActor
 	private var streamRetryDelays: [StreamType: TimeInterval] = [.traffic: 1, .logging: 1, .memory: 1]
     
     private var logRateLimiter = LogRateLimiter {
@@ -575,10 +578,12 @@ extension ApiRequest {
 // MARK: - Stream Apis
 
 extension ApiRequest {
+	@MainActor
 	func resetStreamApis() {
 		StreamType.allCases.forEach { resetStreamApi(for: $0) }
 	}
 
+	@MainActor
 	func resetStreamApi(for type: StreamType) {
 		cancelRetryTask(for: type)
 		streamRetryDelays[type] = 1
@@ -593,13 +598,14 @@ extension ApiRequest {
 		}
 	}
 
+	@MainActor
 	private func startStream(for type: StreamType) {
 		cancelRetryTask(for: type)
 		streamTasks[type]?.cancel()
 
 		let uri = streamUri(for: type)
 
-		streamTasks[type] = Task { [weak self] in
+		streamTasks[type] = Task { @MainActor [weak self] in
 			do {
 				let stream = ApiRequest.req(uri).serializingStream().stream()
 				var didConnect = false
@@ -619,15 +625,17 @@ extension ApiRequest {
 		}
 	}
 
+	@MainActor
 	private func cancelRetryTask(for type: StreamType) {
 		streamRetryTasks[type]?.cancel()
 		streamRetryTasks[type] = nil
 	}
 
+	@MainActor
 	private func scheduleRetry(for type: StreamType) {
 		let delay = streamRetryDelays[type] ?? 1
 		cancelRetryTask(for: type)
-		streamRetryTasks[type] = Task { [weak self] in
+		streamRetryTasks[type] = Task { @MainActor [weak self] in
 			try? await Task.sleep(seconds: delay)
 			guard let self, !Task.isCancelled else { return }
 			self.startStream(for: type)
@@ -659,6 +667,7 @@ extension ApiRequest {
 
 	// MARK: Stream Event Handlers
 
+	@MainActor
 	private func streamDidConnect(_ type: StreamType) async {
 		streamRetryDelays[type] = 1
 		Logger.log("\(type)Stream did Connect", level: .debug)
@@ -669,6 +678,7 @@ extension ApiRequest {
 		}
 	}
 
+	@MainActor
 	private func streamDidDisconnect(_ type: StreamType, error: Error?) async {
 		if type == .traffic {
 			ConfigManager.shared.isRunning = false
