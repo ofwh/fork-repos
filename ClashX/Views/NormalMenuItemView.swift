@@ -40,6 +40,10 @@ class NormalMenuItemView: MenuItemBaseView {
         fatalError("init(coder:) has not been implemented")
     }
 
+    override func didClickView() {
+        
+    }
+    
     override var cells: [NSCell?] {
         return [label.cell, arrowLabel.cell]
     }

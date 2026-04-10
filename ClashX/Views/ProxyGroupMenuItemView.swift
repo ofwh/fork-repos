@@ -99,6 +99,10 @@ class ProxyGroupMenuItemView: MenuItemBaseView {
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
+    
+    override func didClickView() {
+        
+    }
 
     deinit {
         NotificationCenter.default.removeObserver(self)
