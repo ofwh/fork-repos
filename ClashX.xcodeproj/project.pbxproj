@@ -15,6 +15,7 @@
 		013B21FF2F7FB18A009B30CB /* Task+Sleep.swift in Sources */ = {isa = PBXBuildFile; fileRef = A15E90002E5C9A1100C0FFEE /* Task+Sleep.swift */; };
 		013B22002F7FB3DC009B30CB /* Command.swift in Sources */ = {isa = PBXBuildFile; fileRef = 49FEC6682AD9369C00BAD9F5 /* Command.swift */; };
 		013B22022F7FEA2D009B30CB /* Dashboard.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 013B22012F7FEA2D009B30CB /* Dashboard.storyboard */; };
+		013B220E2F88A219009B30CB /* AsyncHTTPClient in Frameworks */ = {isa = PBXBuildFile; productRef = 013B220D2F88A219009B30CB /* AsyncHTTPClient */; };
 		0162E74F2864B819007218A6 /* MetaTask.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0162E74E2864B819007218A6 /* MetaTask.swift */; };
 		0197255A2CA15D6400C14E49 /* UserNotificationCenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 019725592CA15D6400C14E49 /* UserNotificationCenter.swift */; };
 		0197255C2CA15FC600C14E49 /* NSWorkspace+openFile.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0197255B2CA15FC600C14E49 /* NSWorkspace+openFile.swift */; };
@@ -116,6 +117,7 @@
 		01F335F72AD10D0B0048AF77 /* TerminalCleanUpAction.swift in Sources */ = {isa = PBXBuildFile; fileRef = 49870ADA2AA75DC7002B106B /* TerminalCleanUpAction.swift */; };
 		01F335F82AD10D0B0048AF77 /* WebPortalManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = F9E754CF239CC21F00CEE7CC /* WebPortalManager.swift */; };
 		01F335F92AD10D0B0048AF77 /* DualTitleMenuItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 018F88F8286DD0CB004DD0F7 /* DualTitleMenuItem.swift */; };
+		01F335F92F7F9E8A00A1B2C3 /* ApiRequestTransport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 01F335F82F7F9E8A00A1B2C3 /* ApiRequestTransport.swift */; };
 		01F335FA2AD10D0B0048AF77 /* RemoteConfigManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 495BFB8721919B9800C8779D /* RemoteConfigManager.swift */; };
 		01F335FB2AD10D0B0048AF77 /* Cgo+Convert.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4982F51E2344A216008804B0 /* Cgo+Convert.swift */; };
 		01F335FC2AD10D0B0048AF77 /* ProxySettingCommand.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8ACD21BA27A04C7800BC4632 /* ProxySettingCommand.swift */; };
@@ -159,7 +161,6 @@
 		01F336252AD10D0B0048AF77 /* SwiftyJSON in Frameworks */ = {isa = PBXBuildFile; productRef = 01F335BD2AD10D0B0048AF77 /* SwiftyJSON */; };
 		01F336262AD10D0B0048AF77 /* Gzip in Frameworks */ = {isa = PBXBuildFile; productRef = 01F335C62AD10D0B0048AF77 /* Gzip */; };
 		01F336272AD10D0B0048AF77 /* CocoaLumberjackSwift in Frameworks */ = {isa = PBXBuildFile; productRef = 01F335C12AD10D0B0048AF77 /* CocoaLumberjackSwift */; };
-		01F336282AD10D0B0048AF77 /* Starscream in Frameworks */ = {isa = PBXBuildFile; productRef = 01F335C22AD10D0B0048AF77 /* Starscream */; };
 		01F3362A2AD10D0B0048AF77 /* KeyboardShortcuts in Frameworks */ = {isa = PBXBuildFile; productRef = 01F335B62AD10D0B0048AF77 /* KeyboardShortcuts */; };
 		01F3362B2AD10D0B0048AF77 /* Alamofire in Frameworks */ = {isa = PBXBuildFile; productRef = 01F335B82AD10D0B0048AF77 /* Alamofire */; };
 		01F3362C2AD10D0B0048AF77 /* CocoaLumberjack in Frameworks */ = {isa = PBXBuildFile; productRef = 01F335BF2AD10D0B0048AF77 /* CocoaLumberjack */; };
@@ -288,6 +289,7 @@
 		01EF33612B98D3A700D1DBD9 /* ProxyConfigRemoteProcessProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProxyConfigRemoteProcessProtocol.swift; sourceTree = "<group>"; };
 		01F335D92BD10D0B0048AF77 /* ProxyHealthCheckManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProxyHealthCheckManager.swift; sourceTree = "<group>"; };
 		01F335DA2CD10D0B0048AF77 /* ConfigReloadManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConfigReloadManager.swift; sourceTree = "<group>"; };
+		01F335F82F7F9E8A00A1B2C3 /* ApiRequestTransport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ApiRequestTransport.swift; sourceTree = "<group>"; };
 		01F336442AD10D0B0048AF77 /* ClashX Meta.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "ClashX Meta.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		01FBC62F2B9C2B0800810BFF /* ClashProcess.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClashProcess.swift; sourceTree = "<group>"; };
 		2753484F2A3082FD0077B458 /* TunModeSettingCommand.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TunModeSettingCommand.swift; sourceTree = "<group>"; };
@@ -405,13 +407,13 @@
 				01F336252AD10D0B0048AF77 /* SwiftyJSON in Frameworks */,
 				01F336262AD10D0B0048AF77 /* Gzip in Frameworks */,
 				01F336272AD10D0B0048AF77 /* CocoaLumberjackSwift in Frameworks */,
-				01F336282AD10D0B0048AF77 /* Starscream in Frameworks */,
 				01F3362A2AD10D0B0048AF77 /* KeyboardShortcuts in Frameworks */,
 				01BCDB212C9EEE260028FA94 /* Sparkle in Frameworks */,
 				01F3362B2AD10D0B0048AF77 /* Alamofire in Frameworks */,
 				013B21FB2F7E95E0009B30CB /* DGCharts in Frameworks */,
 				01F3362C2AD10D0B0048AF77 /* CocoaLumberjack in Frameworks */,
 				01F3362D2AD10D0B0048AF77 /* Yams in Frameworks */,
+				013B220E2F88A219009B30CB /* AsyncHTTPClient in Frameworks */,
 				01F3362E2AD10D0B0048AF77 /* RxCocoa in Frameworks */,
 				01F3362F2AD10D0B0048AF77 /* FlexibleDiff in Frameworks */,
 				01F336302AD10D0B0048AF77 /* libresolv.tbd in Frameworks */,
@@ -640,6 +642,7 @@
 				491C250121BD561200AB5D44 /* Managers */,
 				491C250021BD55B900AB5D44 /* Utils */,
 				492C4868210EE6B9004554A0 /* ApiRequest.swift */,
+				01F335F82F7F9E8A00A1B2C3 /* ApiRequestTransport.swift */,
 				015F1E90288E42A50052B20A /* ClashMetaConfig.swift */,
 				016BEAAF29D80102001586C5 /* AlphaMetaDownloader.swift */,
 				01FBC62F2B9C2B0800810BFF /* ClashProcess.swift */,
@@ -908,13 +911,13 @@
 				01F335BD2AD10D0B0048AF77 /* SwiftyJSON */,
 				01F335BF2AD10D0B0048AF77 /* CocoaLumberjack */,
 				01F335C12AD10D0B0048AF77 /* CocoaLumberjackSwift */,
-				01F335C22AD10D0B0048AF77 /* Starscream */,
 				01F335C42AD10D0B0048AF77 /* FlexibleDiff */,
 				01F335C62AD10D0B0048AF77 /* Gzip */,
 				01F335C82AD10D0B0048AF77 /* Yams */,
 				01BCDAB22C9ECB560028FA94 /* SwiftUIIntrospect */,
 				01BCDB202C9EEE260028FA94 /* Sparkle */,
 				013B21FA2F7E95E0009B30CB /* DGCharts */,
+				013B220D2F88A219009B30CB /* AsyncHTTPClient */,
 			);
 			productName = ClashX;
 			productReference = 01F336442AD10D0B0048AF77 /* ClashX Meta.app */;
@@ -971,13 +974,13 @@
 				015B976B2A4F2F6C00F9FA4D /* XCRemoteSwiftPackageReference "RxSwift" */,
 				015B97702A4F2F9900F9FA4D /* XCRemoteSwiftPackageReference "SwiftyJSON" */,
 				015B97732A4F2FC600F9FA4D /* XCRemoteSwiftPackageReference "CocoaLumberjack" */,
-				015B97782A4F306800F9FA4D /* XCRemoteSwiftPackageReference "Starscream" */,
 				015B977B2A4F30B900F9FA4D /* XCRemoteSwiftPackageReference "FlexibleDiff" */,
 				015B977E2A4F30EA00F9FA4D /* XCRemoteSwiftPackageReference "GzipSwift" */,
 				015B97812A4F311300F9FA4D /* XCRemoteSwiftPackageReference "Yams" */,
 				01BCDAB12C9ECB560028FA94 /* XCRemoteSwiftPackageReference "SwiftUI-Introspect" */,
 				01BCDB1F2C9EEE260028FA94 /* XCRemoteSwiftPackageReference "Sparkle" */,
 				013B21F92F7E95E0009B30CB /* XCRemoteSwiftPackageReference "Charts" */,
+				013B220C2F88A219009B30CB /* XCRemoteSwiftPackageReference "async-http-client" */,
 			);
 			productRefGroup = 49CF3B1E20CD7463001EBF94 /* Products */;
 			projectDirPath = "";
@@ -1068,6 +1071,7 @@
 				01F335F32AD10D0B0048AF77 /* NSColor+Extension.swift in Sources */,
 				01F335F42AD10D0B0048AF77 /* ClashConfig.swift in Sources */,
 				01F335F52AD10D0B0048AF77 /* ApiRequest.swift in Sources */,
+				01F335F92F7F9E8A00A1B2C3 /* ApiRequestTransport.swift in Sources */,
 				01F335F62AD10D0B0048AF77 /* ConfigManager.swift in Sources */,
 				01F335F72AD10D0B0048AF77 /* TerminalCleanUpAction.swift in Sources */,
 				01F335F82AD10D0B0048AF77 /* WebPortalManager.swift in Sources */,
@@ -1552,6 +1556,14 @@
 				minimumVersion = 5.1.0;
 			};
 		};
+		013B220C2F88A219009B30CB /* XCRemoteSwiftPackageReference "async-http-client" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/swift-server/async-http-client";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.33.1;
+			};
+		};
 		015B97682A4F2F4500F9FA4D /* XCRemoteSwiftPackageReference "Alamofire" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/Alamofire/Alamofire";
@@ -1582,14 +1594,6 @@
 			requirement = {
 				kind = upToNextMajorVersion;
 				minimumVersion = 3.0.0;
-			};
-		};
-		015B97782A4F306800F9FA4D /* XCRemoteSwiftPackageReference "Starscream" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/daltoniam/Starscream";
-			requirement = {
-				kind = exactVersion;
-				version = 3.1.1;
 			};
 		};
 		015B977B2A4F30B900F9FA4D /* XCRemoteSwiftPackageReference "FlexibleDiff" */ = {
@@ -1672,14 +1676,6 @@
 				minimumVersion = 3.0.0;
 			};
 		};
-		01F335C32AD10D0B0048AF77 /* XCRemoteSwiftPackageReference "Starscream" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/daltoniam/Starscream";
-			requirement = {
-				kind = exactVersion;
-				version = 3.1.1;
-			};
-		};
 		01F335C52AD10D0B0048AF77 /* XCRemoteSwiftPackageReference "FlexibleDiff" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/RACCommunity/FlexibleDiff";
@@ -1719,6 +1715,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 013B21F92F7E95E0009B30CB /* XCRemoteSwiftPackageReference "Charts" */;
 			productName = DGCharts;
+		};
+		013B220D2F88A219009B30CB /* AsyncHTTPClient */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 013B220C2F88A219009B30CB /* XCRemoteSwiftPackageReference "async-http-client" */;
+			productName = AsyncHTTPClient;
 		};
 		01BCDAB22C9ECB560028FA94 /* SwiftUIIntrospect */ = {
 			isa = XCSwiftPackageProductDependency;
@@ -1764,11 +1765,6 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 01F335C02AD10D0B0048AF77 /* XCRemoteSwiftPackageReference "CocoaLumberjack" */;
 			productName = CocoaLumberjackSwift;
-		};
-		01F335C22AD10D0B0048AF77 /* Starscream */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 01F335C32AD10D0B0048AF77 /* XCRemoteSwiftPackageReference "Starscream" */;
-			productName = Starscream;
 		};
 		01F335C42AD10D0B0048AF77 /* FlexibleDiff */ = {
 			isa = XCSwiftPackageProductDependency;

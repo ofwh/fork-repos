@@ -6,10 +6,11 @@
 //  Copyright © 2018年 yichengchen. All rights reserved.
 //
 
-import Alamofire
 import Cocoa
-import Starscream
+
 import SwiftyJSON
+import Foundation
+import NIOHTTP1
 
 protocol ApiRequestStreamDelegate: AnyObject {
     func didUpdateTraffic(up: Int, down: Int) async
@@ -45,37 +46,23 @@ class ApiRequest {
     }
 
     private init() {
-        let configuration = URLSessionConfiguration.default
-        configuration.timeoutIntervalForRequest = 604800
-        configuration.timeoutIntervalForResource = 604800
-        configuration.httpMaximumConnectionsPerHost = 100
-        configuration.requestCachePolicy = .reloadIgnoringLocalCacheData
-        alamoFireManager = Session(configuration: configuration)
-    }
-
-    static func authHeader() -> HTTPHeaders {
-        let secret = ConfigManager.shared.overrideSecret ?? ConfigManager.shared.apiSecret
-        return (!secret.isEmpty) ? ["Authorization": "Bearer \(secret)"] : [:]
     }
 
     @discardableResult
     private static func req(
         _ url: String,
-        method: HTTPMethod = .get,
-        parameters: Parameters? = nil,
-        encoding: ParameterEncoding = URLEncoding.default,
+        method: HTTPMethod = .GET,
+        parameters: [String: Any]? = nil,
+        encoding: ApiParameterEncoding = .default,
         requiresCoreRunning: Bool = true
-    ) -> DataRequest {
-        guard !requiresCoreRunning || ConfigManager.shared.isRunning else {
-            return AF.request("")
-        }
-
-        return shared.alamoFireManager
-            .request(ConfigManager.apiUrl + url,
-                     method: method,
-                     parameters: parameters,
-                     encoding: encoding,
-                     headers: authHeader())
+    ) -> ApiRequestTransport.Handle {
+        ApiRequestTransport.req(
+            url,
+            method: method,
+            parameters: parameters,
+            encoding: encoding,
+            requiresCoreRunning: requiresCoreRunning
+        )
     }
 
     static func findConfigPath(configName: String) async -> String? {
@@ -94,7 +81,7 @@ class ApiRequest {
 
         let success: Bool
 
-        let response = await req("/cache/fakeip/flush", method: .post)
+        let response = await req("/cache/fakeip/flush", method: .POST)
             .serializingData()
             .response
         success = response.response?.statusCode == 204
@@ -108,7 +95,7 @@ class ApiRequest {
 
         let success: Bool
 
-        let response = await req("/cache/dns/flush", method: .post)
+        let response = await req("/cache/dns/flush", method: .POST)
             .serializingData()
             .response
         success = response.response?.statusCode == 204
@@ -120,17 +107,13 @@ class ApiRequest {
     weak var delegate: ApiRequestStreamDelegate?
 	weak var dashboardDelegate: ApiRequestStreamDelegate?
 
-	private var trafficWebSocket: WebSocket?
-	private var loggingWebSocket: WebSocket?
-	private var memoryWebSocket: WebSocket?
+	enum StreamType: CaseIterable {
+		case traffic, logging, memory
+	}
 
-	private var trafficWebSocketRetryDelay: TimeInterval = 1
-	private var loggingWebSocketRetryDelay: TimeInterval = 1
-	private var memoryWebSocketRetryDelay: TimeInterval = 1
-	
-    private var trafficWebSocketRetryTask: Task<Void, Never>?
-    private var loggingWebSocketRetryTask: Task<Void, Never>?
-    private var memoryWebSocketRetryTask: Task<Void, Never>?
+	private var streamTasks: [StreamType: Task<Void, Never>] = [:]
+	private var streamRetryTasks: [StreamType: Task<Void, Never>] = [:]
+	private var streamRetryDelays: [StreamType: TimeInterval] = [.traffic: 1, .logging: 1, .memory: 1]
     
     private var logRateLimiter = LogRateLimiter {
         let alert = NSAlert()
@@ -142,8 +125,6 @@ class ApiRequest {
             NSApplication.shared.terminate(nil)
         }
     }
-
-	private var alamoFireManager: Session
 
 	static func requestVersion() async -> ClashVersion? {
 		do {
@@ -201,9 +182,9 @@ class ApiRequest {
 
         let response = await req(
                 "/configs",
-                method: .put,
+                method: .PUT,
                 parameters: ["Path": configPath],
-                encoding: JSONEncoding.default
+                encoding: .json
             )
             .serializingData()
             .response
@@ -224,9 +205,9 @@ class ApiRequest {
         do {
             _ = try await req(
                 "/configs",
-                method: .patch,
+                method: .PATCH,
                 parameters: ["mode": mode.rawValue],
-                encoding: JSONEncoding.default
+                encoding: .json
             )
             .validate()
             .serializingData()
@@ -241,9 +222,9 @@ class ApiRequest {
         do {
             _ = try await req(
                 "/configs",
-                method: .patch,
+                method: .PATCH,
                 parameters: ["log-level": level.rawValue],
-                encoding: JSONEncoding.default
+                encoding: .json
             )
             .validate()
             .serializingData()
@@ -276,7 +257,7 @@ class ApiRequest {
         do {
             return try await req("/providers/proxies")
                 .validate()
-                .serializingDecodable(ClashProviderResp.self, decoder: ClashProviderResp.decoder)
+                .serializingDecodable(ClashProviderResp.self)
                 .value
         } catch {
             Logger.log("requestProxyProviderList error \(error.localizedDescription)")
@@ -294,9 +275,9 @@ class ApiRequest {
         do {
             _ = try await req(
                 "/configs",
-                method: .patch,
+                method: .PATCH,
                 parameters: ["allow-lan": allow],
-                encoding: JSONEncoding.default
+                encoding: .json
             )
             .validate()
             .serializingData()
@@ -309,9 +290,9 @@ class ApiRequest {
     static func updateProxyGroup(group: String, selectProxy: String) async -> Bool {
         let response = await req(
             "/proxies/\(group.encoded)",
-            method: .put,
+            method: .PUT,
             parameters: ["name": selectProxy],
-            encoding: JSONEncoding.default
+            encoding: .json
         )
         .serializingData()
         .response
@@ -331,7 +312,7 @@ class ApiRequest {
         do {
             let responseData = try await req(
                 "/proxies/\(proxyName.encoded)/delay",
-                method: .get,
+                method: .GET,
                 parameters: ["timeout": 2500, "url": ConfigManager.shared.benchMarkUrl]
             )
             .validate()
@@ -345,15 +326,14 @@ class ApiRequest {
 
     static func getGroupDelay(groupName: String) async -> [String: Int] {
         do {
-            let responseData = try await req(
+            return try await req(
                 "/group/\(groupName.encoded)/delay",
-                method: .get,
+                method: .GET,
                 parameters: ["timeout": 2500, "url": ConfigManager.shared.benchMarkUrl]
             )
             .validate()
-            .serializingData()
+            .serializingDecodable([String: Int].self)
             .value
-            return (try? JSONDecoder().decode([String: Int].self, from: responseData)) ?? [:]
         } catch {
             return [:]
         }
@@ -401,20 +381,17 @@ extension ApiRequest {
     }
 
     static func closeConnection(_ id: String) async {
-        _ = try? await req("/connections/\(id)", method: .delete)
+        _ = try? await req("/connections/\(id)", method: .DELETE)
             .validate()
             .serializingData()
             .value
     }
 	
 	static func getConnectionsSnapshot() async -> DBConnectionSnapShot? {
-		let decoder = JSONDecoder()
-		decoder.dateDecodingStrategy = .formatted(DateFormatter.js)
-		
 		do {
 			return try await req("/connections")
 				.validate()
-				.serializingDecodable(DBConnectionSnapShot.self, decoder: decoder)
+				.serializingDecodable(DBConnectionSnapShot.self)
 				.value
 		} catch {
 			return nil
@@ -422,17 +399,17 @@ extension ApiRequest {
 	}
 
 	static func closeConnection(_ conn: ClashConnectionSnapShot.Connection) async {
-		_ = try? await req("/connections/".appending(conn.id), method: .delete)
-			.validate()
-			.serializingData()
-			.value
+        _ = try? await req("/connections/".appending(conn.id), method: .DELETE)
+            .validate()
+            .serializingData()
+            .value
 	}
 
 	static func closeAllConnection() async {
-		_ = try? await req("/connections", method: .delete)
-			.validate()
-			.serializingData()
-			.value
+        _ = try? await req("/connections", method: .DELETE)
+            .validate()
+            .serializingData()
+            .value
 	}
 }
 
@@ -474,7 +451,7 @@ extension ApiRequest {
 
         Logger.log("\(logTitle) \(name)")
 
-        let response = await req("/providers/\(type.apiString())/\(name)", method: .put)
+        let response = await req("/providers/\(type.apiString())/\(name)", method: .PUT)
             .serializingData()
             .response
         let success = response.response?.statusCode == 204
@@ -487,7 +464,7 @@ extension ApiRequest {
         do {
             return try await req("/providers/rules")
                 .validate()
-                .serializingDecodable(ClashRuleProviderResp.self, decoder: ClashProviderResp.decoder)
+                .serializingDecodable(ClashRuleProviderResp.self)
                 .value
         } catch {
             Logger.log("Get Rule providers error \(error.localizedDescription)")
@@ -510,7 +487,7 @@ extension ApiRequest {
 
     static func updateGEO() async -> Bool {
         Logger.log("UpdateGEO")
-        let response = await req("/configs/geo", method: .post)
+        let response = await req("/configs/geo", method: .POST)
             .serializingData()
             .response
         let success = response.response?.statusCode == 204
@@ -523,9 +500,9 @@ extension ApiRequest {
         do {
             _ = try await req(
                 "/configs",
-                method: .patch,
+                method: .PATCH,
                 parameters: ["tun": ["enable": enable]],
-                encoding: JSONEncoding.default
+                encoding: .json
             )
             .validate()
             .serializingData()
@@ -540,9 +517,9 @@ extension ApiRequest {
         do {
             _ = try await req(
                 "/configs",
-                method: .patch,
+                method: .PATCH,
                 parameters: ["sniffing": enable],
-                encoding: JSONEncoding.default
+                encoding: .json
             )
             .validate()
             .serializingData()
@@ -588,7 +565,7 @@ extension ApiRequest {
 	 */
 
     static func resetFakeIpCache() async {
-        let response = await req("/cache/fakeip/flush", method: .post)
+        let response = await req("/cache/fakeip/flush", method: .POST)
             .serializingData()
             .response
         Logger.log("flush fake ip: \(response.response?.statusCode ?? -1)")
@@ -599,221 +576,125 @@ extension ApiRequest {
 
 extension ApiRequest {
 	func resetStreamApis() {
-		resetLogStreamApi()
-		resetTrafficStreamApi()
-		resetMemoryStreamApi()
+		StreamType.allCases.forEach { resetStreamApi(for: $0) }
 	}
 
-    func resetLogStreamApi() {
-        cancelLoggingRetryTask()
-        loggingWebSocketRetryDelay = 1
-        requestLog()
-    }
-
-    func resetTrafficStreamApi() {
-        cancelTrafficRetryTask()
-        trafficWebSocketRetryDelay = 1
-        requestTrafficInfo()
-    }
-	
-	func resetMemoryStreamApi() {
-		cancelMemoryRetryTask()
-		memoryWebSocketRetryDelay = 1
-		requestMemoryInfo()
+	func resetStreamApi(for type: StreamType) {
+		cancelRetryTask(for: type)
+		streamRetryDelays[type] = 1
+		startStream(for: type)
 	}
 
-    private func requestTrafficInfo() {
-        cancelTrafficRetryTask()
-        trafficWebSocket?.disconnect(forceTimeout: 0.5)
-
-        let socket = WebSocket(url: URL(string: ConfigManager.apiUrl.appending("/traffic"))!)
-
-        for header in ApiRequest.authHeader() {
-            socket.request.setValue(header.value, forHTTPHeaderField: header.name)
-        }
-        socket.delegate = self
-        socket.connect()
-        trafficWebSocket = socket
-    }
-
-    private func requestLog() {
-        cancelLoggingRetryTask()
-        loggingWebSocket?.disconnect(forceTimeout: 1)
-
-        let uriString = "/logs?level=".appending(ConfigManager.selectLoggingApiLevel.rawValue)
-        let socket = WebSocket(url: URL(string: ConfigManager.apiUrl.appending(uriString))!)
-        for header in ApiRequest.authHeader() {
-            socket.request.setValue(header.value, forHTTPHeaderField: header.name)
-        }
-        socket.delegate = self
-        socket.callbackQueue = logQueue
-        socket.connect()
-        loggingWebSocket = socket
-    }
-	
-	private func requestMemoryInfo() {
-        cancelMemoryRetryTask()
-		memoryWebSocket?.disconnect(forceTimeout: 1)
-		
-		let socket = WebSocket(url: URL(string: ConfigManager.apiUrl.appending("/memory"))!)
-		for header in ApiRequest.authHeader() {
-			socket.request.setValue(header.value, forHTTPHeaderField: header.name)
+	private func streamUri(for type: StreamType) -> String {
+		switch type {
+		case .traffic: return "/traffic"
+		case .logging: return "/logs?level=\(ConfigManager.selectLoggingApiLevel.rawValue)"
+		case .memory:  return "/memory"
 		}
-		socket.delegate = self
-		socket.connect()
-		memoryWebSocket = socket
 	}
 
-    private func notifyStreamStatusChanged() async {
-        await delegate?.streamStatusChanged()
-        await dashboardDelegate?.streamStatusChanged()
-    }
+	private func startStream(for type: StreamType) {
+		cancelRetryTask(for: type)
+		streamTasks[type]?.cancel()
 
-    private func notifyTrafficUpdate(up: Int, down: Int) async {
-        await delegate?.didUpdateTraffic(up: up, down: down)
-        await dashboardDelegate?.didUpdateTraffic(up: up, down: down)
-    }
+		let uri = streamUri(for: type)
 
-    private func notifyLog(log: String, level: String) async {
-        await delegate?.didGetLog(log: log, level: level)
-        await dashboardDelegate?.didGetLog(log: log, level: level)
-    }
+		streamTasks[type] = Task { [weak self] in
+			do {
+				let stream = ApiRequest.req(uri).serializingStream().stream()
+				var didConnect = false
+				for try await line in stream {
+					if !didConnect {
+						didConnect = true
+						await self?.streamDidConnect(type)
+					}
+					if !line.isEmpty {
+						await self?.streamDidReceiveMessage(type, text: line)
+					}
+				}
+				await self?.streamDidDisconnect(type, error: nil)
+			} catch {
+				await self?.streamDidDisconnect(type, error: error)
+			}
+		}
+	}
 
-    private func notifyMemoryUpdate(memory: Int64) async {
-        await delegate?.didUpdateMemory(memory: memory)
-        await dashboardDelegate?.didUpdateMemory(memory: memory)
-    }
+	private func cancelRetryTask(for type: StreamType) {
+		streamRetryTasks[type]?.cancel()
+		streamRetryTasks[type] = nil
+	}
 
-    private func cancelTrafficRetryTask() {
-        trafficWebSocketRetryTask?.cancel()
-        trafficWebSocketRetryTask = nil
-    }
-
-    private func cancelLoggingRetryTask() {
-        loggingWebSocketRetryTask?.cancel()
-        loggingWebSocketRetryTask = nil
-    }
-
-	private func cancelMemoryRetryTask() {
-		memoryWebSocketRetryTask?.cancel()
-		memoryWebSocketRetryTask = nil
-    }
-
-    private func scheduleTrafficRetry() {
-        let retryDelay = trafficWebSocketRetryDelay
-        cancelTrafficRetryTask()
-        trafficWebSocketRetryTask = Task { [weak self] in
-            try? await Task.sleep(seconds: retryDelay)
-            guard let self, !Task.isCancelled else { return }
-            if self.trafficWebSocket?.isConnected == true { return }
-            self.requestTrafficInfo()
-        }
-        trafficWebSocketRetryDelay *= 2
-    }
-
-    private func scheduleLoggingRetry() {
-        let retryDelay = loggingWebSocketRetryDelay
-        cancelLoggingRetryTask()
-        loggingWebSocketRetryTask = Task { [weak self] in
-            try? await Task.sleep(seconds: retryDelay)
-            guard let self, !Task.isCancelled else { return }
-            if self.loggingWebSocket?.isConnected == true { return }
-            self.requestLog()
-        }
-        loggingWebSocketRetryDelay *= 2
-    }
-
-	private func scheduleMemoryRetry() {
-		let retryDelay = memoryWebSocketRetryDelay
-        cancelMemoryRetryTask()
-		memoryWebSocketRetryTask = Task { [weak self] in
-			try? await Task.sleep(seconds: retryDelay)
+	private func scheduleRetry(for type: StreamType) {
+		let delay = streamRetryDelays[type] ?? 1
+		cancelRetryTask(for: type)
+		streamRetryTasks[type] = Task { [weak self] in
+			try? await Task.sleep(seconds: delay)
 			guard let self, !Task.isCancelled else { return }
-			if self.memoryWebSocket?.isConnected == true { return }
-			self.requestMemoryInfo()
+			self.startStream(for: type)
 		}
-		memoryWebSocketRetryDelay *= 2
+		streamRetryDelays[type] = delay * 2
 	}
-}
 
-extension ApiRequest: WebSocketDelegate {
-	func websocketDidConnect(socket: WebSocketClient) {
-		guard let webSocket = socket as? WebSocket else { return }
-		switch webSocket {
-		case trafficWebSocket:
-			trafficWebSocketRetryDelay = 1
-			Logger.log("trafficWebSocket did Connect", level: .debug)
-			
+	// MARK: Notify Delegates
+
+	private func notifyStreamStatusChanged() async {
+		await delegate?.streamStatusChanged()
+		await dashboardDelegate?.streamStatusChanged()
+	}
+
+	private func notifyTrafficUpdate(up: Int, down: Int) async {
+		await delegate?.didUpdateTraffic(up: up, down: down)
+		await dashboardDelegate?.didUpdateTraffic(up: up, down: down)
+	}
+
+	private func notifyLog(log: String, level: String) async {
+		await delegate?.didGetLog(log: log, level: level)
+		await dashboardDelegate?.didGetLog(log: log, level: level)
+	}
+
+	private func notifyMemoryUpdate(memory: Int64) async {
+		await delegate?.didUpdateMemory(memory: memory)
+		await dashboardDelegate?.didUpdateMemory(memory: memory)
+	}
+
+	// MARK: Stream Event Handlers
+
+	private func streamDidConnect(_ type: StreamType) async {
+		streamRetryDelays[type] = 1
+		Logger.log("\(type)Stream did Connect", level: .debug)
+
+		if type == .traffic {
 			ConfigManager.shared.isRunning = true
-            Task {
-                await notifyStreamStatusChanged()
-            }
-		case loggingWebSocket:
-			loggingWebSocketRetryDelay = 1
-			Logger.log("loggingWebSocket did Connect", level: .debug)
-		case memoryWebSocket:
-			memoryWebSocketRetryDelay = 1
-			Logger.log("memoryWebSocket did Connect", level: .debug)
-		default:
-			return
+			await notifyStreamStatusChanged()
 		}
 	}
 
-	func websocketDidDisconnect(socket: WebSocketClient, error: Error?) {
-		
-		if (socket as? WebSocket) == trafficWebSocket {
+	private func streamDidDisconnect(_ type: StreamType, error: Error?) async {
+		if type == .traffic {
 			ConfigManager.shared.isRunning = false
-            Task {
-                await notifyStreamStatusChanged()
-            }
-		}
-		
-		guard let err = error else {
-			return
+			await notifyStreamStatusChanged()
 		}
 
-		Logger.log(err.localizedDescription, level: .error)
-
-		guard let webSocket = socket as? WebSocket else { return }
-
-		switch webSocket {
-		case trafficWebSocket:
-			Logger.log("trafficWebSocket did disconnect", level: .debug)
-            scheduleTrafficRetry()
-		case loggingWebSocket:
-			Logger.log("loggingWebSocket did disconnect", level: .debug)
-            scheduleLoggingRetry()
-		case memoryWebSocket:
-			Logger.log("memoryWebSocket did disconnect", level: .debug)
-            scheduleMemoryRetry()
-		default:
-			return
+		if let err = error {
+			Logger.log(err.localizedDescription, level: .error)
 		}
+
+		Logger.log("\(type)Stream did disconnect", level: .debug)
+		scheduleRetry(for: type)
 	}
 
-	func websocketDidReceiveMessage(socket: WebSocketClient, text: String) {
-		guard let webSocket = socket as? WebSocket else { return }
+	private func streamDidReceiveMessage(_ type: StreamType, text: String) async {
 		let json = JSON(parseJSON: text)
-		
-		
-		switch webSocket {
-		case trafficWebSocket:
-            Task {
-                await notifyTrafficUpdate(up: json["up"].intValue, down: json["down"].intValue)
-            }
-		case loggingWebSocket:
-            Task {
-                guard await logRateLimiter.processLog() else { return }
-                await notifyLog(log: json["payload"].stringValue, level: json["type"].string ?? "info")
-            }
-		case memoryWebSocket:
-            Task {
-                await notifyMemoryUpdate(memory: json["inuse"].int64Value)
-            }
-		default:
-			return
+
+		switch type {
+		case .traffic:
+			await notifyTrafficUpdate(up: json["up"].intValue, down: json["down"].intValue)
+		case .logging:
+			guard await logRateLimiter.processLog() else { return }
+			await notifyLog(log: json["payload"].stringValue, level: json["type"].string ?? "info")
+		case .memory:
+			await notifyMemoryUpdate(memory: json["inuse"].int64Value)
 		}
 	}
-
-	func websocketDidReceiveData(socket: WebSocketClient, data: Data) {}
 }
+

@@ -135,17 +135,7 @@ class ConfigManager {
         return "http://127.0.0.1:\(shared.apiPort)"
     }
 
-    static var webSocketUrl: String {
-        if let override = shared.overrideApiURL, var comp = URLComponents(url: override, resolvingAgainstBaseURL: true) {
-            if comp.scheme == "https" {
-                comp.scheme = "wss"
-            } else {
-                comp.scheme = "ws"
-            }
-            return comp.url?.absoluteString ?? ""
-        }
-        return "ws://127.0.0.1:\(shared.apiPort)"
-    }
+
 
     static var selectedProxyRecords = SavedProxyModel.loadsFromUserDefault() {
         didSet {

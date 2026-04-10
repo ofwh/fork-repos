@@ -215,8 +215,7 @@ class ClashProxyResp {
 
         var proxiesMap = [ClashProxyName: ClashProxy]()
 
-        let decoder = JSONDecoder()
-        decoder.dateDecodingStrategy = .formatted(DateFormatter.js)
+        let decoder = ApiRequestTransport.makeJSONDecoder()
         for value in proxies.dictionaryValue.values {
             guard let data = try? value.rawData() else {
                 continue

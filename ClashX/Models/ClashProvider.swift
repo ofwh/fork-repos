@@ -16,12 +16,6 @@ class ClashProviderResp: Codable {
         allProviders = [:]
     }
 
-    static var decoder: JSONDecoder {
-        let decoder = JSONDecoder()
-        decoder.dateDecodingStrategy = .formatted(DateFormatter.js)
-        return decoder
-    }
-
     private enum CodingKeys: String, CodingKey {
         case allProviders = "providers"
     }

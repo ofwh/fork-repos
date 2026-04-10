@@ -217,7 +217,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             .showNetSpeedIndicatorObservable.skip(1)
             .bind {
                 _ in
-                ApiRequest.shared.resetTrafficStreamApi()
+                ApiRequest.shared.resetStreamApi(for: .traffic)
             }.disposed(by: disposeBag)
 
         Observable
