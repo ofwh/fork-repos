@@ -86,12 +86,12 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         Logger.log("Appversion: \(AppVersionUtil.currentVersion) \(AppVersionUtil.currentBuild)")
         ProcessInfo.processInfo.disableSuddenTermination()
         Task { @MainActor in
-        // setup menu item first
-        statusItem = NSStatusBar.system.statusItem(withLength: statusItemLengthWithSpeed)
+            // setup menu item first
+            statusItem = NSStatusBar.system.statusItem(withLength: statusItemLengthWithSpeed)
             statusItemView = await StatusItemView.create(statusItem: statusItem)
-        statusItemView.updateSize(width: statusItemLengthWithSpeed)
-        statusMenu.delegate = self
-        setupStatusMenuItemData()
+            statusItemView.updateSize(width: statusItemLengthWithSpeed)
+            statusMenu.delegate = self
+            setupStatusMenuItemData()
             
             await self.postFinishLaunching()
         }
@@ -217,7 +217,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             .showNetSpeedIndicatorObservable.skip(1)
             .bind { _ in
                 Task { @MainActor in
-                ApiRequest.shared.resetStreamApi(for: .traffic)
+                    ApiRequest.shared.resetStreamApi(for: .traffic)
                 }
             }.disposed(by: disposeBag)
 
@@ -429,8 +429,8 @@ extension AppDelegate: ClashProcessDelegate {
 		alert.alertStyle = .warning
 		alert.addButton(withTitle: NSLocalizedString("Quit", comment: ""))
 		alert.runModal()
-			NSApplication.shared.terminate(nil)
-		}
+        NSApplication.shared.terminate(nil)
+	}
 
     func clashProcess(_ process: ClashProcess, didStartWith server: MetaServer) async {
 		let port = server.externalController.components(separatedBy: ":").last ?? "9090"
@@ -442,8 +442,8 @@ extension AppDelegate: ClashProcessDelegate {
 	}
 	
     func clashProcessDidUpdateConfig(_ process: ClashProcess) async {
-            await ConfigReloadManager.shared.handleClashConfigUpdated()
-        }
+        await ConfigReloadManager.shared.handleClashConfigUpdated()
+	}
 	
     func clashProcess(_ process: ClashProcess, didFailToStartWith error: Error) async {
 		let unc = UserNotificationCenter.shared
@@ -580,8 +580,8 @@ extension AppDelegate: ApiRequestStreamDelegate {
         }
     }
 
-        Logger.log(log, level: ClashLogLevel(rawValue: level) ?? .unknow)
     func didGetLog(log: String, level: String) async {
+        Logger.log(log, level: ClashLogLevel(rawValue: level) ?? .unknow)
     }
 }
 
@@ -640,14 +640,14 @@ extension AppDelegate {
 extension AppDelegate {
     @IBAction func actionSetTunMode(_ sender: NSMenuItem?) {
         let enable = tunModeMenuItem.state != .on
-		tunModeMenuItem.isEnabled = false
+        tunModeMenuItem.isEnabled = false
         Task {
             guard await SSIDSuspendTool.shared.checkAndHandleOverride(isTun: true, requestedEnable: enable) else {
                 tunModeMenuItem.isEnabled = true
                 return
             }
             await SystemProxyManager.shared.toggleTunMode(enabled: enable)
-			tunModeMenuItem.isEnabled = true
+            tunModeMenuItem.isEnabled = true
         }
     }
 
