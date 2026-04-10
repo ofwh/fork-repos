@@ -31,7 +31,7 @@ final class PrivilegedHelperManager {
         }
     }
 
-    let isHelperCheckFinished = BehaviorRelay<Bool>(value: false)
+    let isHelperCheckFinishedRelay = BehaviorRelay<Bool>(value: false)
 
     private var cancelInstallCheck = false
     private let useLegacyInstall = true
@@ -71,7 +71,7 @@ final class PrivilegedHelperManager {
             Logger.log("need to install helper", level: .debug)
             await notifyInstall()
         case .installed:
-            isHelperCheckFinished.accept(true)
+            isHelperCheckFinishedRelay.accept(true)
         }
     }
 
@@ -327,7 +327,7 @@ extension PrivilegedHelperManager {
             return true
         case .alertThirdButtonReturn:
             cancelInstallCheck = true
-            isHelperCheckFinished.accept(true)
+            isHelperCheckFinishedRelay.accept(true)
             Logger.log("cancelInstallCheck = true", level: .error)
             return true
         default:

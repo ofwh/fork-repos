@@ -208,7 +208,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                 self.statusItemView.showSpeedContainer(show: show ?? true)
             }.disposed(by: disposeBag)
 
-        statusItemView.updateViewStatus(enableProxy: ConfigManager.shared.proxyPortAutoSet)
+        statusItemView.updateViewStatus(enableProxy: ConfigManager.shared.isSystemProxyEnabled)
 
     }
 	
@@ -222,41 +222,42 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             }.disposed(by: disposeBag)
 
         Observable
-            .merge([ConfigManager.shared.proxyPortAutoSetObservable,
-                    ConfigManager.shared.isProxySetByOtherVariable.asObservable(),
-                    ConfigManager.shared.proxyShouldPaused.asObservable()])
+            .combineLatest(ConfigManager.shared.isSystemProxyEnabledRelay.asObservable(),
+                           ConfigManager.shared.isTunModeEnabledRelay.asObservable(),
+                           ConfigManager.shared.isTunModeActiveRelay.asObservable(),
+                           ConfigManager.shared.isProxySetByOtherRelay.asObservable(),
+                           ConfigManager.shared.isProxyPausedRelay.asObservable())
             .observe(on: MainScheduler.instance)
-            .map { _ -> NSControl.StateValue in
-                if (ConfigManager.shared.isProxySetByOtherVariable.value || ConfigManager.shared.proxyShouldPaused.value) && ConfigManager.shared.proxyPortAutoSet {
-                    return .mixed
-                }
-                return ConfigManager.shared.proxyPortAutoSet ? .on : .off
-            }.distinctUntilChanged()
-            .bind { [weak self] status in
+            .subscribe { [weak self] isSystemProxyEnabled, isTunModeEnabled, isTunModeActive, isProxySetByOther, isProxyPaused in
                 guard let self = self else { return }
-                self.proxySettingMenuItem.state = status
-            }.disposed(by: disposeBag)
 
-        Observable
-            .merge([ConfigManager.shared.proxyPortAutoSetObservable,
-                    ConfigManager.shared.isTunModeVariable.asObservable(),
-                    ConfigManager.shared.isProxySetByOtherVariable.asObservable()])
-            .map { _ -> Bool in
-                var status = NSControl.StateValue.mixed
-                if ConfigManager.shared.isProxySetByOtherVariable.value && ConfigManager.shared.proxyPortAutoSet {
-
+                if !isSystemProxyEnabled {
+                    self.proxySettingMenuItem.state = .off
+                } else if isProxyPaused || isProxySetByOther {
+                    self.proxySettingMenuItem.state = .mixed
                 } else {
-                    status = ConfigManager.shared.proxyPortAutoSet ? .on : .off
+                    self.proxySettingMenuItem.state = .on
                 }
-                return status == .on || ConfigManager.shared.isTunModeVariable.value
-            }.distinctUntilChanged()
-            .bind { [weak self] enable in
-                guard let self = self else { return }
-                self.statusItemView.updateViewStatus(enableProxy: enable)
-            }.disposed(by: disposeBag)
+
+                if !isTunModeEnabled {
+                    self.tunModeMenuItem.state = .off
+                } else if isProxyPaused {
+                    self.tunModeMenuItem.state = .mixed
+                } else {
+                    self.tunModeMenuItem.state = isTunModeActive ? .on : .off
+                }
+
+                if isProxyPaused {
+                    self.statusItemView.updateViewStatus(enableProxy: false)
+                } else {
+                    let isIconActive = (self.proxySettingMenuItem.state == .on) || isTunModeActive
+                    self.statusItemView.updateViewStatus(enableProxy: isIconActive)
+                }
+            }
+            .disposed(by: disposeBag)
 
         let configObservable = ConfigManager.shared
-            .currentConfigVariable
+            .currentConfigRelay
             .asObservable()
         Observable.zip(configObservable, configObservable.skip(1))
             .filter { _, new in return new != nil }
@@ -290,14 +291,12 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                 }
 
                 self.snifferMenuItem.state = config.sniffing ? .on : .off
-                self.tunModeMenuItem.state = config.tun.enable ? .on : .off
-                ConfigManager.shared.isTunModeVariable.accept(config.tun.enable)
             }.disposed(by: disposeBag)
 		
-		if !PrivilegedHelperManager.shared.isHelperCheckFinished.value {
+		if !PrivilegedHelperManager.shared.isHelperCheckFinishedRelay.value {
 			proxySettingMenuItem.target = nil
 			tunModeMenuItem.target = nil
-			PrivilegedHelperManager.shared.isHelperCheckFinished
+			PrivilegedHelperManager.shared.isHelperCheckFinishedRelay
 				.filter({$0})
 				.take(1)
 				.observe(on: MainScheduler.instance)
@@ -318,7 +317,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 		}
 
         LaunchAtLogin.shared
-            .isEnableVirable
+            .isLaunchAtLoginEnabledRelay
             .asObservable()
             .subscribe(onNext: { [weak self] enable in
                 guard let self = self else { return }
@@ -345,8 +344,15 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             .bind { _ in
                 guard NetworkChangeNotifier.getPrimaryInterface() != nil else { return }
                 let proxySetted = NetworkChangeNotifier.isCurrentSystemSetToClash()
-                ConfigManager.shared.isProxySetByOtherVariable.accept(!proxySetted)
-                if !proxySetted && ConfigManager.shared.proxyPortAutoSet {
+                if ConfigManager.shared.isProxyPausedRelay.value {
+                    let (http, https, socks) = NetworkChangeNotifier.currentSystemProxySetting()
+                    if http == 0 && https == 0 && socks == 0 {
+                        Logger.log("Proxy paused!")
+                        return
+                    }
+                }
+                ConfigManager.shared.isProxySetByOtherRelay.accept(!proxySetted)
+                if !proxySetted && ConfigManager.shared.isSystemProxyEnabled {
                     let proxiesSetting = NetworkChangeNotifier.getRawProxySetting()
                     Logger.log("Proxy changed by other process!, current:\(proxiesSetting), is Interface Set: \(NetworkChangeNotifier.hasInterfaceProxySetToClash())", level: .warning)
                 }
@@ -360,12 +366,12 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         ProxyHealthCheckManager.shared.setupHealthCheckOnIPAddressChange(disposeBag: disposeBag)
 
         ConfigManager.shared
-            .isProxySetByOtherVariable
+            .isProxySetByOtherRelay
             .asObservable()
-            .filter { _ in ConfigManager.shared.proxyPortAutoSet }
+            .filter { _ in ConfigManager.shared.isSystemProxyEnabled }
             .distinctUntilChanged()
             .filter { $0 }
-            .filter { _ in !ConfigManager.shared.proxyShouldPaused.value }
+            .filter { _ in !ConfigManager.shared.isProxyPausedRelay.value }
             .bind { _ in
                 let rawProxy = NetworkChangeNotifier.getRawProxySetting()
                 Logger.log("proxy changed to no clashX setting: \(rawProxy)", level: .warning)
@@ -517,8 +523,10 @@ extension AppDelegate {
     }
 
     @IBAction func actionSetSystemProxy(_ sender: Any?) {
+        let enable = proxySettingMenuItem.state != .on
         Task {
-            await SystemProxyManager.shared.toggleProxyPortAutoSet()
+            guard await SSIDSuspendTool.shared.checkAndHandleOverride(isTun: false, requestedEnable: enable) else { return }
+            await SystemProxyManager.shared.toggleSystemProxyEnabled()
         }
     }
 
@@ -634,8 +642,11 @@ extension AppDelegate {
         let enable = tunModeMenuItem.state != .on
 		tunModeMenuItem.isEnabled = false
         Task {
-			await ConfigReloadManager.shared.setTunMode(enabled: enable)
-			tunModeMenuItem.state = enable ? .on : .off
+            guard await SSIDSuspendTool.shared.checkAndHandleOverride(isTun: true, requestedEnable: enable) else {
+                tunModeMenuItem.isEnabled = true
+                return
+            }
+            await SystemProxyManager.shared.toggleTunMode(enabled: enable)
 			tunModeMenuItem.isEnabled = true
         }
     }
@@ -794,3 +805,4 @@ extension AppDelegate {
         }
     }
 }
+

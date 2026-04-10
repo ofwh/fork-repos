@@ -217,7 +217,7 @@ actor ClashProcess {
 		}
 
 		var paths = [resourcePath + "/dashboard"]
-		guard ICloudManager.shared.useiCloud.value else {
+		guard ICloudManager.shared.useICloudRelay.value else {
 			return paths
 		}
 

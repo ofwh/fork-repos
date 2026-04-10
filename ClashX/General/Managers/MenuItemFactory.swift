@@ -126,7 +126,7 @@ class MenuItemFactory {
             return []
         }
 
-        if ICloudManager.shared.useiCloud.value {
+        if ICloudManager.shared.useICloudRelay.value {
             let list = await ICloudManager.shared.getConfigFilesList()
             return list.map { generateMenuItem($0) }
         } else {

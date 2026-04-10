@@ -52,7 +52,7 @@ class GeneralSettingViewController: NSViewController {
                 }
             }.disposed(by: disposeBag)
 
-        LaunchAtLogin.shared.isEnableVirable
+        LaunchAtLogin.shared.isLaunchAtLoginEnabledRelay
             .map { $0 ? .on : .off }
             .bind(to: launchAtLoginButton.rx.state)
             .disposed(by: disposeBag)
@@ -60,7 +60,7 @@ class GeneralSettingViewController: NSViewController {
             LaunchAtLogin.shared.isEnabled = $0
         }.disposed(by: disposeBag)
 
-        ICloudManager.shared.useiCloud
+        ICloudManager.shared.useICloudRelay
             .map { $0 ? .on : .off }
             .bind(to: useiCloudButton.rx.state)
             .disposed(by: disposeBag)

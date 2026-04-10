@@ -59,23 +59,23 @@ class ICloudManager {
     private var enableMenuItem: NSMenuItem?
     private let fileSystem = ICloudFileSystem()
     private(set) var icloudAvailable = false {
-        didSet { useiCloud.accept(userEnableiCloud && icloudAvailable) }
+        didSet { useICloudRelay.accept(userEnableiCloud && icloudAvailable) }
     }
 
     private var disposeBag = DisposeBag()
 
-    let useiCloud = BehaviorRelay<Bool>(value: false)
+    let useICloudRelay = BehaviorRelay<Bool>(value: false)
 
     var userEnableiCloud: Bool = UserDefaults.standard.bool(forKey: "kUserEnableiCloud") {
         didSet {
             UserDefaults.standard.set(userEnableiCloud, forKey: "kUserEnableiCloud")
-            useiCloud.accept(userEnableiCloud && icloudAvailable)
+            useICloudRelay.accept(userEnableiCloud && icloudAvailable)
         }
     }
 
     func setup() {
         addNotification()
-        useiCloud.distinctUntilChanged().filter { $0 }.subscribe {
+        useICloudRelay.distinctUntilChanged().filter { $0 }.subscribe {
             [weak self] _ in
             Task { @MainActor in
                 await self?.checkiCloud()
@@ -83,7 +83,7 @@ class ICloudManager {
         }.disposed(by: disposeBag)
 
         icloudAvailable = isICloudAvailable()
-        useiCloud.accept(userEnableiCloud && icloudAvailable)
+        useICloudRelay.accept(userEnableiCloud && icloudAvailable)
     }
 
     func getConfigFilesList() async -> [String] {

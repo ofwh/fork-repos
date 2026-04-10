@@ -69,9 +69,17 @@ class SystemProxyManager: NSObject {
         await disableProxy(port: port, socksPort: socketPort, forceDisable: forceDisable)
     }
     
-    func toggleTunProxy(enable: Bool) async {
-        await ApiRequest.updateTun(enable: enable)
-        try? await PrivilegedHelperManager.shared.request(ProxyConfigHelperMessages.UpdateTun(state: enable, dns: ConfigManager.metaTunDNS))
+    func toggleTunMode(enabled: Bool, persistent: Bool = true) async {
+        if enabled && persistent {
+            if await SSIDSuspendTool.shared.shouldSuspend() {
+                Logger.log("not enableTunProxy due to ssid in disabled list", level: .info)
+                return
+            }
+        }
+        await ConfigReloadManager.shared.setTunMode(enabled: enabled)
+        if persistent {
+            ConfigManager.shared.isTunModeEnabled = enabled
+        }
     }
 
     func disableProxy(port: Int, socksPort: Int, forceDisable: Bool = false) async {
@@ -104,21 +112,21 @@ class SystemProxyManager: NSObject {
         }
     }
 
-    func toggleProxyPortAutoSet() async {
+    func toggleSystemProxyEnabled() async {
         var shouldSaveProxy = true
 
-        if ConfigManager.shared.proxyPortAutoSet && ConfigManager.shared.proxyShouldPaused.value {
-            ConfigManager.shared.proxyPortAutoSet = false
-        } else if ConfigManager.shared.isProxySetByOtherVariable.value {
-            ConfigManager.shared.isProxySetByOtherVariable.accept(false)
-            ConfigManager.shared.proxyPortAutoSet = true
+        if ConfigManager.shared.isSystemProxyEnabled && ConfigManager.shared.isProxyPausedRelay.value {
+            ConfigManager.shared.isSystemProxyEnabled = false
+        } else if ConfigManager.shared.isProxySetByOtherRelay.value {
+            ConfigManager.shared.isProxySetByOtherRelay.accept(false)
+            ConfigManager.shared.isSystemProxyEnabled = true
             shouldSaveProxy = false
             await disableProxy(port: 0, socksPort: 0, forceDisable: true)
         } else {
-            ConfigManager.shared.proxyPortAutoSet.toggle()
+            ConfigManager.shared.isSystemProxyEnabled.toggle()
         }
 
-        if ConfigManager.shared.proxyPortAutoSet {
+        if ConfigManager.shared.isSystemProxyEnabled {
             if shouldSaveProxy {
                 await saveProxy()
             }
@@ -134,13 +142,13 @@ class SystemProxyManager: NSObject {
 
         Logger.log("port config updated,new: \(newConfig.usedHttpPort),\(newConfig.usedSocksPort)")
 
-        guard ConfigManager.shared.proxyPortAutoSet else { return }
+        guard ConfigManager.shared.isSystemProxyEnabled else { return }
         await enableProxy(port: newConfig.usedHttpPort, socksPort: newConfig.usedSocksPort)
     }
 
     func resetProxySettingOnWakeupFromSleep() async {
-        guard !ConfigManager.shared.isProxySetByOtherVariable.value,
-              ConfigManager.shared.proxyPortAutoSet else { return }
+        guard !ConfigManager.shared.isProxySetByOtherRelay.value,
+              ConfigManager.shared.isSystemProxyEnabled else { return }
         guard NetworkChangeNotifier.getPrimaryInterface() != nil else { return }
 
         if !NetworkChangeNotifier.isCurrentSystemSetToClash() {

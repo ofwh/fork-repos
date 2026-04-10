@@ -182,7 +182,7 @@ class RemoteConfigManager {
         }
         config.isPlaceHolderName = false
 
-        if ICloudManager.shared.useiCloud.value {
+        if ICloudManager.shared.useICloudRelay.value {
             ConfigFileManager.shared.stopWatchConfigFile()
         }
         if config.name == ConfigManager.selectConfigName {
@@ -190,7 +190,7 @@ class RemoteConfigManager {
         }
 
         let savePath: String?
-        if ICloudManager.shared.useiCloud.value {
+        if ICloudManager.shared.useICloudRelay.value {
             savePath = await ICloudManager.shared.getUrl()?.appendingPathComponent(Paths.configFileName(for: config.name)).path
         } else {
             savePath = Paths.localConfigPath(for: config.name)

@@ -22,24 +22,25 @@ class ConfigManager {
 
     var currentConfig: ClashConfig? {
         get {
-            return currentConfigVariable.value
+            return currentConfigRelay.value
         }
 
         set {
-            currentConfigVariable.accept(newValue)
+            currentConfigRelay.accept(newValue)
+            isTunModeActiveRelay.accept(newValue?.tun.enable ?? false)
         }
     }
 
-    var currentConfigVariable = BehaviorRelay<ClashConfig?>(value: nil)
+    var currentConfigRelay = BehaviorRelay<ClashConfig?>(value: nil)
 
     var isRunning: Bool {
         get {
-            return isRunningVariable.value
+            return isRunningRelay.value
         }
 
         set {
-            isRunningVariable.accept(newValue)
-			NotificationCenter.default.post(.init(name: .init("ClashRunningStateChanged")))
+            isRunningRelay.accept(newValue)
+            NotificationCenter.default.post(.init(name: .init("ClashRunningStateChanged")))
         }
     }
 
@@ -57,7 +58,7 @@ class ConfigManager {
 
     @MainActor
     static func watchCurrentConfigFile() async {
-        if ICloudManager.shared.useiCloud.value {
+        if ICloudManager.shared.useICloudRelay.value {
             guard let url = await ICloudManager.shared.getUrl() else { return }
             let configUrl = url.appendingPathComponent(Paths.configFileName(for: selectConfigName))
             ConfigFileManager.shared.watchFile(path: configUrl.path)
@@ -66,42 +67,44 @@ class ConfigManager {
         }
     }
 
-    let isRunningVariable = BehaviorRelay<Bool>(value: false)
+    let isRunningRelay = BehaviorRelay<Bool>(value: false)
 
-    var proxyPortAutoSet: Bool {
+    let isSystemProxyEnabledRelay = BehaviorRelay<Bool>(value: UserDefaults.standard.bool(forKey: "proxyPortAutoSet"))
+    var isSystemProxyEnabled: Bool {
         get {
-            return UserDefaults.standard.bool(forKey: "proxyPortAutoSet")
+            return isSystemProxyEnabledRelay.value
         }
         set {
+            isSystemProxyEnabledRelay.accept(newValue)
             UserDefaults.standard.set(newValue, forKey: "proxyPortAutoSet")
         }
     }
-	
-	var restoreSystemProxy: Bool {
-		get {
-			return UserDefaults.standard.bool(forKey: "restoreSystemProxy")
-		}
-		set {
-			UserDefaults.standard.set(newValue, forKey: "restoreSystemProxy")
-		}
-	}
-	
-	var restoreTunProxy: Bool {
-		get {
-			return UserDefaults.standard.bool(forKey: "restoreTunProxy")
-		}
-		set {
-			UserDefaults.standard.set(newValue, forKey: "restoreTunProxy")
-		}
-	}
 
-    let proxyPortAutoSetObservable = UserDefaults.standard.rx.observe(Bool.self, "proxyPortAutoSet").map { $0 ?? false }
+    let isTunModeEnabledRelay = BehaviorRelay<Bool>(value: UserDefaults.standard.bool(forKey: "restoreTunProxy"))
+    var isTunModeEnabled: Bool {
+        get {
+            return isTunModeEnabledRelay.value
+        }
+        set {
+            isTunModeEnabledRelay.accept(newValue)
+            UserDefaults.standard.set(newValue, forKey: "restoreTunProxy")
+        }
+    }
 
-    var isProxySetByOtherVariable = BehaviorRelay<Bool>(value: false)
-    var proxyShouldPaused = BehaviorRelay<Bool>(value: false)
+    var isProxySetByOtherRelay = BehaviorRelay<Bool>(value: false)
+    var isProxyPausedRelay = BehaviorRelay<Bool>(value: false)
 
-    var isTunModeVariable = BehaviorRelay<Bool>(value: false)
+    var isTunModeActiveRelay = BehaviorRelay<Bool>(value: false)
     var isTunModeInConfig = false
+
+    var restoreSystemProxy: Bool {
+        get {
+            return UserDefaults.standard.bool(forKey: "restoreSystemProxy")
+        }
+        set {
+            UserDefaults.standard.set(newValue, forKey: "restoreSystemProxy")
+        }
+    }
 	
 	static let defaultTunDNS = "8.8.8.8"
 	
@@ -111,16 +114,20 @@ class ConfigManager {
 		}
 	}
 
+    private let showNetSpeedIndicatorRelay = BehaviorRelay<Bool>(value: UserDefaults.standard.bool(forKey: "showNetSpeedIndicator"))
     var showNetSpeedIndicator: Bool {
         get {
-            return UserDefaults.standard.bool(forKey: "showNetSpeedIndicator")
+            return showNetSpeedIndicatorRelay.value
         }
         set {
+            showNetSpeedIndicatorRelay.accept(newValue)
             UserDefaults.standard.set(newValue, forKey: "showNetSpeedIndicator")
         }
     }
 
-    let showNetSpeedIndicatorObservable = UserDefaults.standard.rx.observe(Bool.self, "showNetSpeedIndicator")
+    var showNetSpeedIndicatorObservable: Observable<Bool?> {
+        return showNetSpeedIndicatorRelay.map { $0 as Bool? }
+    }
 
     var benchMarkUrl: String = UserDefaults.standard.string(forKey: "benchMarkUrl") ?? "http://cp.cloudflare.com/generate_204" {
         didSet {
@@ -177,7 +184,7 @@ class ConfigManager {
     }
 
     static func getConfigPath(configName: String) async -> String? {
-        if ICloudManager.shared.useiCloud.value {
+        if ICloudManager.shared.useICloudRelay.value {
             guard let url = await ICloudManager.shared.getUrl() else {
                 return nil
             }

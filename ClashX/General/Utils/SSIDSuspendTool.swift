@@ -21,6 +21,39 @@ class SSIDSuspendTool: NSObject {
     private lazy var locationManager = CLLocationManager()
 
     var showNoticeOnNotPermission = false
+    private(set) var isOverrideActive = false
+
+    func setOverride(_ active: Bool) async {
+        isOverrideActive = active
+        await update()
+    }
+
+    func checkAndHandleOverride(isTun: Bool, requestedEnable: Bool) async -> Bool {
+        let isBlacklisted = await isCurrentSSIDInBlacklist()
+        if isBlacklisted && !isOverrideActive {
+            if showSSIDOverrideAlert() {
+                await setOverride(true)
+            } else {
+                return false
+            }
+        }
+
+        let isAlreadyIntendedEnabled = isTun ? ConfigManager.shared.isTunModeEnabled : ConfigManager.shared.isSystemProxyEnabled
+        if requestedEnable && isAlreadyIntendedEnabled {
+            return false
+        }
+
+        return true
+    }
+
+    private func showSSIDOverrideAlert() -> Bool {
+        let alert = NSAlert()
+        alert.messageText = NSLocalizedString("Current SSID is in the auto-suspend list.", comment: "")
+        alert.informativeText = NSLocalizedString("Do you want to enable the proxy anyway? This override will be cleared when you switch WiFi or restart ClashX.", comment: "")
+        alert.addButton(withTitle: NSLocalizedString("Enable Anyway", comment: ""))
+        alert.addButton(withTitle: NSLocalizedString("Cancel", comment: ""))
+        return alert.runModal() == .alertFirstButtonReturn
+    }
 
     func setup() async {
         if AppVersionUtil.hasVersionChanged {
@@ -56,7 +89,7 @@ class SSIDSuspendTool: NSObject {
                 }.disposed(by: disposeBag)
         }
         ConfigManager.shared
-            .proxyShouldPaused
+            .isProxyPausedRelay
             .asObservable()
             .distinctUntilChanged()
             .bind { pause in
@@ -89,32 +122,32 @@ class SSIDSuspendTool: NSObject {
     }
 
     func update() async {
-        ConfigManager.shared.proxyShouldPaused.accept(await shouldSuspend())
+        Logger.log("Update isProxyPausedRelay")
+        ConfigManager.shared.isProxyPausedRelay.accept(await shouldSuspend())
     }
     
     func updateProxys(pause: Bool) async {
-        if let config = await ApiRequest.requestConfig(),
-           ConfigManager.shared.isTunModeInConfig {
-            if pause, config.tun.enable {
-                await SystemProxyManager.shared
-                    .toggleTunProxy(enable: false)
-            }
-            if !pause, !config.tun.enable {
-                await SystemProxyManager.shared
-                    .toggleTunProxy(enable: true)
-            }
-        }
-        
-        if ConfigManager.shared.proxyPortAutoSet {
-            if pause {
-                await SystemProxyManager.shared.disableProxy()
-            } else {
+        if pause {
+            // Suspend both
+            await SystemProxyManager.shared.disableProxy()
+            await SystemProxyManager.shared.toggleTunMode(enabled: false, persistent: false)
+        } else {
+            // Restore based on intent
+            if ConfigManager.shared.isSystemProxyEnabled {
                 await SystemProxyManager.shared.enableProxy()
+            }
+            if ConfigManager.shared.isTunModeEnabled {
+                await SystemProxyManager.shared.toggleTunMode(enabled: true, persistent: false)
             }
         }
     }
 
     func shouldSuspend() async -> Bool {
+        if isOverrideActive { return false }
+        return await isCurrentSSIDInBlacklist()
+    }
+
+    func isCurrentSSIDInBlacklist() async -> Bool {
         guard let currentSSID = await getCurrentSSID() else {
             return false
         }
@@ -153,8 +186,14 @@ class SSIDSuspendTool: NSObject {
 extension SSIDSuspendTool: @preconcurrency CLLocationManagerDelegate {
     func locationManager(_ manager: CLLocationManager, didChangeAuthorization status: CLAuthorizationStatus) {
         Logger.log("Location status: \(status.rawValue)")
-        if status != .authorized, showNoticeOnNotPermission {
-            openLocationSettings()
+        if status == .authorized {
+            Task {
+                await self.update()
+            }
+        } else if status != .notDetermined && status != .authorized {
+            if showNoticeOnNotPermission {
+                openLocationSettings()
+            }
         }
         showNoticeOnNotPermission = false
     }
@@ -166,6 +205,7 @@ extension SSIDSuspendTool: @preconcurrency CLLocationManagerDelegate {
 
 extension SSIDSuspendTool: @preconcurrency CWEventDelegate {
     func ssidDidChangeForWiFiInterface(withName interfaceName: String) {
+        isOverrideActive = false
         ssidChangePublisher.onNext(interfaceName)
     }
 }

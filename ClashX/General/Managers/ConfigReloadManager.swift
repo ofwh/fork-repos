@@ -131,8 +131,8 @@ final class ConfigReloadManager {
         if let config = await ApiRequest.requestConfig() {
             ConfigManager.shared.isTunModeInConfig = config.tun.enable
         }
-        if ConfigManager.shared.restoreTunProxy {
-            await SystemProxyManager.shared.toggleTunProxy(enable: true)
+        if ConfigManager.shared.isTunModeEnabled {
+            await SystemProxyManager.shared.toggleTunMode(enabled: true, persistent: false)
         } else {
             await syncConfigWithTun(true)
         }
@@ -162,7 +162,7 @@ final class ConfigReloadManager {
             }
         }
 
-        let list = if ICloudManager.shared.useiCloud.value {
+        let list = if ICloudManager.shared.useICloudRelay.value {
             await ICloudManager.shared.getConfigFilesList()
         } else {
             ConfigManager.getConfigFilesList()

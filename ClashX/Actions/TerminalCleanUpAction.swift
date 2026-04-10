@@ -18,7 +18,7 @@ enum TerminalConfirmAction {
             return
         }
 
-        ConfigManager.shared.restoreTunProxy = ConfigManager.shared.isTunModeVariable.value
+        ConfigManager.shared.isTunModeEnabled = ConfigManager.shared.isTunModeActiveRelay.value
 
         async let stopMetaAndDisableTunTask = stopMetaAndDisableTun()
 
@@ -61,12 +61,12 @@ enum TerminalConfirmAction {
 
     private static func forceDisableForProxyCleanup() -> Bool? {
         let shouldCleanSystemProxy =
-            (ConfigManager.shared.proxyPortAutoSet && !ConfigManager.shared.isProxySetByOtherVariable.value) ||
+            (ConfigManager.shared.isSystemProxyEnabled && !ConfigManager.shared.isProxySetByOtherRelay.value) ||
             NetworkChangeNotifier.isCurrentSystemSetToClash(looser: true) ||
             NetworkChangeNotifier.hasInterfaceProxySetToClash()
 
         guard shouldCleanSystemProxy else { return nil }
-        return ConfigManager.shared.isProxySetByOtherVariable.value
+        return ConfigManager.shared.isProxySetByOtherRelay.value
     }
 
     private static func prepareForTerminationWait() {

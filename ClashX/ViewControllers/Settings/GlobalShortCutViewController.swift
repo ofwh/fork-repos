@@ -10,8 +10,8 @@ import AppKit
 import KeyboardShortcuts
 
 extension KeyboardShortcuts.Name {
-    static let toggleSystemProxyMode = Self("shortCut.toggleSystemProxyMode")
-	static let toggleTunProxyMode = Self("shortCut.toggleTunProxyMode")
+    static let toggleSystemProxy = Self("shortCut.toggleSystemProxy")
+    static let toggleTunMode = Self("shortCut.toggleTunMode")
 	
     static let copyShellCommand = Self("shortCut.copyShellCommand")
     static let copyExternalShellCommand = Self("shortCut.copyExternalShellCommand")
@@ -28,11 +28,11 @@ extension KeyboardShortcuts.Name {
 
 enum KeyboardShortCutManager {
     static func setup() {
-        KeyboardShortcuts.onKeyUp(for: .toggleSystemProxyMode) {
+        KeyboardShortcuts.onKeyUp(for: .toggleSystemProxy) {
             AppDelegate.shared.actionSetSystemProxy(nil)
         }
 		
-		KeyboardShortcuts.onKeyUp(for: .toggleTunProxyMode) {
+		KeyboardShortcuts.onKeyUp(for: .toggleTunMode) {
 			AppDelegate.shared.actionSetTunMode(nil)
 		}
         
@@ -83,8 +83,8 @@ class GlobalShortCutViewController: NSViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        let systemProxy = getRecoder(for: .toggleSystemProxyMode)
-		let tunProxy = getRecoder(for: .toggleTunProxyMode)
+        let systemProxy = getRecoder(for: .toggleSystemProxy)
+		let tunProxy = getRecoder(for: .toggleTunMode)
         let copyShellCommand = getRecoder(for: .copyShellCommand)
         let copyShellCommandExternal = getRecoder(for: .copyExternalShellCommand)
         addGridView(in: proxyBox.contentView!, with: [

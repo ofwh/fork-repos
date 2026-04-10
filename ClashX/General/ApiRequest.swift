@@ -66,7 +66,7 @@ class ApiRequest {
     }
 
     static func findConfigPath(configName: String) async -> String? {
-        if ICloudManager.shared.useiCloud.value {
+        if ICloudManager.shared.useICloudRelay.value {
             guard let url = await ICloudManager.shared.getUrl() else {
                 return nil
             }
@@ -112,11 +112,11 @@ class ApiRequest {
 	}
 
 	@MainActor
-	private var streamTasks: [StreamType: Task<Void, Never>] = [:]
+    private var streamTasks: [StreamType: Task<Void, Never>] = [:]
 	@MainActor
-	private var streamRetryTasks: [StreamType: Task<Void, Never>] = [:]
+    private var streamRetryTasks: [StreamType: Task<Void, Never>] = [:]
 	@MainActor
-	private var streamRetryDelays: [StreamType: TimeInterval] = [.traffic: 1, .logging: 1, .memory: 1]
+    private var streamRetryDelays: [StreamType: TimeInterval] = [.traffic: 1, .logging: 1, .memory: 1]
     
     private var logRateLimiter = LogRateLimiter {
         let alert = NSAlert()
@@ -161,7 +161,7 @@ class ApiRequest {
             return "icloud error"
         }
 
-        guard ICloudManager.shared.useiCloud.value else {
+        guard ICloudManager.shared.useICloudRelay.value else {
             return await requestConfigUpdate(configPath: path)
         }
 

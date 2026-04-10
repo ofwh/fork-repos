@@ -15,7 +15,7 @@ public class LaunchAtLogin {
     static let shared = LaunchAtLogin()
 
     private init() {
-        isEnableVirable.accept(isEnabled)
+        isLaunchAtLoginEnabledRelay.accept(isEnabled)
     }
 
     public var isEnabled: Bool {
@@ -28,9 +28,9 @@ public class LaunchAtLogin {
             } else {
                 LoginServiceKit.removeLoginItems()
             }
-            isEnableVirable.accept(newValue)
+            isLaunchAtLoginEnabledRelay.accept(newValue)
         }
     }
 
-    var isEnableVirable = BehaviorRelay<Bool>(value: false)
+    var isLaunchAtLoginEnabledRelay = BehaviorRelay<Bool>(value: false)
 }

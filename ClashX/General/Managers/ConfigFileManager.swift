@@ -62,7 +62,7 @@ class ConfigFileManager {
 
     @MainActor
     func openConfigFolder() async {
-        if ICloudManager.shared.useiCloud.value {
+        if ICloudManager.shared.useICloudRelay.value {
             guard let url = await ICloudManager.shared.getUrl() else { return }
             NSWorkspace.shared.open(url)
         } else {
