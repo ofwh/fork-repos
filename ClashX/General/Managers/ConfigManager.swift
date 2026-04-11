@@ -33,6 +33,7 @@ class ConfigManager {
 
     var currentConfigRelay = BehaviorRelay<ClashConfig?>(value: nil)
 
+    @MainActor
     var isRunning: Bool {
         get {
             return isRunningRelay.value

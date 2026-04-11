@@ -22,6 +22,9 @@ enum ApiRequestTransport {
     static var unixSocketPath: String?
     static let localRequestBaseURL = "http://localhost"
     static var requestTimeout: TimeAmount = .seconds(30)
+    
+    // Debug
+    static var debugUseHttpApi: Bool = false
 
     private enum RequestError: LocalizedError {
         case coreNotRunning
@@ -104,8 +107,13 @@ enum ApiRequestTransport {
         parameters: [String: Any]? = nil,
         encoding: ApiParameterEncoding = .default,
         requiresCoreRunning: Bool = true
-    ) -> Handle {
-        guard !requiresCoreRunning || ConfigManager.shared.isRunning else {
+    ) async -> Handle {
+        let isCoreRunning = await MainActor.run {
+            ConfigManager.shared.isRunning
+        }
+        
+        
+        if requiresCoreRunning && !isCoreRunning {
             return Handle(backend: .failure(RequestError.coreNotRunning), shouldValidate: false)
         }
 
@@ -117,7 +125,16 @@ enum ApiRequestTransport {
             guard let path = unixSocketPath, !path.isEmpty else {
                 return Handle(backend: .failure(RequestError.missingUnixSocketPath), shouldValidate: false)
             }
+            
+#if DEBUG
+            if debugUseHttpApi {
+                socketPath = nil
+            } else {
+                socketPath = path
+            }
+#else
             socketPath = path
+#endif
         } else {
             socketPath = nil
         }
@@ -184,17 +201,21 @@ enum ApiRequestTransport {
 
         func stream() -> AsyncThrowingStream<String, Error> {
             AsyncThrowingStream { continuation in
-                Task {
+                let innerTask = Task {
                     do {
                         switch backend {
                         case .failure(let error):
                             throw error
                         case .request(let request):
                             let response = try await performClientRequest(request, shouldValidate: shouldValidate, timeout: .hours(24))
-                            continuation.yield("") // Signal connection established
+
+                            continuation.yield("")
                             var bufferArray = [UInt8]()
-                            
+
                             for try await buffer in response.body {
+                                if Task.isCancelled {
+                                    break
+                                }
                                 bufferArray.append(contentsOf: buffer.readableBytesView)
                                 while let newlineIndex = bufferArray.firstIndex(of: 10 /* \n */) {
                                     let lineBytes = bufferArray[0..<newlineIndex]
@@ -204,14 +225,27 @@ enum ApiRequestTransport {
                                     }
                                 }
                             }
-                            
+
                             if !bufferArray.isEmpty, let line = String(bytes: bufferArray, encoding: .utf8) {
                                 continuation.yield(line)
                             }
                             continuation.finish()
                         }
                     } catch {
-                        continuation.finish(throwing: error)
+                        if (error is CancellationError) || ( (error as NSError).domain == NSCocoaErrorDomain && (error as NSError).code == NSUserCancelledError ) {
+                            continuation.finish()
+                        } else {
+                            continuation.finish(throwing: error)
+                        }
+                    }
+                }
+                
+                continuation.onTermination = {
+                    switch $0 {
+                    case .finished:
+                        break
+                    default:
+                        innerTask.cancel()
                     }
                 }
             }
@@ -252,7 +286,9 @@ enum ApiRequestTransport {
             guard let socketURL = URL(httpURLWithSocketPath: socketPath, uri: url) else { return nil }
             requestURLString = socketURL.absoluteString
         } else {
-            guard let fullURL = URL(string: baseURL + url) else { return nil }
+            guard let fullURL = URL(string: ConfigManager.apiUrl + url) else {
+                return nil
+            }
             requestURLString = fullURL.absoluteString
         }
 

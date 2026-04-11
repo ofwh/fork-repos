@@ -55,8 +55,8 @@ class ApiRequest {
         parameters: [String: Any]? = nil,
         encoding: ApiParameterEncoding = .default,
         requiresCoreRunning: Bool = true
-    ) -> ApiRequestTransport.Handle {
-        ApiRequestTransport.req(
+    ) async -> ApiRequestTransport.Handle {
+        await ApiRequestTransport.req(
             url,
             method: method,
             parameters: parameters,
@@ -187,13 +187,16 @@ class ApiRequest {
                 "/configs",
                 method: .PUT,
                 parameters: ["Path": configPath],
-                encoding: .json
+                encoding: .json,
+                requiresCoreRunning: false
             )
             .serializingData()
             .response
 
         if response.response?.statusCode == 204 {
-            ConfigManager.shared.isRunning = true
+            await MainActor.run {
+                ConfigManager.shared.isRunning = true
+            }
             return nil
         }
 
@@ -592,9 +595,12 @@ extension ApiRequest {
 
 	private func streamUri(for type: StreamType) -> String {
 		switch type {
-		case .traffic: return "/traffic"
-		case .logging: return "/logs?level=\(ConfigManager.selectLoggingApiLevel.rawValue)"
-		case .memory:  return "/memory"
+		case .traffic: 
+            "/traffic"
+		case .logging:
+            "/logs?level=\(ConfigManager.selectLoggingApiLevel.rawValue)"
+		case .memory:
+            "/memory"
 		}
 	}
 
@@ -607,7 +613,9 @@ extension ApiRequest {
 
 		streamTasks[type] = Task { @MainActor [weak self] in
 			do {
-				let stream = ApiRequest.req(uri).serializingStream().stream()
+                let requiresCoreRunning = type != .traffic
+                
+                let stream = await ApiRequest.req(uri, requiresCoreRunning: requiresCoreRunning).serializingStream().stream()
 				var didConnect = false
 				for try await line in stream {
 					if !didConnect {
@@ -680,11 +688,13 @@ extension ApiRequest {
 
 	@MainActor
 	private func streamDidDisconnect(_ type: StreamType, error: Error?) async {
+        streamTasks[type]?.cancel()
+        
 		if type == .traffic {
 			ConfigManager.shared.isRunning = false
 			await notifyStreamStatusChanged()
 		}
-
+        
 		if let err = error {
 			Logger.log(err.localizedDescription, level: .error)
 		}

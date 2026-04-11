@@ -9,6 +9,7 @@
 import Cocoa
 
 class ClashStatusTool {
+    @MainActor
     static func checkPortConfig(cfg: ClashConfig?) {
         guard ConfigManager.shared.isRunning else { return }
         guard let cfg = cfg else { return }
@@ -19,13 +20,11 @@ class ClashStatusTool {
             alert.informativeText = NSLocalizedString("Ports Open Fail, Please try to restart ClashX", comment: "")
             alert.addButton(withTitle: NSLocalizedString("Quit", comment: ""))
             alert.addButton(withTitle: "Edit Config")
-            Task { @MainActor in
-                let ret = alert.runModal()
-                if ret == .alertSecondButtonReturn {
-                    NSWorkspace.shared.openFilePath(Paths.localConfigPath(for: "config"))
-                }
-                NSApp.terminate(nil)
+            let ret = alert.runModal()
+            if ret == .alertSecondButtonReturn {
+                NSWorkspace.shared.openFilePath(Paths.localConfigPath(for: "config"))
             }
+            NSApp.terminate(nil)
         }
     }
 }

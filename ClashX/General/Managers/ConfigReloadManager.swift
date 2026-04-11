@@ -103,7 +103,8 @@ final class ConfigReloadManager {
         }
 
         await syncConfigWithTun()
-        resetStreamApi()
+        #warning("may need resetStreamApi")
+//        resetStreamApi()
         await syncInitialAllowLanIfNeeded()
 
         if showNotification {

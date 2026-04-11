@@ -287,7 +287,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                 self.ipMenuItem.title = "IP: \(NetworkChangeNotifier.getPrimaryIPAddress() ?? "")"
 
                 if RemoteControlManager.selectConfig == nil {
-                    ClashStatusTool.checkPortConfig(cfg: config)
+                    Task {
+                        await ClashStatusTool.checkPortConfig(cfg: config)
+                    }
                 }
 
                 self.snifferMenuItem.state = config.sniffing ? .on : .off
