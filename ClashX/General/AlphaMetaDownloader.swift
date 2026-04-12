@@ -8,6 +8,7 @@
 import Cocoa
 import CryptoKit
 import AsyncHTTPClient
+import SwiftyJSON
 
 class AlphaMetaDownloader: NSObject {
 
@@ -20,6 +21,7 @@ class AlphaMetaDownloader: NSObject {
         case checksumFailed
         case downloadChecksumFailed
         case notFoundChecksums
+        case apiRateLimit
 
 		func des() -> String {
 			switch self {
@@ -37,6 +39,8 @@ class AlphaMetaDownloader: NSObject {
                 return "Download checksum failed"
             case .notFoundChecksums:
                 return "Not found checksums.txt"
+            case .apiRateLimit:
+                return "API rate limit"
 			case .unknownError:
 				return "Unknown error"
 			}
@@ -91,6 +95,11 @@ class AlphaMetaDownloader: NSObject {
                                     cachePolicy: .reloadIgnoringCacheData)
         do {
             let (data, _) = try await URLSession.shared.data(for: urlRequest)
+            if let msg = try? JSON(data: data)["message"].string {
+                if msg.starts(with: "API rate limit") {
+                    throw errors.apiRateLimit
+                }
+            }
             return try JSONDecoder().decode(ReleasesResp.self, from: data).assets
         } catch {
             throw errors.downloadFailed
