@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		0106179F2AF38EFA005C7877 /* Command.swift in Sources */ = {isa = PBXBuildFile; fileRef = 49FEC6682AD9369C00BAD9F5 /* Command.swift */; };
+		0112DEAA2F8B84E50019410B /* HTTPClientResponse+.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0112DEA92F8B84E50019410B /* HTTPClientResponse+.swift */; };
 		0114F0CF2E5B60CB007C7AAC /* LogRateLimiter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0114F0CE2E5B60CB007C7AAC /* LogRateLimiter.swift */; };
 		013B21FB2F7E95E0009B30CB /* DGCharts in Frameworks */ = {isa = PBXBuildFile; productRef = 013B21FA2F7E95E0009B30CB /* DGCharts */; };
 		013B21FD2F7EC4F9009B30CB /* ProxyConfigHelperXPCTransport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 013B21FC2F7EC4F9009B30CB /* ProxyConfigHelperXPCTransport.swift */; };
@@ -162,7 +163,6 @@
 		01F336262AD10D0B0048AF77 /* Gzip in Frameworks */ = {isa = PBXBuildFile; productRef = 01F335C62AD10D0B0048AF77 /* Gzip */; };
 		01F336272AD10D0B0048AF77 /* CocoaLumberjackSwift in Frameworks */ = {isa = PBXBuildFile; productRef = 01F335C12AD10D0B0048AF77 /* CocoaLumberjackSwift */; };
 		01F3362A2AD10D0B0048AF77 /* KeyboardShortcuts in Frameworks */ = {isa = PBXBuildFile; productRef = 01F335B62AD10D0B0048AF77 /* KeyboardShortcuts */; };
-		01F3362B2AD10D0B0048AF77 /* Alamofire in Frameworks */ = {isa = PBXBuildFile; productRef = 01F335B82AD10D0B0048AF77 /* Alamofire */; };
 		01F3362C2AD10D0B0048AF77 /* CocoaLumberjack in Frameworks */ = {isa = PBXBuildFile; productRef = 01F335BF2AD10D0B0048AF77 /* CocoaLumberjack */; };
 		01F3362D2AD10D0B0048AF77 /* Yams in Frameworks */ = {isa = PBXBuildFile; productRef = 01F335C82AD10D0B0048AF77 /* Yams */; };
 		01F3362E2AD10D0B0048AF77 /* RxCocoa in Frameworks */ = {isa = PBXBuildFile; productRef = 01F335BA2AD10D0B0048AF77 /* RxCocoa */; };
@@ -222,6 +222,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		0112DEA92F8B84E50019410B /* HTTPClientResponse+.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "HTTPClientResponse+.swift"; sourceTree = "<group>"; };
 		0114F0CE2E5B60CB007C7AAC /* LogRateLimiter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LogRateLimiter.swift; sourceTree = "<group>"; };
 		013B21FC2F7EC4F9009B30CB /* ProxyConfigHelperXPCTransport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProxyConfigHelperXPCTransport.swift; sourceTree = "<group>"; };
 		013B22012F7FEA2D009B30CB /* Dashboard.storyboard */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; path = Dashboard.storyboard; sourceTree = "<group>"; };
@@ -409,7 +410,6 @@
 				01F336272AD10D0B0048AF77 /* CocoaLumberjackSwift in Frameworks */,
 				01F3362A2AD10D0B0048AF77 /* KeyboardShortcuts in Frameworks */,
 				01BCDB212C9EEE260028FA94 /* Sparkle in Frameworks */,
-				01F3362B2AD10D0B0048AF77 /* Alamofire in Frameworks */,
 				013B21FB2F7E95E0009B30CB /* DGCharts in Frameworks */,
 				01F3362C2AD10D0B0048AF77 /* CocoaLumberjack in Frameworks */,
 				01F3362D2AD10D0B0048AF77 /* Yams in Frameworks */,
@@ -598,6 +598,7 @@
 				01E33AB129B5BF4200FD1006 /* NSColor+Extension.swift */,
 				019725592CA15D6400C14E49 /* UserNotificationCenter.swift */,
 				0197255B2CA15FC600C14E49 /* NSWorkspace+openFile.swift */,
+				0112DEA92F8B84E50019410B /* HTTPClientResponse+.swift */,
 			);
 			path = Extensions;
 			sourceTree = "<group>";
@@ -905,7 +906,6 @@
 			name = "ClashX Meta";
 			packageProductDependencies = (
 				01F335B62AD10D0B0048AF77 /* KeyboardShortcuts */,
-				01F335B82AD10D0B0048AF77 /* Alamofire */,
 				01F335BA2AD10D0B0048AF77 /* RxCocoa */,
 				01F335BC2AD10D0B0048AF77 /* RxSwift */,
 				01F335BD2AD10D0B0048AF77 /* SwiftyJSON */,
@@ -970,7 +970,6 @@
 			mainGroup = 49CF3B1420CD7463001EBF94;
 			packageReferences = (
 				4905A2C62A2058D400AEDA2E /* XCRemoteSwiftPackageReference "KeyboardShortcuts" */,
-				015B97682A4F2F4500F9FA4D /* XCRemoteSwiftPackageReference "Alamofire" */,
 				015B976B2A4F2F6C00F9FA4D /* XCRemoteSwiftPackageReference "RxSwift" */,
 				015B97702A4F2F9900F9FA4D /* XCRemoteSwiftPackageReference "SwiftyJSON" */,
 				015B97732A4F2FC600F9FA4D /* XCRemoteSwiftPackageReference "CocoaLumberjack" */,
@@ -1049,6 +1048,7 @@
 				01F335E12AD10D0B0048AF77 /* StatusItemViewProtocol.swift in Sources */,
 				01F335E22AD10D0B0048AF77 /* AppVersionUtil.swift in Sources */,
 				01F335E32AD10D0B0048AF77 /* AppDelegate.swift in Sources */,
+				0112DEAA2F8B84E50019410B /* HTTPClientResponse+.swift in Sources */,
 				01F335E42AD10D0B0048AF77 /* SpeedUtils.swift in Sources */,
 				01F335E52AD10D0B0048AF77 /* Logger.swift in Sources */,
 				01D567E62AD158B600CDA0AE /* MetaPrefsViewController.swift in Sources */,
@@ -1564,14 +1564,6 @@
 				minimumVersion = 1.33.1;
 			};
 		};
-		015B97682A4F2F4500F9FA4D /* XCRemoteSwiftPackageReference "Alamofire" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/Alamofire/Alamofire";
-			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 5.0.0;
-			};
-		};
 		015B976B2A4F2F6C00F9FA4D /* XCRemoteSwiftPackageReference "RxSwift" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/ReactiveX/RxSwift";
@@ -1642,14 +1634,6 @@
 			requirement = {
 				kind = upToNextMajorVersion;
 				minimumVersion = 1.0.0;
-			};
-		};
-		01F335B92AD10D0B0048AF77 /* XCRemoteSwiftPackageReference "Alamofire" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/Alamofire/Alamofire";
-			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 5.0.0;
 			};
 		};
 		01F335BB2AD10D0B0048AF77 /* XCRemoteSwiftPackageReference "RxSwift" */ = {
@@ -1735,11 +1719,6 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 01F335B72AD10D0B0048AF77 /* XCRemoteSwiftPackageReference "KeyboardShortcuts" */;
 			productName = KeyboardShortcuts;
-		};
-		01F335B82AD10D0B0048AF77 /* Alamofire */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 01F335B92AD10D0B0048AF77 /* XCRemoteSwiftPackageReference "Alamofire" */;
-			productName = Alamofire;
 		};
 		01F335BA2AD10D0B0048AF77 /* RxCocoa */ = {
 			isa = XCSwiftPackageProductDependency;

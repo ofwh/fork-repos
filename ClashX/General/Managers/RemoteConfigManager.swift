@@ -6,7 +6,6 @@
 //  Copyright © 2018 west2online. All rights reserved.
 //
 
-import Alamofire
 import Cocoa
 
 class RemoteConfigManager {
@@ -147,19 +146,18 @@ class RemoteConfigManager {
     }
 
     static func getRemoteConfigData(config: RemoteConfigModel) async -> (String?, String?) {
-        guard var urlRequest = try? URLRequest(url: config.url, method: .get) else {
+        guard let url = URL(string: config.url) else {
             assertionFailure()
             Logger.log("[getRemoteConfigData] url incorrect,\(config.name) \(config.url)")
             return (nil, nil)
         }
-        urlRequest.cachePolicy = .reloadIgnoringCacheData
-
-        return await withCheckedContinuation { continuation in
-            AF.request(urlRequest)
-                .validate()
-                .responseString(encoding: .utf8) { res in
-                    continuation.resume(returning: (try? res.result.get(), res.response?.suggestedFilename))
-                }
+        
+        do {
+            let urlRequest = URLRequest(url: url, cachePolicy: .reloadIgnoringCacheData)
+            let (data, response) = try await URLSession.shared.data(for: urlRequest)
+            return (String(data: data, encoding: .utf8), response.suggestedFilename)
+        } catch {
+            return (nil, nil)
         }
     }
 

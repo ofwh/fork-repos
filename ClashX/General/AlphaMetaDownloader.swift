@@ -6,8 +6,8 @@
 //
 
 import Cocoa
-import Alamofire
 import CryptoKit
+import AsyncHTTPClient
 
 class AlphaMetaDownloader: NSObject {
 
@@ -19,6 +19,7 @@ class AlphaMetaDownloader: NSObject {
 		case testFailed
         case checksumFailed
         case downloadChecksumFailed
+        case notFoundChecksums
 
 		func des() -> String {
 			switch self {
@@ -34,6 +35,8 @@ class AlphaMetaDownloader: NSObject {
                 return "Checksum failed"
             case .downloadChecksumFailed:
                 return "Download checksum failed"
+            case .notFoundChecksums:
+                return "Not found checksums.txt"
 			case .unknownError:
 				return "Unknown error"
 			}
@@ -83,13 +86,15 @@ class AlphaMetaDownloader: NSObject {
 	}
 
 	static func alphaAssets() async throws -> [ReleasesResp.Asset] {
-		let resp = try? await AF.request("https://api.github.com/repos/MetaCubeX/mihomo/releases/tags/Prerelease-Alpha").serializingDecodable(ReleasesResp.self).value
-		
-		guard let resp else {
-			throw errors.downloadFailed
-		}
-		
-		return resp.assets
+        let url = "https://api.github.com/repos/MetaCubeX/mihomo/releases/tags/Prerelease-Alpha"
+        let urlRequest = URLRequest(url: .init(string: url)!,
+                                    cachePolicy: .reloadIgnoringCacheData)
+        do {
+            let (data, _) = try await URLSession.shared.data(for: urlRequest)
+            return try JSONDecoder().decode(ReleasesResp.self, from: data).assets
+        } catch {
+            throw errors.downloadFailed
+        }
 	}
     
     static func alphaCoreAsset(_ assets: [ReleasesResp.Asset]) async throws -> ReleasesResp.Asset {
@@ -113,17 +118,29 @@ class AlphaMetaDownloader: NSObject {
     }
     
     static func checksumString(_ assets: [ReleasesResp.Asset], asset: ReleasesResp.Asset) async throws -> String {
-        guard let checksumsAsset = assets.first(where: {
-            $0.name == "checksums.txt"
-        }),
-              let resp = try? await AF.request(checksumsAsset.downloadUrl).serializingString().value,
-              let str = resp.split(separator: "\n").first(where: { $0.contains(asset.name) })?.split(separator: " ").first,
-              str.count == 64
-        else {
-            throw errors.downloadChecksumFailed
+        
+        guard let checksumsAsset = assets.first(where: { $0.name == "checksums.txt" }),
+              let url = URL(string: checksumsAsset.downloadUrl) else {
+            throw errors.notFoundChecksums
         }
         
-        return String(str)
+        do {
+            let urlRequest = URLRequest(url: url, cachePolicy: .reloadIgnoringCacheData)
+            let (data, _) = try await URLSession.shared.data(for: urlRequest)
+            let str = String(data: data, encoding: .utf8)?
+                .split(separator: "\n")
+                .first(where: { $0.contains(asset.name) })?
+                .split(separator: " ").first
+            
+            if let str {
+                return String(str)
+            } else {
+                Logger.log("Decode checksums.txt failed", level: .debug)
+                throw errors.downloadChecksumFailed
+            }
+        } catch {
+            throw errors.downloadChecksumFailed
+        }
     }
     
 	static func checkVersion(_ asset: ReleasesResp.Asset) throws -> ReleasesResp.Asset {
@@ -138,14 +155,12 @@ class AlphaMetaDownloader: NSObject {
 	}
 
 	static func downloadCore(_ asset: ReleasesResp.Asset) async throws -> Data {
-		let fm = FileManager.default
-		let data = try? await AF.download(asset.downloadUrl).serializingData().value
-
-		if let data {
-			return data
-		} else {
-			throw errors.downloadFailed
-		}
+        do {
+            let resp = try await HTTPClient.shared.execute(.init(url: asset.downloadUrl), timeout: .minutes(1))
+            return try await resp.body.collectData()
+        } catch {
+            throw errors.downloadFailed
+        }
 	}
 
     static func replaceCore(_ gzData: Data, checksum: String) throws -> String {

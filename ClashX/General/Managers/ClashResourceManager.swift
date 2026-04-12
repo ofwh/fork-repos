@@ -1,6 +1,6 @@
-import Alamofire
 import AppKit
 import Foundation
+import AsyncHTTPClient
 import Gzip
 
 class ClashResourceManager {
@@ -127,23 +127,22 @@ extension ClashResourceManager {
 
     static func updateGeoIP() {
         guard let url = showCustomAlert() else { return }
-        AF.download(url, to: { _, _ in
-            let path = kConfigFolderPath.appending("/Country.mmdb")
-            return (URL(fileURLWithPath: path), .removePreviousFile)
-        }).response { res in
+        
+        try? HTTPClient.shared.execute(
+            request: .init(url: url),
+            delegate: FileDownloadDelegate(path: kConfigFolderPath.appending("/Country.mmdb"))
+        )
+        .futureResult
+        .whenComplete {
             var info: String
-            switch res.result {
+            switch $0 {
             case .success:
                 info = NSLocalizedString("Success!", comment: "")
                 Logger.log("update success")
-            case let .failure(err):
+            case .failure(let err):
                 info = NSLocalizedString("Fail:", comment: "") + err.localizedDescription
                 Logger.log("update fail \(err)")
             }
-//            if !verifyGEOIPDataBase().toBool() {
-//                info = "Database verify fail"
-//                checkMMDB()
-//            }
             let alert = NSAlert()
             alert.messageText = NSLocalizedString("Update GEOIP Database", comment: "")
             alert.informativeText = info

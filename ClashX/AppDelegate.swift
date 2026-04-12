@@ -6,7 +6,6 @@
 //  Copyright © 2018年 yichengchen. All rights reserved.
 //
 
-import Alamofire
 import Cocoa
 import RxCocoa
 import RxSwift
