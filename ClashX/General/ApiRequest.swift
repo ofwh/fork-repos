@@ -187,8 +187,7 @@ class ApiRequest {
                 "/configs",
                 method: .PUT,
                 parameters: ["Path": configPath],
-                encoding: .json,
-                requiresCoreRunning: false
+                encoding: .json
             )
             .serializingData()
             .response
