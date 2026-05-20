@@ -105,11 +105,11 @@ class MetaPrefsViewController: NSViewController {
 				await MainActor.run {
 					self.updateAlphaVersion(newVer)
 					let msg = NSLocalizedString("Version: ", comment: "") + newVer
-					UserNotificationCenter.shared.post(title: "Clash Meta Core", info: msg)
+					UserNotificationCenter.shared.postNotificationAlert(title: "Clash Meta Core", info: msg)
 				}
 			} catch {
 				let error = error as? AlphaMetaDownloader.errors
-				UserNotificationCenter.shared.post(title: "Clash Meta Core", info: error?.des() ?? "")
+				UserNotificationCenter.shared.postNotificationAlert(title: "Clash Meta Core", info: error?.des() ?? "")
 			}
 			
 			await MainActor.run {
