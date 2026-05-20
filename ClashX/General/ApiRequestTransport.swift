@@ -129,7 +129,7 @@ enum ApiRequestTransport {
         requiresCoreRunning: Bool = true
     ) async -> Handle {
         let isCoreRunning = await MainActor.run {
-            ConfigManager.shared.isRunning
+            ConfigManager.shared.kernelState.isOperational
         }
 
         if requiresCoreRunning && !isCoreRunning {

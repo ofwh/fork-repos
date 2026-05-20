@@ -78,7 +78,7 @@ class SystemProxyManager: NSObject {
         }
         await ConfigReloadManager.shared.setTunMode(enabled: enabled)
         if persistent {
-            ConfigManager.shared.isTunModeEnabled = enabled
+            ConfigManager.shared.proxyState.isTunModeEnabled = enabled
         }
     }
 
@@ -115,18 +115,18 @@ class SystemProxyManager: NSObject {
     func toggleSystemProxyEnabled() async {
         var shouldSaveProxy = true
 
-        if ConfigManager.shared.isSystemProxyEnabled && ConfigManager.shared.isProxyPausedRelay.value {
-            ConfigManager.shared.isSystemProxyEnabled = false
-        } else if ConfigManager.shared.isProxySetByOtherRelay.value {
-            ConfigManager.shared.isProxySetByOtherRelay.accept(false)
-            ConfigManager.shared.isSystemProxyEnabled = true
+        if ConfigManager.shared.proxyState.isSystemProxyEnabled && ConfigManager.shared.proxyState.isProxyPaused {
+            ConfigManager.shared.proxyState.isSystemProxyEnabled = false
+        } else if ConfigManager.shared.proxyState.isSystemProxySetByOther {
+            ConfigManager.shared.proxyState.isSystemProxySetByOther = false
+            ConfigManager.shared.proxyState.isSystemProxyEnabled = true
             shouldSaveProxy = false
             await disableProxy(port: 0, socksPort: 0, forceDisable: true)
         } else {
-            ConfigManager.shared.isSystemProxyEnabled.toggle()
+            ConfigManager.shared.proxyState.isSystemProxyEnabled.toggle()
         }
 
-        if ConfigManager.shared.isSystemProxyEnabled {
+        if ConfigManager.shared.proxyState.isSystemProxyEnabled {
             if shouldSaveProxy {
                 await saveProxy()
             }
@@ -142,13 +142,13 @@ class SystemProxyManager: NSObject {
 
         Logger.log("port config updated,new: \(newConfig.usedHttpPort),\(newConfig.usedSocksPort)")
 
-        guard ConfigManager.shared.isSystemProxyEnabled else { return }
+        guard ConfigManager.shared.proxyState.isSystemProxyEnabled else { return }
         await enableProxy(port: newConfig.usedHttpPort, socksPort: newConfig.usedSocksPort)
     }
 
     func resetProxySettingOnWakeupFromSleep() async {
-        guard !ConfigManager.shared.isProxySetByOtherRelay.value,
-              ConfigManager.shared.isSystemProxyEnabled else { return }
+        guard !ConfigManager.shared.proxyState.isSystemProxySetByOther,
+              ConfigManager.shared.proxyState.isSystemProxyEnabled else { return }
         guard NetworkChangeNotifier.getPrimaryInterface() != nil else { return }
 
         if !NetworkChangeNotifier.isCurrentSystemSetToClash() {

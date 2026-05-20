@@ -90,7 +90,7 @@ final class ConfigReloadManager {
     @discardableResult
     func updateConfig(configName: String? = nil, showNotification: Bool = true) async -> ErrorString? {
         await AppDelegate.shared.startProxyCore()
-        guard ConfigManager.shared.isRunning else { return nil }
+        guard ConfigManager.shared.kernelState.isOperational else { return nil }
 
         let config = configName ?? ConfigManager.selectConfigName
 
@@ -126,13 +126,14 @@ final class ConfigReloadManager {
     }
 
     func handleClashConfigUpdated() async {
+        ConfigManager.shared.kernelState = .reloadingConfig
         if ConfigManager.shared.restoreSystemProxy {
             await SystemProxyManager.shared.enableProxy()
         }
         if let config = await ApiRequest.requestConfig() {
             ConfigManager.shared.isTunModeInConfig = config.tun.enable
         }
-        if ConfigManager.shared.isTunModeEnabled {
+        if ConfigManager.shared.proxyState.isTunModeEnabled {
             await SystemProxyManager.shared.toggleTunMode(enabled: true, persistent: false)
         } else {
             await syncConfigWithTun(true)
@@ -145,6 +146,7 @@ final class ConfigReloadManager {
         await selectProxyGroupWithMemory()
         await MenuItemFactory.recreateProxyMenuItems()
         NotificationCenter.default.post(name: .reloadDashboard, object: nil)
+        ConfigManager.shared.kernelState = .running
     }
 
     func selectOutBoundModeWithMenory() async {

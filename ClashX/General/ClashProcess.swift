@@ -104,6 +104,9 @@ actor ClashProcess {
 		}
 
 		let task = Task {
+			await MainActor.run {
+				ConfigManager.shared.kernelState = .starting
+			}
 			await self.runStartSequence()
 		}
 		startTask = task
@@ -116,9 +119,15 @@ actor ClashProcess {
 		}
 
 		coreState = .checkingLaunchPath
+		await MainActor.run {
+			ConfigManager.shared.kernelState = .checkingLaunchPath
+		}
 		let paths = loadLaunchPath()
 		guard let launchPath = paths.path else {
 			coreState = .stopped
+			await MainActor.run {
+				ConfigManager.shared.kernelState = .failedToStart
+			}
 			let msg = paths.err ?? "Load internal Meta Core failed."
 			await delegate?.clashProcess(self, didFailToResolveLaunchPath: msg)
 			return
@@ -129,12 +138,21 @@ actor ClashProcess {
 		do {
 			try await checkHelperVersion()
 			coreState = .preparingConfig
+			await MainActor.run {
+				ConfigManager.shared.kernelState = .preparingConfig
+			}
 			try await prepareConfigFile()
 			let config = try await generateInitConfig()
 			coreState = .starting
+			await MainActor.run {
+				ConfigManager.shared.kernelState = .starting
+			}
 			let res = try await startMeta(config, launchPath: launchPath)
 			didStartCore = true
 			coreState = .running
+			await MainActor.run {
+				ConfigManager.shared.kernelState = .running
+			}
 
 			if res.log != "" {
 				Logger.log("""
@@ -155,11 +173,17 @@ actor ClashProcess {
 	private func handleStartError(_ error: Error, didStartCore: Bool) async {
 		Logger.log("\(error)", level: .error)
 		coreState = didStartCore ? .running : .stopped
+		await MainActor.run {
+			ConfigManager.shared.kernelState = didStartCore ? .running : .failedToStart
+		}
 		await delegate?.clashProcess(self, didFailToStartWith: error)
 	}
 
 	private func checkHelperVersion() async throws {
 		coreState = .checkingHelper
+		await MainActor.run {
+			ConfigManager.shared.kernelState = .checkingHelper
+		}
 
 		let version: String
 		do {

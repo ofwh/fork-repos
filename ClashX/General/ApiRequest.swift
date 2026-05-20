@@ -191,9 +191,6 @@ class ApiRequest {
             .response
 
         if response.httpResponse?.statusCode == 204 {
-            await MainActor.run {
-                ConfigManager.shared.isRunning = true
-            }
             return nil
         }
 
@@ -658,31 +655,41 @@ extension ApiRequest {
 
 	// MARK: Stream Event Handlers
 
-	@MainActor
-	private func streamDidConnect(_ type: StreamType) async {
-		streamRetryDelays[type] = 1
-		Logger.log("\(type)Stream did Connect", level: .debug)
+    @MainActor
+    private func streamDidConnect(_ type: StreamType) async {
+        streamRetryDelays[type] = 1
+        Logger.log("\(type)Stream did Connect", level: .debug)
 
-		if type == .traffic {
-			ConfigManager.shared.isRunning = true
-			await notifyStreamStatusChanged()
-		}
-	}
+        if type == .traffic {
+            ConfigManager.shared.kernelState = .running
+            await notifyStreamStatusChanged()
+        }
+    }
 
 	@MainActor
 	private func streamDidDisconnect(_ type: StreamType, error: Error?) async {
         streamTasks[type]?.cancel()
+        if type == .traffic {
+            let kernelState = ConfigManager.shared.kernelState
+            let shouldTreatAsStartupFailure: Bool
+            switch kernelState {
+            case .stopped, .checkingLaunchPath, .checkingHelper, .preparingConfig, .starting:
+                shouldTreatAsStartupFailure = true
+            case .reloadingConfig, .running, .disconnected, .failedToStart:
+                shouldTreatAsStartupFailure = false
+            }
 
-        let shouldSilenceError = (error as? HTTPParserError) == .invalidEOFState
+            if error == nil || (error as? HTTPParserError) == .invalidEOFState || !shouldTreatAsStartupFailure {
+                ConfigManager.shared.kernelState = .disconnected
+            } else {
+                ConfigManager.shared.kernelState = .failedToStart
+            }
+            await notifyStreamStatusChanged()
+        }
         
-		if type == .traffic {
-			ConfigManager.shared.isRunning = false
-			await notifyStreamStatusChanged()
-		}
-        
-		if let err = error, !shouldSilenceError {
-			Logger.log(err.localizedDescription, level: .error)
-		}
+        if let err = error, (err as? HTTPParserError) != .invalidEOFState {
+            Logger.log(err.localizedDescription, level: .error)
+        }
 
 		Logger.log("\(type)Stream did disconnect", level: .debug)
 		scheduleRetry(for: type)

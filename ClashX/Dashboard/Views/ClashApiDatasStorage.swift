@@ -46,10 +46,8 @@ class ClashApiDatasStorage: NSObject, ObservableObject {
 }
 
 extension ClashApiDatasStorage: ApiRequestStreamDelegate {
-	func streamStatusChanged() async {
-		print("streamStatusChanged", ConfigManager.shared.isRunning)
-		
-	}
+    func streamStatusChanged() async {
+    }
 
 	func didUpdateTraffic(up: Int, down: Int) async {
 		await enqueueTrafficUpdate(up: up, down: down)

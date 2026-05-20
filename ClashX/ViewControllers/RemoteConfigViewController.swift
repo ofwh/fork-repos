@@ -19,7 +19,6 @@ class RemoteConfigViewController: NSViewController {
     let disposeBag = DisposeBag()
 
     deinit {
-        print("RemoteConfigViewController deinit")
     }
 
     override func viewDidLoad() {

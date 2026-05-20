@@ -14,8 +14,8 @@ class HideProxyNames: ObservableObject, Identifiable {
 struct DashboardView: View {
 	static let minimumSize = CGSize(width: 920, height: 580)
 	
-	private let runningState = NotificationCenter.default.publisher(for: .init("ClashRunningStateChanged"))
-	@State private var isRunning = false
+	private let kernelStateChanged = NotificationCenter.default.publisher(for: .init("ClashKernelStateChanged"))
+	@State private var kernelState = ConfigManager.shared.kernelState
 	
 	var body: some View {
 		NavigationView {
@@ -28,8 +28,8 @@ struct DashboardView: View {
 			minHeight: Self.minimumSize.height,
 			idealHeight: Self.minimumSize.height
 		)
-		.onReceive(runningState) { _ in
-			isRunning = ConfigManager.shared.isRunning
+		.onReceive(kernelStateChanged) { _ in
+			kernelState = ConfigManager.shared.kernelState
 		}
 		
 	}

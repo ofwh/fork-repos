@@ -11,7 +11,7 @@ import Cocoa
 class ClashStatusTool {
     @MainActor
     static func checkPortConfig(cfg: ClashConfig?) {
-        guard ConfigManager.shared.isRunning else { return }
+        guard ConfigManager.shared.kernelState.isOperational else { return }
         guard let cfg = cfg else { return }
         if cfg.usedHttpPort == 0 {
             Logger.log("checkPortConfig: \(cfg.mixedPort) ", level: .error)

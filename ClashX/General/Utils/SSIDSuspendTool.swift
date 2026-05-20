@@ -38,7 +38,7 @@ class SSIDSuspendTool: NSObject {
             }
         }
 
-        let isAlreadyIntendedEnabled = isTun ? ConfigManager.shared.isTunModeEnabled : ConfigManager.shared.isSystemProxyEnabled
+        let isAlreadyIntendedEnabled = isTun ? ConfigManager.shared.proxyState.isTunModeEnabled : ConfigManager.shared.proxyState.isSystemProxyEnabled
         if requestedEnable && isAlreadyIntendedEnabled {
             return false
         }
@@ -89,8 +89,9 @@ class SSIDSuspendTool: NSObject {
                 }.disposed(by: disposeBag)
         }
         ConfigManager.shared
-            .isProxyPausedRelay
+            .proxyStateRelay
             .asObservable()
+            .map(\.isProxyPaused)
             .distinctUntilChanged()
             .bind { pause in
                 Task {
@@ -123,7 +124,7 @@ class SSIDSuspendTool: NSObject {
 
     func update() async {
         Logger.log("Update isProxyPausedRelay")
-        ConfigManager.shared.isProxyPausedRelay.accept(await shouldSuspend())
+        ConfigManager.shared.proxyState.isProxyPaused = await shouldSuspend()
     }
     
     func updateProxys(pause: Bool) async {
@@ -133,10 +134,10 @@ class SSIDSuspendTool: NSObject {
             await SystemProxyManager.shared.toggleTunMode(enabled: false, persistent: false)
         } else {
             // Restore based on intent
-            if ConfigManager.shared.isSystemProxyEnabled {
+            if ConfigManager.shared.proxyState.isSystemProxyEnabled {
                 await SystemProxyManager.shared.enableProxy()
             }
-            if ConfigManager.shared.isTunModeEnabled {
+            if ConfigManager.shared.proxyState.isTunModeEnabled {
                 await SystemProxyManager.shared.toggleTunMode(enabled: true, persistent: false)
             }
         }

@@ -13,12 +13,43 @@ import RxSwift
 
 class ConfigManager {
     static let shared = ConfigManager()
-    private let disposeBag = DisposeBag()
+
+    // MARK: - Basic Settings
+
     var apiPort = "8080"
     var allowExternalControl = false
     var apiSecret: String = ""
     var overrideApiURL: URL?
     var overrideSecret: String?
+
+    // MARK: - State
+
+    enum KernelState: Equatable {
+        case stopped
+        case checkingLaunchPath
+        case checkingHelper
+        case preparingConfig
+        case starting
+        case reloadingConfig
+        case disconnected
+        case running
+        case failedToStart
+
+        var isOperational: Bool {
+            self == .running || self == .reloadingConfig || self == .disconnected
+        }
+    }
+
+    struct ProxyState: Equatable {
+        var isSystemProxyEnabled = UserDefaults.standard.bool(forKey: "proxyPortAutoSet")
+        var isTunModeEnabled = UserDefaults.standard.bool(forKey: "restoreTunProxy")
+        var isSystemProxySetByOther = false
+        var isProxyPaused = false
+        var isTunModeActive = false
+    }
+
+    let kernelStateRelay = BehaviorRelay<KernelState>(value: .stopped)
+    let proxyStateRelay = BehaviorRelay<ProxyState>(value: ProxyState())
 
     var currentConfig: ClashConfig? {
         get {
@@ -27,23 +58,36 @@ class ConfigManager {
 
         set {
             currentConfigRelay.accept(newValue)
-            isTunModeActiveRelay.accept(newValue?.tun.enable ?? false)
+            var state = proxyStateRelay.value
+            state.isTunModeActive = newValue?.tun.enable ?? false
+            proxyStateRelay.accept(state)
         }
     }
 
     var currentConfigRelay = BehaviorRelay<ClashConfig?>(value: nil)
 
+    var isTunModeInConfig = false
+
     @MainActor
-    var isRunning: Bool {
+    var kernelState: KernelState {
         get {
-            return isRunningRelay.value
+            return kernelStateRelay.value
         }
 
         set {
-            isRunningRelay.accept(newValue)
-            NotificationCenter.default.post(.init(name: .init("ClashRunningStateChanged")))
+            let oldValue = kernelStateRelay.value
+            kernelStateRelay.accept(newValue)
+            Logger.log("kernelState change: \(oldValue) -> \(newValue)", level: .info)
+            NotificationCenter.default.post(.init(name: .init("ClashKernelStateChanged")))
         }
     }
+
+    var proxyState: ProxyState {
+        get { proxyStateRelay.value }
+        set { proxyStateRelay.accept(newValue) }
+    }
+
+    // MARK: - Config Selection
 
     static var selectConfigName: String {
         get {
@@ -68,35 +112,7 @@ class ConfigManager {
         }
     }
 
-    let isRunningRelay = BehaviorRelay<Bool>(value: false)
-
-    let isSystemProxyEnabledRelay = BehaviorRelay<Bool>(value: UserDefaults.standard.bool(forKey: "proxyPortAutoSet"))
-    var isSystemProxyEnabled: Bool {
-        get {
-            return isSystemProxyEnabledRelay.value
-        }
-        set {
-            isSystemProxyEnabledRelay.accept(newValue)
-            UserDefaults.standard.set(newValue, forKey: "proxyPortAutoSet")
-        }
-    }
-
-    let isTunModeEnabledRelay = BehaviorRelay<Bool>(value: UserDefaults.standard.bool(forKey: "restoreTunProxy"))
-    var isTunModeEnabled: Bool {
-        get {
-            return isTunModeEnabledRelay.value
-        }
-        set {
-            isTunModeEnabledRelay.accept(newValue)
-            UserDefaults.standard.set(newValue, forKey: "restoreTunProxy")
-        }
-    }
-
-    var isProxySetByOtherRelay = BehaviorRelay<Bool>(value: false)
-    var isProxyPausedRelay = BehaviorRelay<Bool>(value: false)
-
-    var isTunModeActiveRelay = BehaviorRelay<Bool>(value: false)
-    var isTunModeInConfig = false
+    // MARK: - Preferences
 
     var restoreSystemProxy: Bool {
         get {
