@@ -30,6 +30,9 @@ class ApiRequest {
     static let shared = ApiRequest()
 
     private var proxyRespCache: ClashProxyResp?
+    
+    @MainActor
+    private var isTerminating = false
 
     private lazy var logQueue = DispatchQueue(label: "com.ClashX.core.log")
 
@@ -82,9 +85,8 @@ class ApiRequest {
         let success: Bool
 
         let response = await req("/cache/fakeip/flush", method: .POST)
-            .serializingData()
             .response
-        success = response.response?.statusCode == 204
+        success = response.httpResponse?.statusCode == 204
 
         Logger.log("FlushFakeipCache \(success ? "success" : "failed")")
         return success
@@ -96,9 +98,8 @@ class ApiRequest {
         let success: Bool
 
         let response = await req("/cache/dns/flush", method: .POST)
-            .serializingData()
             .response
-        success = response.response?.statusCode == 204
+        success = response.httpResponse?.statusCode == 204
 
         Logger.log("FlushDNSCache \(success ? "success" : "failed")")
         return success
@@ -129,24 +130,22 @@ class ApiRequest {
         }
     }
 
-	static func requestVersion() async -> ClashVersion? {
-		do {
-			return try await req("/version", requiresCoreRunning: false)
-				.validate()
-				.serializingDecodable(ClashVersion.self)
-				.value
-		} catch {
-			Logger.log("Request Version failed, \(error)", level: .error)
-			return nil
-		}
-	}
+    static func requestVersion() async -> ClashVersion? {
+        do {
+            return try await req("/version", requiresCoreRunning: false)
+                .validate()
+                .responseDecodable(ClashVersion.self)
+        } catch {
+            Logger.log("Request Version failed, \(error)", level: .error)
+            return nil
+        }
+    }
 
     static func requestConfig() async -> ClashConfig? {
         do {
             return try await req("/configs")
                 .validate()
-                .serializingDecodable(ClashConfig.self)
-                .value
+                .responseDecodable(ClashConfig.self)
         } catch {
             Logger.log(error.localizedDescription)
             await MainActor.run {
@@ -189,10 +188,9 @@ class ApiRequest {
                 parameters: ["Path": configPath],
                 encoding: .json
             )
-            .serializingData()
             .response
 
-        if response.response?.statusCode == 204 {
+        if response.httpResponse?.statusCode == 204 {
             await MainActor.run {
                 ConfigManager.shared.isRunning = true
             }
@@ -215,8 +213,7 @@ class ApiRequest {
                 encoding: .json
             )
             .validate()
-            .serializingData()
-            .value
+            .response
             return true
         } catch {
             return false
@@ -232,8 +229,7 @@ class ApiRequest {
                 encoding: .json
             )
             .validate()
-            .serializingData()
-            .value
+            .response
             return true
         } catch {
             return false
@@ -244,11 +240,10 @@ class ApiRequest {
         let proxies: ClashProxyResp
 
         do {
-            let responseData = try await req("/proxies")
+            let data = try await req("/proxies")
                 .validate()
-                .serializingData()
-                .value
-            proxies = ClashProxyResp(responseData)
+                .responseData
+            proxies = ClashProxyResp(data)
         } catch {
             Logger.log(error.localizedDescription)
             proxies = ClashProxyResp(nil)
@@ -262,8 +257,7 @@ class ApiRequest {
         do {
             return try await req("/providers/proxies")
                 .validate()
-                .serializingDecodable(ClashProviderResp.self)
-                .value
+                .responseDecodable(ClashProviderResp.self)
         } catch {
             Logger.log("requestProxyProviderList error \(error.localizedDescription)")
             return ClashProviderResp()
@@ -285,8 +279,7 @@ class ApiRequest {
                 encoding: .json
             )
             .validate()
-            .serializingData()
-            .value
+            .responseData
         } catch {
             Logger.log("update allow lan failed: \(error.localizedDescription)", level: .error)
         }
@@ -299,9 +292,8 @@ class ApiRequest {
             parameters: ["name": selectProxy],
             encoding: .json
         )
-        .serializingData()
         .response
-        return response.response?.statusCode == 204
+        return response.httpResponse?.statusCode == 204
     }
 
     static func getMergedProxyData() async -> ClashProxyResp {
@@ -315,15 +307,14 @@ class ApiRequest {
 
     static func getProxyDelay(proxyName: String) async -> Int {
         do {
-            let responseData = try await req(
+            let data = try await req(
                 "/proxies/\(proxyName.encoded)/delay",
                 method: .GET,
                 parameters: ["timeout": 2500, "url": ConfigManager.shared.benchMarkUrl]
             )
             .validate()
-            .serializingData()
-            .value
-            return JSON(responseData)["delay"].intValue
+            .responseData
+            return JSON(data)["delay"].intValue
         } catch {
             return 0
         }
@@ -337,8 +328,7 @@ class ApiRequest {
                 parameters: ["timeout": 2500, "url": ConfigManager.shared.benchMarkUrl]
             )
             .validate()
-            .serializingDecodable([String: Int].self)
-            .value
+            .responseDecodable([String: Int].self)
         } catch {
             return [:]
         }
@@ -346,11 +336,10 @@ class ApiRequest {
 
     static func getRules() async -> [ClashRule] {
         do {
-            let responseData = try await req("/rules")
+            let data = try await req("/rules")
                 .validate()
-                .serializingData()
-                .value
-            return ClashRuleResponse.fromData(responseData).rules ?? []
+                .responseData
+            return ClashRuleResponse.fromData(data).rules ?? []
         } catch {
             return []
         }
@@ -359,12 +348,11 @@ class ApiRequest {
     static func healthCheck(proxy: ClashProviderName) async {
         Logger.log("HeathCheck for \(proxy) started")
         let response = await req("/providers/proxies/\(proxy.encoded)/healthcheck")
-            .serializingData()
             .response
-        if response.response?.statusCode == 204 {
+        if response.httpResponse?.statusCode == 204 {
             Logger.log("HeathCheck for \(proxy) finished")
         } else {
-            Logger.log("HeathCheck for \(proxy) failed:\(response.response?.statusCode ?? -1)")
+            Logger.log("HeathCheck for \(proxy) failed:\(response.httpResponse?.statusCode ?? -1)")
         }
     }
 }
@@ -376,8 +364,7 @@ extension ApiRequest {
         do {
             let snapshot = try await req("/connections")
                 .validate()
-                .serializingDecodable(ClashConnectionBaseSnapShot.self)
-                .value
+                .responseDecodable(ClashConnectionBaseSnapShot.self)
             return snapshot.connections
         } catch {
             assertionFailure()
@@ -386,35 +373,31 @@ extension ApiRequest {
     }
 
     static func closeConnection(_ id: String) async {
-        _ = try? await req("/connections/\(id)", method: .DELETE)
-            .validate()
-            .serializingData()
-            .value
+            _ = try? await req("/connections/\(id)", method: .DELETE)
+                .validate()
+                .responseData
     }
 	
 	static func getConnectionsSnapshot() async -> DBConnectionSnapShot? {
 		do {
 			return try await req("/connections")
 				.validate()
-				.serializingDecodable(DBConnectionSnapShot.self)
-				.value
+				.responseDecodable(DBConnectionSnapShot.self)
 		} catch {
 			return nil
 		}
 	}
 
 	static func closeConnection(_ conn: ClashConnectionSnapShot.Connection) async {
-        _ = try? await req("/connections/".appending(conn.id), method: .DELETE)
-            .validate()
-            .serializingData()
-            .value
+            _ = try? await req("/connections/".appending(conn.id), method: .DELETE)
+                .validate()
+                .responseData
 	}
 
 	static func closeAllConnection() async {
-        _ = try? await req("/connections", method: .DELETE)
-            .validate()
-            .serializingData()
-            .value
+            _ = try? await req("/connections", method: .DELETE)
+                .validate()
+                .responseData
 	}
 }
 
@@ -457,9 +440,8 @@ extension ApiRequest {
         Logger.log("\(logTitle) \(name)")
 
         let response = await req("/providers/\(type.apiString())/\(name)", method: .PUT)
-            .serializingData()
             .response
-        let success = response.response?.statusCode == 204
+        let success = response.httpResponse?.statusCode == 204
 
         Logger.log("\(logTitle) \(name) \(success ? "success" : "failed")")
         return success
@@ -469,8 +451,7 @@ extension ApiRequest {
         do {
             return try await req("/providers/rules")
                 .validate()
-                .serializingDecodable(ClashRuleProviderResp.self)
-                .value
+                .responseDecodable(ClashRuleProviderResp.self)
         } catch {
             Logger.log("Get Rule providers error \(error.localizedDescription)")
             return ClashRuleProviderResp()
@@ -493,9 +474,8 @@ extension ApiRequest {
     static func updateGEO() async -> Bool {
         Logger.log("UpdateGEO")
         let response = await req("/configs/geo", method: .POST)
-            .serializingData()
             .response
-        let success = response.response?.statusCode == 204
+        let success = response.httpResponse?.statusCode == 204
         Logger.log("Updating GEO Databases...")
         return success
     }
@@ -510,8 +490,7 @@ extension ApiRequest {
                 encoding: .json
             )
             .validate()
-            .serializingData()
-            .value
+            .responseData
         } catch {
             Logger.log("update tun failed: \(error.localizedDescription)", level: .error)
         }
@@ -527,8 +506,7 @@ extension ApiRequest {
                 encoding: .json
             )
             .validate()
-            .serializingData()
-            .value
+            .responseData
         } catch {
             Logger.log("update sniffing failed: \(error.localizedDescription)", level: .error)
         }
@@ -544,11 +522,10 @@ extension ApiRequest {
     static func requestExternalProviderNames() async -> AllProviders {
         async let proxyNamesTask: [String] = {
             do {
-                let responseData = try await req("/providers/proxies")
+                let data = try await req("/providers/proxies")
                     .validate()
-                    .serializingData()
-                    .value
-                let json = JSON(responseData)
+                    .responseData
+                let json = JSON(data)
                 return json["providers"].dictionaryValue
                     .filter { $0.value["vehicleType"] == "HTTP" }
                     .map(\.key)
@@ -571,9 +548,8 @@ extension ApiRequest {
 
     static func resetFakeIpCache() async {
         let response = await req("/cache/fakeip/flush", method: .POST)
-            .serializingData()
             .response
-        Logger.log("flush fake ip: \(response.response?.statusCode ?? -1)")
+        Logger.log("flush fake ip: \(response.httpResponse?.statusCode ?? -1)")
     }
 }
 
@@ -614,16 +590,14 @@ extension ApiRequest {
 			do {
                 let requiresCoreRunning = type != .traffic
                 
-                let stream = await ApiRequest.req(uri, requiresCoreRunning: requiresCoreRunning).serializingStream().stream()
+				let stream = await ApiRequest.req(uri, requiresCoreRunning: requiresCoreRunning).stream
 				var didConnect = false
 				for try await line in stream {
 					if !didConnect {
 						didConnect = true
 						await self?.streamDidConnect(type)
 					}
-					if !line.isEmpty {
-						await self?.streamDidReceiveMessage(type, text: line)
-					}
+					await self?.streamDidReceiveMessage(type, text: line)
 				}
 				await self?.streamDidDisconnect(type, error: nil)
 			} catch {
@@ -640,14 +614,24 @@ extension ApiRequest {
 
 	@MainActor
 	private func scheduleRetry(for type: StreamType) {
+		guard !isTerminating else { return }
 		let delay = streamRetryDelays[type] ?? 1
 		cancelRetryTask(for: type)
 		streamRetryTasks[type] = Task { @MainActor [weak self] in
 			try? await Task.sleep(seconds: delay)
-			guard let self, !Task.isCancelled else { return }
+			guard let self, !Task.isCancelled, !self.isTerminating else { return }
 			self.startStream(for: type)
 		}
 		streamRetryDelays[type] = delay * 2
+	}
+
+	@MainActor
+	func prepareForTermination() {
+		isTerminating = true
+		streamTasks.values.forEach { $0.cancel() }
+		streamRetryTasks.values.forEach { $0.cancel() }
+		streamTasks.removeAll()
+		streamRetryTasks.removeAll()
 	}
 
 	// MARK: Notify Delegates
@@ -688,13 +672,15 @@ extension ApiRequest {
 	@MainActor
 	private func streamDidDisconnect(_ type: StreamType, error: Error?) async {
         streamTasks[type]?.cancel()
+
+        let shouldSilenceError = (error as? HTTPParserError) == .invalidEOFState
         
 		if type == .traffic {
 			ConfigManager.shared.isRunning = false
 			await notifyStreamStatusChanged()
 		}
         
-		if let err = error {
+		if let err = error, !shouldSilenceError {
 			Logger.log(err.localizedDescription, level: .error)
 		}
 
@@ -716,4 +702,3 @@ extension ApiRequest {
 		}
 	}
 }
-

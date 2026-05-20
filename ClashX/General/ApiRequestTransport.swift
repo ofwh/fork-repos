@@ -22,6 +22,8 @@ enum ApiRequestTransport {
     static var unixSocketPath: String?
     static let localRequestBaseURL = "http://localhost"
     static var requestTimeout: TimeAmount = .seconds(30)
+    private static let maxPendingStreamBytes = 1 * 1024 * 1024
+    private static let maxStreamLineBytes = 64 * 1024
     
     // Debug
     static var debugUseHttpApi: Bool = false
@@ -65,14 +67,32 @@ enum ApiRequestTransport {
             return Handle(backend: backend, shouldValidate: true)
         }
 
-        func serializingData() -> RequestDataTask { RequestDataTask(backend: backend, shouldValidate: shouldValidate) }
-
-        func serializingDecodable<T: Decodable>(_ type: T.Type, decoder: JSONDecoder = ApiRequestTransport.makeJSONDecoder()) -> RequestDecodableTask<T> {
-            RequestDecodableTask(backend: backend, shouldValidate: shouldValidate, decoder: decoder)
+        var response: DataResponse {
+            get async {
+                await ApiRequestTransport.makeDataResponse(backend: backend, shouldValidate: shouldValidate)
+            }
         }
 
-        func serializingStream() -> RequestStreamTask {
-            RequestStreamTask(backend: backend, shouldValidate: shouldValidate)
+        var responseData: Data {
+            get async throws {
+                let response = await ApiRequestTransport.makeDataResponse(backend: backend, shouldValidate: shouldValidate)
+                if let error = response.error {
+                    throw error
+                }
+                guard let data = response.data else {
+                    throw RequestError.invalidResponse
+                }
+                return data
+            }
+        }
+
+        func responseDecodable<T: Decodable>(_ type: T.Type, decoder: JSONDecoder = ApiRequestTransport.makeJSONDecoder()) async throws -> T {
+            let data = try await responseData
+            return try decoder.decode(T.self, from: data)
+        }
+
+        var stream: AsyncThrowingStream<String, Error> {
+            ApiRequestTransport.makeStream(backend: backend, shouldValidate: shouldValidate)
         }
     }
 
@@ -111,8 +131,7 @@ enum ApiRequestTransport {
         let isCoreRunning = await MainActor.run {
             ConfigManager.shared.isRunning
         }
-        
-        
+
         if requiresCoreRunning && !isCoreRunning {
             return Handle(backend: .failure(RequestError.coreNotRunning), shouldValidate: false)
         }
@@ -154,120 +173,107 @@ enum ApiRequestTransport {
     }
 
 
-    struct RequestDataTask {
-        let backend: RequestBackend
-        let shouldValidate: Bool
+    struct DataResponse {
+        let httpResponse: HTTPURLResponse?
+        let data: Data?
+        let error: Error?
+    }
 
-        var value: Data {
-            get async throws {
-                switch backend {
-                case .request(let request):
-                    let response = try await performClientRequest(request, shouldValidate: shouldValidate)
-                    return try await streamResponseToData(response)
-                case .failure(let error):
-                    throw error
+    private static func makeDataResponse(
+        backend: RequestBackend,
+        shouldValidate: Bool
+    ) async -> DataResponse {
+        switch backend {
+        case .request(let request):
+            do {
+                let httpResponse = try await performClientRequest(request, shouldValidate: shouldValidate)
+                let data = try await streamResponseToData(httpResponse)
+                let response = makeHTTPURLResponse(from: httpResponse, requestURL: request.url)
+                return DataResponse(httpResponse: response, data: data, error: nil)
+            } catch {
+                return DataResponse(httpResponse: nil, data: nil, error: error)
+            }
+        case .failure(let error):
+            return DataResponse(httpResponse: nil, data: nil, error: error)
+        }
+    }
+
+    private static func makeStream(
+        backend: RequestBackend,
+        shouldValidate: Bool
+    ) -> AsyncThrowingStream<String, Error> {
+        AsyncThrowingStream<String, Error>(bufferingPolicy: .bufferingNewest(256)) { continuation in
+            let innerTask = Task {
+                var bufferArray = [UInt8]()
+
+                func finishNormally() {
+                    if !bufferArray.isEmpty, bufferArray.count <= maxStreamLineBytes, let rawLine = String(bytes: bufferArray, encoding: .utf8) {
+                        continuation.yield(rawLine.trimmingCharacters(in: .newlines))
+                    }
+                    continuation.finish()
+                }
+
+                do {
+                    switch backend {
+                    case .failure(let error):
+                        throw error
+                    case .request(let request):
+                        let response = try await performClientRequest(request, shouldValidate: shouldValidate, timeout: .hours(24))
+
+                        for try await buffer in response.body {
+                            if Task.isCancelled {
+                                break
+                            }
+                            bufferArray.append(contentsOf: buffer.readableBytesView)
+                            if bufferArray.count > maxPendingStreamBytes {
+                                bufferArray.removeAll(keepingCapacity: true)
+                                continue
+                            }
+                            while let newlineIndex = bufferArray.firstIndex(of: 10 /* \n */) {
+                                let lineBytes = bufferArray[0..<newlineIndex]
+                                bufferArray.removeSubrange(0...newlineIndex)
+                                if lineBytes.count <= maxStreamLineBytes, let rawLine = String(bytes: lineBytes, encoding: .utf8) {
+                                    continuation.yield(rawLine.trimmingCharacters(in: .newlines))
+                                }
+                            }
+                        }
+
+                        if Task.isCancelled {
+                            continuation.finish()
+                            return
+                        }
+
+                        finishNormally()
+                    }
+                } catch {
+                    if (error is CancellationError) || ((error as NSError).domain == NSCocoaErrorDomain && (error as NSError).code == NSUserCancelledError) {
+                        continuation.finish()
+                    } else if Self.shouldIgnoreStreamEOFError(error) {
+                        finishNormally()
+                    } else {
+                        continuation.finish(throwing: error)
+                    }
                 }
             }
-        }
 
-        struct DataResponse {
-            let response: HTTPURLResponse?
-            let data: Data?
-            let error: Error?
-        }
-
-        var response: DataResponse {
-            get async {
-                switch backend {
-                case .request(let request):
-                    do {
-                        let resp = try await HTTPClient.shared.execute(request, timeout: requestTimeout)
-                        let data = try await streamResponseToData(resp)
-                        let httpURLResponse = makeHTTPURLResponse(from: resp, requestURL: request.url)
-                        return DataResponse(response: httpURLResponse, data: data, error: nil)
-                    } catch {
-                        return DataResponse(response: nil, data: nil, error: error)
-                    }
-                case .failure(let error):
-                    return DataResponse(response: nil, data: nil, error: error)
+            continuation.onTermination = {
+                switch $0 {
+                case .finished:
+                    break
+                default:
+                    innerTask.cancel()
                 }
             }
         }
     }
 
-    struct RequestStreamTask {
-        let backend: RequestBackend
-        let shouldValidate: Bool
-
-        func stream() -> AsyncThrowingStream<String, Error> {
-            AsyncThrowingStream { continuation in
-                let innerTask = Task {
-                    do {
-                        switch backend {
-                        case .failure(let error):
-                            throw error
-                        case .request(let request):
-                            let response = try await performClientRequest(request, shouldValidate: shouldValidate, timeout: .hours(24))
-
-                            continuation.yield("")
-                            var bufferArray = [UInt8]()
-
-                            for try await buffer in response.body {
-                                if Task.isCancelled {
-                                    break
-                                }
-                                bufferArray.append(contentsOf: buffer.readableBytesView)
-                                while let newlineIndex = bufferArray.firstIndex(of: 10 /* \n */) {
-                                    let lineBytes = bufferArray[0..<newlineIndex]
-                                    bufferArray.removeSubrange(0...newlineIndex)
-                                    if !lineBytes.isEmpty, let line = String(bytes: lineBytes, encoding: .utf8) {
-                                        continuation.yield(line)
-                                    }
-                                }
-                            }
-
-                            if !bufferArray.isEmpty, let line = String(bytes: bufferArray, encoding: .utf8) {
-                                continuation.yield(line)
-                            }
-                            continuation.finish()
-                        }
-                    } catch {
-                        if (error is CancellationError) || ( (error as NSError).domain == NSCocoaErrorDomain && (error as NSError).code == NSUserCancelledError ) {
-                            continuation.finish()
-                        } else {
-                            continuation.finish(throwing: error)
-                        }
-                    }
-                }
-                
-                continuation.onTermination = {
-                    switch $0 {
-                    case .finished:
-                        break
-                    default:
-                        innerTask.cancel()
-                    }
-                }
-            }
-        }
-    }
-
-    struct RequestDecodableTask<T: Decodable> {
-        let backend: RequestBackend
-        let shouldValidate: Bool
-        let decoder: JSONDecoder
-
-        var value: T {
-            get async throws {
-                switch backend {
-                case .request(let request):
-                    let response = try await performClientRequest(request, shouldValidate: shouldValidate)
-                    let data = try await streamResponseToData(response)
-                    return try decoder.decode(T.self, from: data)
-                case .failure(let error):
-                    throw error
-                }
-            }
+    private static func shouldIgnoreStreamEOFError(_ error: Error) -> Bool {
+        guard let parserError = error as? HTTPParserError else { return false }
+        switch parserError {
+        case .invalidEOFState:
+            return true
+        default:
+            return false
         }
     }
 
