@@ -108,8 +108,7 @@ class MetaPrefsViewController: NSViewController {
 					UserNotificationCenter.shared.postNotificationAlert(title: "Clash Meta Core", info: msg)
 				}
 			} catch {
-				let error = error as? AlphaMetaDownloader.errors
-				UserNotificationCenter.shared.postNotificationAlert(title: "Clash Meta Core", info: error?.des() ?? "")
+				UserNotificationCenter.shared.postNotificationAlert(title: "Clash Meta Core", info: error.localizedDescription)
 			}
 			
 			await MainActor.run {
