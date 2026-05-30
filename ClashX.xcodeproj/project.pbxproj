@@ -19,6 +19,8 @@
 		013B220E2F88A219009B30CB /* AsyncHTTPClient in Frameworks */ = {isa = PBXBuildFile; productRef = 013B220D2F88A219009B30CB /* AsyncHTTPClient */; };
 		0162E74F2864B819007218A6 /* MetaTask.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0162E74E2864B819007218A6 /* MetaTask.swift */; };
 		0190155C2FC7EB7000EB077C /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = 0190155B2FC7EB7000EB077C /* Localizable.xcstrings */; };
+		019015602FCA938C00EB077C /* MetaPrefs.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 0190155F2FCA938C00EB077C /* MetaPrefs.storyboard */; };
+		019015642FCAA8BC00EB077C /* RemoteConfigAddView.xib in Resources */ = {isa = PBXBuildFile; fileRef = 019015632FCAA8BC00EB077C /* RemoteConfigAddView.xib */; };
 		0197255A2CA15D6400C14E49 /* UserNotificationCenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 019725592CA15D6400C14E49 /* UserNotificationCenter.swift */; };
 		0197255C2CA15FC600C14E49 /* NSWorkspace+openFile.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0197255B2CA15FC600C14E49 /* NSWorkspace+openFile.swift */; };
 		019A239628657A7A00AE5698 /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = 019A239528657A7A00AE5698 /* main.swift */; };
@@ -67,7 +69,6 @@
 		01BCDB212C9EEE260028FA94 /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = 01BCDB202C9EEE260028FA94 /* Sparkle */; };
 		01CA6BC12B6A1B3100E386D6 /* MetaServer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 01CA6BBF2B6A1B3100E386D6 /* MetaServer.swift */; };
 		01CA6BC22B6A1B3100E386D6 /* MetaServer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 01CA6BBF2B6A1B3100E386D6 /* MetaServer.swift */; };
-		01D567E42AD158B600CDA0AE /* MetaPrefs.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 01D567E12AD158B500CDA0AE /* MetaPrefs.storyboard */; };
 		01D567E62AD158B600CDA0AE /* MetaPrefsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 01D567E22AD158B500CDA0AE /* MetaPrefsViewController.swift */; };
 		01EF33602B98D03B00D1DBD9 /* ProxyConfigHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 01EF335F2B98D03B00D1DBD9 /* ProxyConfigHelper.swift */; };
 		01EF33622B98D3A700D1DBD9 /* ProxyConfigRemoteProcessProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = 01EF33612B98D3A700D1DBD9 /* ProxyConfigRemoteProcessProtocol.swift */; };
@@ -177,7 +178,6 @@
 		01F336382AD10D0B0048AF77 /* StatusItemView.xib in Resources */ = {isa = PBXBuildFile; fileRef = 495340AF20DE5F7200B0D3FF /* StatusItemView.xib */; };
 		01F336392AD10D0B0048AF77 /* geoip.dat.gz in Resources */ = {isa = PBXBuildFile; fileRef = 01B009AC2854533200B93618 /* geoip.dat.gz */; };
 		01F3363A2AD10D0B0048AF77 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 49CF3B2620CD7465001EBF94 /* Main.storyboard */; };
-		01F3363B2AD10D0B0048AF77 /* RemoteConfigAddView.xib in Resources */ = {isa = PBXBuildFile; fileRef = 499A485922ED781100F6C675 /* RemoteConfigAddView.xib */; };
 		01F3363C2AD10D0B0048AF77 /* sampleConfig.yaml in Resources */ = {isa = PBXBuildFile; fileRef = 4989F98D20D0AE990001E564 /* sampleConfig.yaml */; };
 		01F3363D2AD10D0B0048AF77 /* com.metacubex.ClashX.ProxyConfigHelper.meta.gz in Resources */ = {isa = PBXBuildFile; fileRef = 01C1462928962E4E00346AF3 /* com.metacubex.ClashX.ProxyConfigHelper.meta.gz */; };
 		01F3363E2AD10D0B0048AF77 /* country.mmdb.gz in Resources */ = {isa = PBXBuildFile; fileRef = 01B2274A29B845F100FE35C9 /* country.mmdb.gz */; };
@@ -233,6 +233,10 @@
 		018F88F8286DD0CB004DD0F7 /* DualTitleMenuItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DualTitleMenuItem.swift; sourceTree = "<group>"; };
 		0190155B2FC7EB7000EB077C /* Localizable.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = Localizable.xcstrings; sourceTree = "<group>"; };
 		0190155D2FC7EB7000EB077C /* mul */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; name = mul; path = mul.lproj/Main.xcstrings; sourceTree = "<group>"; };
+		0190155E2FCA938C00EB077C /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/MetaPrefs.storyboard; sourceTree = "<group>"; };
+		019015612FCA938C00EB077C /* mul */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; name = mul; path = mul.lproj/MetaPrefs.xcstrings; sourceTree = "<group>"; };
+		019015622FCAA8BC00EB077C /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = Base; path = Base.lproj/RemoteConfigAddView.xib; sourceTree = "<group>"; };
+		019015652FCAA8BC00EB077C /* mul */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; name = mul; path = mul.lproj/RemoteConfigAddView.xcstrings; sourceTree = "<group>"; };
 		01943258287D19BC008CC51A /* ClashRuleProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClashRuleProvider.swift; sourceTree = "<group>"; };
 		019725592CA15D6400C14E49 /* UserNotificationCenter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserNotificationCenter.swift; sourceTree = "<group>"; };
 		0197255B2CA15FC600C14E49 /* NSWorkspace+openFile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "NSWorkspace+openFile.swift"; sourceTree = "<group>"; };
@@ -284,7 +288,6 @@
 		01BCDB1C2C9EE2CF0028FA94 /* ProgressButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgressButton.swift; sourceTree = "<group>"; };
 		01C1462928962E4E00346AF3 /* com.metacubex.ClashX.ProxyConfigHelper.meta.gz */ = {isa = PBXFileReference; lastKnownFileType = archive.gzip; path = com.metacubex.ClashX.ProxyConfigHelper.meta.gz; sourceTree = "<group>"; };
 		01CA6BBF2B6A1B3100E386D6 /* MetaServer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MetaServer.swift; sourceTree = "<group>"; };
-		01D567E12AD158B500CDA0AE /* MetaPrefs.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; path = MetaPrefs.storyboard; sourceTree = "<group>"; };
 		01D567E22AD158B500CDA0AE /* MetaPrefsViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MetaPrefsViewController.swift; sourceTree = "<group>"; };
 		01E33AB129B5BF4200FD1006 /* NSColor+Extension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "NSColor+Extension.swift"; sourceTree = "<group>"; };
 		01E33AB429B5C5E300FD1006 /* menu_icon@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "menu_icon@2x.png"; sourceTree = "<group>"; };
@@ -337,7 +340,6 @@
 		499976C721359F0400E7BF83 /* ClashWebViewContoller.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClashWebViewContoller.swift; sourceTree = "<group>"; };
 		499A485322ED707300F6C675 /* RemoteConfigViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemoteConfigViewController.swift; sourceTree = "<group>"; };
 		499A485722ED715200F6C675 /* RemoteConfigModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemoteConfigModel.swift; sourceTree = "<group>"; };
-		499A485922ED781100F6C675 /* RemoteConfigAddView.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = RemoteConfigAddView.xib; sourceTree = "<group>"; };
 		499A485B22ED793C00F6C675 /* NSView+Nib.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "NSView+Nib.swift"; sourceTree = "<group>"; };
 		499A485D22ED9B7C00F6C675 /* NSTableView+Reload.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "NSTableView+Reload.swift"; sourceTree = "<group>"; };
 		499A486422EEA3FC00F6C675 /* Array+Safe.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "Array+Safe.swift"; sourceTree = "<group>"; };
@@ -672,7 +674,7 @@
 				49D176A8235614340093DD7B /* ProxyGroupSpeedTestMenuItem.swift */,
 				F92D0B2D236D35C000575E15 /* ProxyItemView.swift */,
 				493AEAE4221AE7230016FE98 /* ProxyMenuItem.swift */,
-				499A485922ED781100F6C675 /* RemoteConfigAddView.xib */,
+				019015632FCAA8BC00EB077C /* RemoteConfigAddView.xib */,
 				F910AA23240134AF00116E95 /* ProxyGroupMenu.swift */,
 				493A9F272453E60400D35296 /* ProxyDelayHistoryMenu.swift */,
 				49228456270AADE20027A4B6 /* RemoteConfigUpdateIntervalSettingView.swift */,
@@ -749,7 +751,7 @@
 				498BC2542929CCAE00CA8084 /* GeneralSettingViewController.swift */,
 				49281C7F2A1F01FA00F60935 /* DebugSettingViewController.swift */,
 				4905A2C42A2058B000AEDA2E /* GlobalShortCutViewController.swift */,
-				01D567E12AD158B500CDA0AE /* MetaPrefs.storyboard */,
+				0190155F2FCA938C00EB077C /* MetaPrefs.storyboard */,
 				01D567E22AD158B500CDA0AE /* MetaPrefsViewController.swift */,
 			);
 			path = Settings;
@@ -997,14 +999,14 @@
 				013B22022F7FEA2D009B30CB /* Dashboard.storyboard in Resources */,
 				01F336332AD10D0B0048AF77 /* dashboard in Resources */,
 				01F336352AD10D0B0048AF77 /* ProxySetting.sdef in Resources */,
-				01D567E42AD158B600CDA0AE /* MetaPrefs.storyboard in Resources */,
+				019015602FCA938C00EB077C /* MetaPrefs.storyboard in Resources */,
 				01F336362AD10D0B0048AF77 /* Images.xcassets in Resources */,
 				01F336372AD10D0B0048AF77 /* menu_icon@2x.png in Resources */,
 				01F336382AD10D0B0048AF77 /* StatusItemView.xib in Resources */,
 				01F336392AD10D0B0048AF77 /* geoip.dat.gz in Resources */,
 				0190155C2FC7EB7000EB077C /* Localizable.xcstrings in Resources */,
 				01F3363A2AD10D0B0048AF77 /* Main.storyboard in Resources */,
-				01F3363B2AD10D0B0048AF77 /* RemoteConfigAddView.xib in Resources */,
+				019015642FCAA8BC00EB077C /* RemoteConfigAddView.xib in Resources */,
 				01F3363C2AD10D0B0048AF77 /* sampleConfig.yaml in Resources */,
 				01F3363D2AD10D0B0048AF77 /* com.metacubex.ClashX.ProxyConfigHelper.meta.gz in Resources */,
 				01F3363E2AD10D0B0048AF77 /* country.mmdb.gz in Resources */,
@@ -1187,6 +1189,24 @@
 /* End PBXTargetDependency section */
 
 /* Begin PBXVariantGroup section */
+		0190155F2FCA938C00EB077C /* MetaPrefs.storyboard */ = {
+			isa = PBXVariantGroup;
+			children = (
+				0190155E2FCA938C00EB077C /* Base */,
+				019015612FCA938C00EB077C /* mul */,
+			);
+			name = MetaPrefs.storyboard;
+			sourceTree = "<group>";
+		};
+		019015632FCAA8BC00EB077C /* RemoteConfigAddView.xib */ = {
+			isa = PBXVariantGroup;
+			children = (
+				019015622FCAA8BC00EB077C /* Base */,
+				019015652FCAA8BC00EB077C /* mul */,
+			);
+			name = RemoteConfigAddView.xib;
+			sourceTree = "<group>";
+		};
 		49CF3B2620CD7465001EBF94 /* Main.storyboard */ = {
 			isa = PBXVariantGroup;
 			children = (

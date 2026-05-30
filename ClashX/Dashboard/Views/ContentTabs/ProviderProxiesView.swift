@@ -80,23 +80,23 @@ struct ProviderProxiesView: View {
 	
 	var buttonsView: some View {
 		VStack {
-			ProgressButton(
-				title: "Health Check",
-				title2: "Testing",
-				iconName: "bolt.fill",
-				inProgress: $isTesting,
-				autoWidth: false) {
+					ProgressButton(
+						title: "Health Check",
+						title2: "Testing",
+						iconName: "bolt.fill",
+						inProgress: $isTesting,
+						autoWidth: false) {
 					Task {
 						await startHealthCheck()
 					}
 				}
 			
-			ProgressButton(
-				title: "Update",
-				title2: "Updating",
-				iconName: "arrow.clockwise",
-				inProgress: $isUpdating,
-				autoWidth: false) {
+					ProgressButton(
+						title: "Update",
+						title2: "Updating",
+						iconName: "arrow.clockwise",
+						inProgress: $isUpdating,
+						autoWidth: false) {
 					Task {
 						await startUpdate()
 					}

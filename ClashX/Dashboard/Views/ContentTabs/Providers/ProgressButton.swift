@@ -36,7 +36,7 @@ struct ProgressButton: View {
 				if title != "" {
 					Spacer()
 					
-					Text(inProgress ? title2 : title)
+					Text(LocalizedStringKey(inProgress ? title2 : title))
 						.font(.system(size: 13))
 					
 					Spacer()

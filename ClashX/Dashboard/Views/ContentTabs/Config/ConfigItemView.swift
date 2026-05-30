@@ -8,7 +8,7 @@ import SwiftUI
 
 struct ConfigItemView<Content: View>: View {
 	
-	@State var name: String
+	let name: LocalizedStringKey
 	var content: () -> Content
 	
 	var body: some View {

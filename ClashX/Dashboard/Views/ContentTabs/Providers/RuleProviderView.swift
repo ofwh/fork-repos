@@ -23,8 +23,8 @@ struct RuleProviderView: View {
 			}
 			
 			HStack {
-				Text("\(provider.ruleCount) rules")
-                Text("Updated \(RelativeDateTimeFormatter().localizedString(for: provider.updatedAt, relativeTo: Date()))")
+				Text(String(format: NSLocalizedString("%lld rules", comment: ""), provider.ruleCount))
+				Text(String(format: NSLocalizedString("Updated %@", comment: ""), RelativeDateTimeFormatter().localizedString(for: provider.updatedAt, relativeTo: Date())))
 				Spacer()
 			}
 			.font(.system(size: 12))

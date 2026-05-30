@@ -32,7 +32,7 @@ struct RuleItemView: View {
 						Text(rule.type)
 							.foregroundColor(.secondary)
 						if rule.size > 0 {
-							Text("size: \(rule.size)")
+							Text(String(format: NSLocalizedString("size: %lld", comment: ""), rule.size))
 								.font(.system(size: 12))
 								.foregroundColor(.secondary)
 
@@ -64,4 +64,3 @@ struct RulesRowView_Previews: PreviewProvider {
 		RuleItemView(index: 114, rule: .init(type: "DIRECT", payload: "cn", proxy: "GeoSite"))
     }
 }
-

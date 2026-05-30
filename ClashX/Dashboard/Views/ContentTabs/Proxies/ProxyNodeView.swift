@@ -44,7 +44,7 @@ struct ProxyNodeView: View {
 			Spacer(minLength: 6)
 				.show(isVisible: !isBuiltInProxy)
 			HStack(alignment: .center) {
-                Text(proxy.type.rawString)
+				Text(verbatim: proxy.type.rawString)
 					.foregroundColor(.secondary)
 					.font(.system(size: 12))
 				
@@ -56,9 +56,9 @@ struct ProxyNodeView: View {
 					.foregroundColor(proxy.delayColor)
 					.font(.system(size: 11))
 			}
-			.show(isVisible: !isBuiltInProxy)
-		}
-		.onHover {
+		.show(isVisible: !isBuiltInProxy)
+	}
+	.onHover {
 			guard selectable else { return }
 			mouseOver = $0
 		}
