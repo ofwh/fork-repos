@@ -33,7 +33,7 @@ struct ProviderRowView: View {
 			}
 
 			HStack {
-				Text(proxyProvider.vehicleType.rawValue)
+				Text(verbatim: proxyProvider.vehicleType.rawValue)
 				Spacer()
 				Text(proxyProvider.updatedAt)
 			}

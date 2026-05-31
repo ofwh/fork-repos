@@ -42,7 +42,7 @@ struct LogsTableView<Item: Hashable>: NSViewRepresentable {
 		
 		TableColumn.allCases.forEach {
 			let tableColumn = NSTableColumn(identifier: .init("LogsTableView." + $0.rawValue))
-			tableColumn.title = $0.rawValue
+			tableColumn.title = NSLocalizedString($0.rawValue, comment: "")
 			tableColumn.isEditable = false
 			
 			switch $0 {

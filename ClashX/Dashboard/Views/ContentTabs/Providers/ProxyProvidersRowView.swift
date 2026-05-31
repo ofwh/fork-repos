@@ -44,10 +44,10 @@ struct ProxyProvidersRowView: View {
 					listView
 				}
 			} header: {
-				ProgressButton(
-					title: "Update All",
-					title2: "Updating",
-					iconName: "arrow.clockwise", inProgress: $isUpdating) {
+			ProgressButton(
+				title: "Update All",
+				title2: "Updating",
+				iconName: "arrow.clockwise", inProgress: $isUpdating) {
 						Task {
 							await updateAll()
 						}

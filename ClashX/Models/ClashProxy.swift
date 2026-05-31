@@ -44,7 +44,7 @@ enum ClashProxyType: Codable, Equatable {
             }?.key ?? "Unknown"
         }
     }
-    
+
     init(rawString: String) {
         let type = ClashProxyType.standardTypes.first {
             $0.key.caseInsensitiveCompare(rawString) == .orderedSame

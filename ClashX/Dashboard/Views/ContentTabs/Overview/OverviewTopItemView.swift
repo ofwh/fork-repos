@@ -8,7 +8,7 @@ import SwiftUI
 
 struct OverviewTopItemView: View {
 	
-	let name: String
+	let name: LocalizedStringKey
 	let value: String
 	
     var body: some View {
@@ -29,7 +29,7 @@ struct OverviewTopItemView: View {
     }
 }
 
-struct OverviewTopItemView_Previews: PreviewProvider {
+	struct OverviewTopItemView_Previews: PreviewProvider {
 	static var previews: some View {
 		OverviewTopItemView(name: "Name", value: "Value")
     }

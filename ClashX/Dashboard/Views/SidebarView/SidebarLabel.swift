@@ -11,7 +11,7 @@ struct SidebarLabel: View {
 	
     var body: some View {
 		Label {
-			Text(item.rawValue)
+			Text(LocalizedStringKey(item.rawValue))
 		} icon: {
             Image(systemName: item.icon)
 				.foregroundColor(.accentColor)

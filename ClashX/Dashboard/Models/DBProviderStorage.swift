@@ -49,16 +49,16 @@ class DBProxyProvider: ObservableObject, Identifiable {
 			
 			let expire = info.expire
 			if expire == 0 {
-				expireDate = "Expire: none"
+				expireDate = String(format: NSLocalizedString("Expire: %@", comment: ""), NSLocalizedString("none", comment: ""))
 			} else {
 				let eDate = Date(timeIntervalSince1970: TimeInterval(expire))
 				if #available(macOS 12.0, *) {
-					expireDate = "Expire: " + eDate.formatted()
+					expireDate = String(format: NSLocalizedString("Expire: %@", comment: ""), eDate.formatted())
 				} else {
 					let dateFormatter = DateFormatter()
 					dateFormatter.dateStyle = .short
 					dateFormatter.timeStyle = .short
-					expireDate = "Expire: " + dateFormatter.string(from: eDate)
+					expireDate = String(format: NSLocalizedString("Expire: %@", comment: ""), dateFormatter.string(from: eDate))
 				}
 			}
 			

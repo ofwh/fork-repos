@@ -21,7 +21,7 @@ struct ConnectionsTableView<Item: Hashable>: NSViewRepresentable {
 		case time = "Time"
 		case source = "Source"
 		case destinationIP = "Destination IP"
-		case type = "Type"
+		case type = "Connection Type"
 	}
 	
 	
@@ -64,7 +64,7 @@ struct ConnectionsTableView<Item: Hashable>: NSViewRepresentable {
 		
 		TableColumn.allCases.forEach {
 			let tableColumn = NSTableColumn(identifier: .init("ConnectionsTableView." + $0.rawValue))
-			tableColumn.title = $0.rawValue
+			tableColumn.title = NSLocalizedString($0.rawValue, comment: "")
 			tableColumn.isEditable = false
 			
 			tableColumn.minWidth = 50
@@ -107,7 +107,7 @@ struct ConnectionsTableView<Item: Hashable>: NSViewRepresentable {
 			tableColumn.sortDescriptorPrototype = sort
 			
 			let item = NSMenuItem(
-				title: $0.rawValue,
+				title: NSLocalizedString($0.rawValue, comment: ""),
 				action: #selector(context.coordinator.toggleColumn(_:)),
 				keyEquivalent: "")
 			item.target = context.coordinator

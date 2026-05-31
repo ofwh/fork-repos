@@ -1,0 +1,54 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "QhQ-wR-TSQ.title" : {
+      "comment" : "Class = \"NSTextFieldCell\"; title = \"Url:\"; ObjectID = \"QhQ-wR-TSQ\";",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Url:"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "链接："
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "連結："
+          }
+        }
+      }
+    },
+    "rjt-gw-VUT.title" : {
+      "comment" : "Class = \"NSTextFieldCell\"; title = \"Config Name:\"; ObjectID = \"rjt-gw-VUT\";",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Config Name:"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "配置名称："
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "設定名稱："
+          }
+        }
+      }
+    }
+  },
+  "version" : "1.2"
+}
