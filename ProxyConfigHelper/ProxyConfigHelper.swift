@@ -125,6 +125,10 @@ private extension ProxyConfigHelper {
 			return ProxyConfigHelperExplicitSuccess()
 		}
 
+		store.register(ProxyConfigHelperMessages.TerminateExistingMeta.self) { [unowned self] _ in
+			return await terminateExistingMeta()
+		}
+
 		store.register(ProxyConfigHelperMessages.UpdateTun.self) { [unowned self] message in
 			await updateTun(message)
 			return ProxyConfigHelperExplicitSuccess()
@@ -203,8 +207,11 @@ private extension ProxyConfigHelper {
 	}
 
 	@MainActor
-	func startMeta(_ message: ProxyConfigHelperMessages.StartMeta) async -> String? {
-		await metaTask.start(message.path,
+    func startMeta(_ message: ProxyConfigHelperMessages.StartMeta) async -> String? {
+        if await terminateExistingMeta() {
+            try? await Task.sleep(seconds: 1)
+        }
+		return await metaTask.start(message.path,
 		                     confPath: message.confPath,
 		                     confFilePath: message.confFilePath,
 		                     confJSON: message.confJSON)
@@ -213,6 +220,11 @@ private extension ProxyConfigHelper {
 	@MainActor
 	func stopMeta() async {
 		await metaTask.stop()
+	}
+
+	@MainActor
+	func terminateExistingMeta() async -> Bool {
+		return await metaTask.terminateExistingMeta()
 	}
 
 	@MainActor

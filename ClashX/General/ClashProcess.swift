@@ -138,6 +138,10 @@ actor ClashProcess {
 		do {
 			try await checkHelperVersion()
 			coreState = .preparingConfig
+            if try await PrivilegedHelperManager.shared.request(ProxyConfigHelperMessages.TerminateExistingMeta()) {
+                try? await Task.sleep(seconds: 1)
+            }
+            
 			await MainActor.run {
 				ConfigManager.shared.kernelState = .preparingConfig
 			}

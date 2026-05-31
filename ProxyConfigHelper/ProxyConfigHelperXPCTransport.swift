@@ -148,6 +148,11 @@ enum ProxyConfigHelperMessages {
 		typealias Response = ProxyConfigHelperExplicitSuccess
 	}
 
+	struct TerminateExistingMeta: ProxyConfigHelperXPCMessage {
+		static let kind = "terminateExistingMeta"
+		typealias Response = Bool
+	}
+
 	struct UpdateTun: ProxyConfigHelperXPCMessage {
 		static let kind = "updateTun"
 		typealias Response = ProxyConfigHelperExplicitSuccess

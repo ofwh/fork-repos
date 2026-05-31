@@ -116,10 +116,8 @@ class MetaTask: NSObject {
             ])
         }
         
-        await killOldProc()
-        
-        guard let confData = confJSON.data(using: .utf8),
-              let serverResult = try? JSONDecoder().decode(MetaServer.self, from: confData) else {
+		guard let confData = confJSON.data(using: .utf8),
+		      let serverResult = try? JSONDecoder().decode(MetaServer.self, from: confData) else {
             throw StartError.invalidConfig
         }
         
@@ -330,9 +328,11 @@ class MetaTask: NSObject {
 	}
     
 
-    
-    func killOldProc() async {
-		await Command(cmd: "/usr/bin/killall", args: ["com.metacubex.ClashX.ProxyConfigHelper.meta"]).run()
+    @discardableResult
+    func terminateExistingMeta() async -> Bool {
+		let pids = await Command(cmd: "/usr/bin/pgrep", args: ["-x", "com.metacubex.ClashX.ProxyConfigHelper.meta"]).run()
+        _ = await Command(cmd: "/usr/bin/killall", args: ["com.metacubex.ClashX.ProxyConfigHelper.meta"]).run()
+        return !pids.isEmpty
     }
     
 	func getUsedPorts() async -> String? {
