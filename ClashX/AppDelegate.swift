@@ -59,6 +59,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     var statusItemView: StatusItemViewProtocol!
 
     let clashProcess = ClashProcess()
+    let clashStatusTool = ClashStatusTool()
 
     func applicationWillFinishLaunching(_ notification: Notification) {
         Logger.log("applicationWillFinishLaunching")
@@ -286,7 +287,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
                 if RemoteControlManager.selectConfig == nil {
                     Task {
-                        await ClashStatusTool.checkPortConfig(cfg: config)
+                        await self.clashStatusTool.checkPortConfig(cfg: config)
                     }
                 }
 

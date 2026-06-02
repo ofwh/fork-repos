@@ -8,13 +8,24 @@
 
 import Cocoa
 
-class ClashStatusTool {
+actor ClashStatusTool {
+    @MainActor private var lastPortWasZero: Date?
+
     @MainActor
-    static func checkPortConfig(cfg: ClashConfig?) {
-        guard ConfigManager.shared.kernelState.isOperational else { return }
-        guard let cfg = cfg else { return }
-        if cfg.usedHttpPort == 0 {
-            Logger.log("checkPortConfig: \(cfg.mixedPort) ", level: .error)
+    func checkPortConfig(cfg: ClashConfig?) async {
+        guard let cfg,
+              ConfigManager.shared.kernelState.isOperational else {
+            lastPortWasZero = nil
+            return
+        }
+        Logger.log("mixedPort: \(cfg.mixedPort) ", level: .info)
+        
+        guard cfg.usedHttpPort == 0 else {
+            lastPortWasZero = nil
+            return
+        }
+        
+        if let time = lastPortWasZero?.timeIntervalSinceNow, time < -1 {
             let alert = NSAlert()
             alert.messageText = NSLocalizedString("ClashX Start Error!", comment: "")
             alert.informativeText = NSLocalizedString("Ports Open Fail, Please try to restart ClashX", comment: "")
@@ -25,6 +36,12 @@ class ClashStatusTool {
                 NSWorkspace.shared.openFilePath(Paths.localConfigPath(for: "config"))
             }
             NSApp.terminate(nil)
+        } else if lastPortWasZero == nil {
+            Logger.log("resync Config", level: .error)
+            
+            lastPortWasZero = Date()
+            try? await Task.sleep(seconds: 1)
+            await ConfigReloadManager.shared.syncConfig()
         }
     }
 }
