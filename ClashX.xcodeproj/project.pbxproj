@@ -8,6 +8,8 @@
 
 /* Begin PBXBuildFile section */
 		0106179F2AF38EFA005C7877 /* Command.swift in Sources */ = {isa = PBXBuildFile; fileRef = 49FEC6682AD9369C00BAD9F5 /* Command.swift */; };
+		01110D9F2FD51EF60015D815 /* meta-rules-dat in Resources */ = {isa = PBXBuildFile; fileRef = 01110D9D2FD51EF60015D815 /* meta-rules-dat */; };
+		01110DA02FD51EF60015D815 /* dashboard in Resources */ = {isa = PBXBuildFile; fileRef = 01110D9E2FD51EF60015D815 /* dashboard */; };
 		0112DEAA2F8B84E50019410B /* HTTPClientResponse+.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0112DEA92F8B84E50019410B /* HTTPClientResponse+.swift */; };
 		0114F0CF2E5B60CB007C7AAC /* LogRateLimiter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0114F0CE2E5B60CB007C7AAC /* LogRateLimiter.swift */; };
 		013B21FB2F7E95E0009B30CB /* DGCharts in Frameworks */ = {isa = PBXBuildFile; productRef = 013B21FA2F7E95E0009B30CB /* DGCharts */; };
@@ -170,17 +172,13 @@
 		01F3362E2AD10D0B0048AF77 /* RxCocoa in Frameworks */ = {isa = PBXBuildFile; productRef = 01F335BA2AD10D0B0048AF77 /* RxCocoa */; };
 		01F3362F2AD10D0B0048AF77 /* FlexibleDiff in Frameworks */ = {isa = PBXBuildFile; productRef = 01F335C42AD10D0B0048AF77 /* FlexibleDiff */; };
 		01F336302AD10D0B0048AF77 /* libresolv.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = 4908087A29F8F3FF007A4944 /* libresolv.tbd */; };
-		01F336322AD10D0B0048AF77 /* geosite.dat.gz in Resources */ = {isa = PBXBuildFile; fileRef = 01B009AD2854533300B93618 /* geosite.dat.gz */; };
-		01F336332AD10D0B0048AF77 /* dashboard in Resources */ = {isa = PBXBuildFile; fileRef = 49761DA621C9497000AE13EF /* dashboard */; };
 		01F336352AD10D0B0048AF77 /* ProxySetting.sdef in Resources */ = {isa = PBXBuildFile; fileRef = 8A2BBEA627A03ACB0081EBEF /* ProxySetting.sdef */; };
 		01F336362AD10D0B0048AF77 /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = F9FAB31D262BE04800DE02A6 /* Images.xcassets */; };
 		01F336372AD10D0B0048AF77 /* menu_icon@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 01E33AB429B5C5E300FD1006 /* menu_icon@2x.png */; };
 		01F336382AD10D0B0048AF77 /* StatusItemView.xib in Resources */ = {isa = PBXBuildFile; fileRef = 495340AF20DE5F7200B0D3FF /* StatusItemView.xib */; };
-		01F336392AD10D0B0048AF77 /* geoip.dat.gz in Resources */ = {isa = PBXBuildFile; fileRef = 01B009AC2854533200B93618 /* geoip.dat.gz */; };
 		01F3363A2AD10D0B0048AF77 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 49CF3B2620CD7465001EBF94 /* Main.storyboard */; };
 		01F3363C2AD10D0B0048AF77 /* sampleConfig.yaml in Resources */ = {isa = PBXBuildFile; fileRef = 4989F98D20D0AE990001E564 /* sampleConfig.yaml */; };
 		01F3363D2AD10D0B0048AF77 /* com.metacubex.ClashX.ProxyConfigHelper.meta.gz in Resources */ = {isa = PBXBuildFile; fileRef = 01C1462928962E4E00346AF3 /* com.metacubex.ClashX.ProxyConfigHelper.meta.gz */; };
-		01F3363E2AD10D0B0048AF77 /* country.mmdb.gz in Resources */ = {isa = PBXBuildFile; fileRef = 01B2274A29B845F100FE35C9 /* country.mmdb.gz */; };
 		01F336402AD10D0B0048AF77 /* com.metacubex.ClashX.ProxyConfigHelper in Copy Files */ = {isa = PBXBuildFile; fileRef = F9A7C0692306E874007163C7 /* com.metacubex.ClashX.ProxyConfigHelper */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		01FBC6312B9C2B0800810BFF /* ClashProcess.swift in Sources */ = {isa = PBXBuildFile; fileRef = 01FBC62F2B9C2B0800810BFF /* ClashProcess.swift */; };
 		A15E90012E5C9A1100C0FFEE /* Task+Sleep.swift in Sources */ = {isa = PBXBuildFile; fileRef = A15E90002E5C9A1100C0FFEE /* Task+Sleep.swift */; };
@@ -222,6 +220,8 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		01110D9D2FD51EF60015D815 /* meta-rules-dat */ = {isa = PBXFileReference; lastKnownFileType = folder; path = "meta-rules-dat"; sourceTree = "<group>"; };
+		01110D9E2FD51EF60015D815 /* dashboard */ = {isa = PBXFileReference; lastKnownFileType = folder; path = dashboard; sourceTree = "<group>"; };
 		0112DEA92F8B84E50019410B /* HTTPClientResponse+.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "HTTPClientResponse+.swift"; sourceTree = "<group>"; };
 		0114F0CE2E5B60CB007C7AAC /* LogRateLimiter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LogRateLimiter.swift; sourceTree = "<group>"; };
 		013B21FC2F7EC4F9009B30CB /* ProxyConfigHelperXPCTransport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProxyConfigHelperXPCTransport.swift; sourceTree = "<group>"; };
@@ -241,10 +241,7 @@
 		019725592CA15D6400C14E49 /* UserNotificationCenter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserNotificationCenter.swift; sourceTree = "<group>"; };
 		0197255B2CA15FC600C14E49 /* NSWorkspace+openFile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "NSWorkspace+openFile.swift"; sourceTree = "<group>"; };
 		019A239528657A7A00AE5698 /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
-		01B009AC2854533200B93618 /* geoip.dat.gz */ = {isa = PBXFileReference; lastKnownFileType = archive.gzip; path = geoip.dat.gz; sourceTree = "<group>"; };
-		01B009AD2854533300B93618 /* geosite.dat.gz */ = {isa = PBXFileReference; lastKnownFileType = archive.gzip; path = geosite.dat.gz; sourceTree = "<group>"; };
 		01B1CB092A2E20C10073EA34 /* DashboardManager.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = DashboardManager.swift; sourceTree = "<group>"; };
-		01B2274A29B845F100FE35C9 /* country.mmdb.gz */ = {isa = PBXFileReference; lastKnownFileType = archive.gzip; path = country.mmdb.gz; sourceTree = "<group>"; };
 		01BC9ABD2928E5C600F9B177 /* MetaDNS.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MetaDNS.swift; sourceTree = "<group>"; };
 		01BCDAB92C9ECD010028FA94 /* DashboardViewContoller.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DashboardViewContoller.swift; sourceTree = "<group>"; };
 		01BCDABA2C9ECD010028FA94 /* DBConnectionSnapShot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DBConnectionSnapShot.swift; sourceTree = "<group>"; };
@@ -325,7 +322,6 @@
 		49722FEB211F338B00650A41 /* EventStream.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = EventStream.swift; sourceTree = "<group>"; };
 		49722FEC211F338B00650A41 /* Witness.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Witness.swift; sourceTree = "<group>"; };
 		49722FED211F338B00650A41 /* Witness.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Witness.h; sourceTree = "<group>"; };
-		49761DA621C9497000AE13EF /* dashboard */ = {isa = PBXFileReference; lastKnownFileType = folder; path = dashboard; sourceTree = "<group>"; };
 		4982F51E2344A216008804B0 /* Cgo+Convert.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Cgo+Convert.swift"; sourceTree = "<group>"; };
 		49862F9F218418C600A1D5EC /* ClashRule.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClashRule.swift; sourceTree = "<group>"; };
 		49870ADA2AA75DC7002B106B /* TerminalCleanUpAction.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TerminalCleanUpAction.swift; sourceTree = "<group>"; };
@@ -720,13 +716,11 @@
 		49761DA521C9490400AE13EF /* Resources */ = {
 			isa = PBXGroup;
 			children = (
-				01B2274A29B845F100FE35C9 /* country.mmdb.gz */,
-				01B009AC2854533200B93618 /* geoip.dat.gz */,
-				01B009AD2854533300B93618 /* geosite.dat.gz */,
 				01C1462928962E4E00346AF3 /* com.metacubex.ClashX.ProxyConfigHelper.meta.gz */,
-				49761DA621C9497000AE13EF /* dashboard */,
 				4989F98D20D0AE990001E564 /* sampleConfig.yaml */,
 				01E33AB429B5C5E300FD1006 /* menu_icon@2x.png */,
+				01110D9E2FD51EF60015D815 /* dashboard */,
+				01110D9D2FD51EF60015D815 /* meta-rules-dat */,
 			);
 			path = Resources;
 			sourceTree = "<group>";
@@ -995,21 +989,19 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				01F336322AD10D0B0048AF77 /* geosite.dat.gz in Resources */,
+				01110D9F2FD51EF60015D815 /* meta-rules-dat in Resources */,
+				01110DA02FD51EF60015D815 /* dashboard in Resources */,
 				013B22022F7FEA2D009B30CB /* Dashboard.storyboard in Resources */,
-				01F336332AD10D0B0048AF77 /* dashboard in Resources */,
 				01F336352AD10D0B0048AF77 /* ProxySetting.sdef in Resources */,
 				019015602FCA938C00EB077C /* MetaPrefs.storyboard in Resources */,
 				01F336362AD10D0B0048AF77 /* Images.xcassets in Resources */,
 				01F336372AD10D0B0048AF77 /* menu_icon@2x.png in Resources */,
 				01F336382AD10D0B0048AF77 /* StatusItemView.xib in Resources */,
-				01F336392AD10D0B0048AF77 /* geoip.dat.gz in Resources */,
 				0190155C2FC7EB7000EB077C /* Localizable.xcstrings in Resources */,
 				01F3363A2AD10D0B0048AF77 /* Main.storyboard in Resources */,
 				019015642FCAA8BC00EB077C /* RemoteConfigAddView.xib in Resources */,
 				01F3363C2AD10D0B0048AF77 /* sampleConfig.yaml in Resources */,
 				01F3363D2AD10D0B0048AF77 /* com.metacubex.ClashX.ProxyConfigHelper.meta.gz in Resources */,
-				01F3363E2AD10D0B0048AF77 /* country.mmdb.gz in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

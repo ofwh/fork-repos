@@ -10,6 +10,7 @@ class ClashResourceManager {
         case mmdb = "country.mmdb"
         case geosite = "geosite.dat"
         case geoip = "geoip.dat"
+        case bundleMRS = "BundleMRS.7z"
     }
 
     @MainActor
@@ -19,7 +20,7 @@ class ClashResourceManager {
 
     static func check() -> Bool {
         checkConfigDir()
-        checkMMDB()
+        checkRuleFiles()
         return true
     }
 
@@ -36,31 +37,23 @@ class ClashResourceManager {
         }
     }
 
-    static func checkMMDB() {
+    static func checkRuleFiles() {
         checkRule(.mmdb)
         checkRule(.geoip)
         checkRule(.geosite)
+        checkRule(.bundleMRS)
     }
 
     static func checkRule(_ file: RuleFiles) {
         let fileManage = FileManager.default
-        let destPath = kConfigFolderPath + file.rawValue
+        let destPath = kConfigFolderPath + "meta-rules-dat" + file.rawValue
 
         // Remove old mmdb file after version update.
         if fileManage.fileExists(atPath: destPath) {
             let versionChange = AppVersionUtil.hasVersionChanged || AppVersionUtil.isFirstLaunch
-//            switch file {
-//            case .mmdb:
-//                let vaild = verifyGEOIPDataBase().toBool()
-//                let customMMDBSet = !Settings.mmdbDownloadUrl.isEmpty
-//                if !vaild || (versionChange && customMMDBSet) {
-//                    try? fileManage.removeItem(atPath: destPath)
-//                }
-//            case .geosite, .geoip:
-                if versionChange {
-                    try? fileManage.removeItem(atPath: destPath)
-                }
-//            }
+            if versionChange {
+                try? fileManage.removeItem(atPath: destPath)
+            }
         }
 
         if !fileManage.fileExists(atPath: destPath) {
