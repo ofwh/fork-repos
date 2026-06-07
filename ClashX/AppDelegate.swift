@@ -660,7 +660,7 @@ extension AppDelegate {
 
     @IBAction func updateGEO(_ sender: NSMenuItem) {
         Task {
-            await ClashResourceManager.shared.updateGeoDatabases()
+            _ = await ApiRequest.updateGEO()
         }
     }
 
@@ -713,11 +713,12 @@ extension AppDelegate {
             if launch_fail_times > 3 {
                 // 发生连续崩溃
                 ConfigFileManager.backupAndRemoveConfigFile()
-				let ruleFiles = ClashResourceManager.RuleFiles.self
+					let ruleFiles = ClashResourceManager.RuleFiles.self
 
-				try? FileManager.default.removeItem(atPath: kConfigFolderPath + ruleFiles.mmdb.rawValue)
-				try? FileManager.default.removeItem(atPath: kConfigFolderPath + ruleFiles.geosite.rawValue)
-				try? FileManager.default.removeItem(atPath: kConfigFolderPath + ruleFiles.geoip.rawValue)
+					try? FileManager.default.removeItem(atPath: kConfigFolderPath + ruleFiles.mmdb.rawValue)
+					try? FileManager.default.removeItem(atPath: kConfigFolderPath + ruleFiles.geosite.rawValue)
+					try? FileManager.default.removeItem(atPath: kConfigFolderPath + ruleFiles.geoip.rawValue)
+					try? FileManager.default.removeItem(atPath: kConfigFolderPath + ruleFiles.bundleMRS.rawValue)
 
                 if let domain = Bundle.main.bundleIdentifier {
                     UserDefaults.standard.removePersistentDomain(forName: domain)

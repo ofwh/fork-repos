@@ -66,10 +66,6 @@ class DebugSettingViewController: NSViewController {
         }
     }
 
-    @IBAction func actionUpdateGeoipDb(_ sender: Any) {
-        ClashResourceManager.updateGeoIP()
-    }
-
     @IBAction func actionRevertProxy(_ sender: Any) {
         Settings.disableRestoreProxy.toggle()
         revertProxyButton.state = Settings.disableRestoreProxy ? .off : .on

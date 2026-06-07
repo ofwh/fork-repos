@@ -1,4 +1,5 @@
 import AppKit
+import CryptoKit
 import Foundation
 import AsyncHTTPClient
 import Gzip
@@ -13,8 +14,7 @@ class ClashResourceManager {
         case bundleMRS = "BundleMRS.7z"
     }
 
-    @MainActor
-    private var updateGeoTask: Task<Void, Never>?
+    private static let ruleMD5Key = "meta-rules-md5"
 
     private init() {}
 
@@ -46,26 +46,50 @@ class ClashResourceManager {
 
     static func checkRule(_ file: RuleFiles) {
         let fileManage = FileManager.default
-        let destPath = kConfigFolderPath + "meta-rules-dat" + file.rawValue
+        let destPath = "\(kConfigFolderPath)\(file.rawValue)"
+        let storedMD5 = storedRuleMD5Map()[file.rawValue]
 
-        // Remove old mmdb file after version update.
         if fileManage.fileExists(atPath: destPath) {
             let versionChange = AppVersionUtil.hasVersionChanged || AppVersionUtil.isFirstLaunch
             if versionChange {
-                try? fileManage.removeItem(atPath: destPath)
+                if let currentMD5 = fileMD5(atPath: destPath), currentMD5 == storedMD5 {
+                    try? fileManage.removeItem(atPath: destPath)
+                }
             }
         }
 
         if !fileManage.fileExists(atPath: destPath) {
-            if let gzUrl = Bundle.main.url(forResource: file.rawValue, withExtension: "gz") {
+            if let gzUrl = Bundle.main.url(forResource: file.rawValue, withExtension: "gz", subdirectory: "meta-rules-dat") {
                 do {
                     let data = try Data(contentsOf: gzUrl).gunzipped()
                     try data.write(to: URL(fileURLWithPath: destPath))
+                    saveRuleMD5(file.rawValue, md5: md5Hex(of: data))
                 } catch let err {
                     Logger.log("add \(file.rawValue) fail:\(err)", level: .error)
                 }
+            } else {
+                Logger.log("missing bundled rule file: \(file.rawValue)", level: .error)
             }
         }
+    }
+
+    private static func storedRuleMD5Map() -> [String: String] {
+        UserDefaults.standard.dictionary(forKey: ruleMD5Key) as? [String: String] ?? [:]
+    }
+
+    private static func saveRuleMD5(_ name: String, md5: String) {
+        var map = storedRuleMD5Map()
+        map[name] = md5
+        UserDefaults.standard.set(map, forKey: ruleMD5Key)
+    }
+
+    private static func md5Hex(of data: Data) -> String {
+        Insecure.MD5.hash(data: data).map { String(format: "%02x", $0) }.joined()
+    }
+
+    private static func fileMD5(atPath path: String) -> String? {
+        guard let data = FileManager.default.contents(atPath: path) else { return nil }
+        return md5Hex(of: data)
     }
 
     static func showCreateConfigDirFailAlert(err: String) {
@@ -75,94 +99,5 @@ class ClashResourceManager {
         alert.addButton(withTitle: NSLocalizedString("Quit", comment: ""))
         alert.runModal()
         NSApplication.shared.terminate(nil)
-    }
-}
-
-extension ClashResourceManager {
-    @MainActor
-    func updateGeoDatabases() async {
-        guard updateGeoTask == nil else { return }
-
-        _ = await ApiRequest.updateGEO()
-        UserNotificationCenter.shared.post(title: NSLocalizedString("Updating GEO Databases...", comment: ""), info: NSLocalizedString("Good luck to you  🙃", comment: ""))
-
-        updateGeoTask = Task { @MainActor [weak self] in
-            guard let self else { return }
-            defer {
-                self.updateGeoTask = nil
-            }
-
-            while !Task.isCancelled {
-                if await self.pollGeoUpdate() {
-                    return
-                }
-                try? await Task.sleep(seconds: 0.5)
-            }
-        }
-    }
-
-    @MainActor
-    private func pollGeoUpdate() async -> Bool {
-        let rules = await ApiRequest.getRules()
-        guard updateGeoTask != nil else { return true }
-
-        if let rule = rules.first,
-           rule.payload == ClashMetaConfig.initRulePayload {
-            Logger.log("Update GEO Finished.")
-            await ConfigReloadManager.shared.updateConfig(showNotification: false)
-            UserNotificationCenter.shared.post(title: "Update GEO Databases Finished.", info: "")
-
-            return true
-        } else {
-            return false
-        }
-    }
-
-    static func updateGeoIP() {
-        guard let url = showCustomAlert() else { return }
-        
-        try? HTTPClient.shared.execute(
-            request: .init(url: url),
-            delegate: FileDownloadDelegate(path: kConfigFolderPath.appending("/Country.mmdb"))
-        )
-        .futureResult
-        .whenComplete {
-            var info: String
-            switch $0 {
-            case .success:
-                info = NSLocalizedString("Success!", comment: "")
-                Logger.log("update success")
-            case .failure(let err):
-                info = NSLocalizedString("Fail:", comment: "") + err.localizedDescription
-                Logger.log("update fail \(err)")
-            }
-            let alert = NSAlert()
-            alert.messageText = NSLocalizedString("Update GEOIP Database", comment: "")
-            alert.informativeText = info
-            alert.runModal()
-        }
-    }
-
-    private static func showCustomAlert() -> String? {
-        let alert = NSAlert()
-        alert.messageText = NSLocalizedString("Custom your GEOIP MMDB download address.", comment: "")
-        let inputView = NSTextField(frame: NSRect(x: 0, y: 0, width: 250, height: 24))
-        inputView.placeholderString = Settings.defaultMmdbDownloadUrl
-        if Settings.mmdbDownloadUrl.isEmpty {
-            inputView.stringValue = Settings.defaultMmdbDownloadUrl
-        } else {
-            inputView.stringValue = Settings.mmdbDownloadUrl
-        }
-        alert.accessoryView = inputView
-        alert.addButton(withTitle: NSLocalizedString("OK", comment: ""))
-        alert.addButton(withTitle: NSLocalizedString("Cancel", comment: ""))
-        if alert.runModal() == .alertFirstButtonReturn {
-            if inputView.stringValue.isEmpty {
-                return inputView.placeholderString
-            }
-            Settings.mmdbDownloadUrl = inputView.stringValue
-            return inputView.stringValue
-        }
-        return nil
     }
 }
