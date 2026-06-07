@@ -47,7 +47,14 @@ class DebugSettingViewController: NSViewController {
 
     @IBAction func actionResetUserDefault(_ sender: Any) {
         guard let domain = Bundle.main.bundleIdentifier else { return }
-        NSAlert.alert(with: NSLocalizedString("Click OK to quit the app and apply change.", comment: ""))
+        let alert = NSAlert()
+        alert.alertStyle = .warning
+        alert.messageText = NSLocalizedString("Reset User Defaults", comment: "")
+        alert.informativeText = NSLocalizedString("This will remove all app settings and quit ClashX. Continue?", comment: "")
+        let resetButton = alert.addButton(withTitle: NSLocalizedString("Reset", comment: ""))
+        resetButton.hasDestructiveAction = true
+        alert.addButton(withTitle: NSLocalizedString("Cancel", comment: ""))
+        guard alert.runModal() == .alertFirstButtonReturn else { return }
         UserDefaults.standard.removePersistentDomain(forName: domain)
         UserDefaults.standard.synchronize()
         NSApplication.shared.terminate(self)

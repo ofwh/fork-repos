@@ -334,6 +334,7 @@
       }
     },
     "Click OK to quit the app and apply change." : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -542,6 +543,7 @@
       }
     },
     "Custom your GEOIP MMDB download address." : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -967,6 +969,7 @@
       }
     },
     "Fail:" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -1066,6 +1069,7 @@
       }
     },
     "Good luck to you  🙃" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -1958,6 +1962,9 @@
         }
       }
     },
+    "Reset" : {
+
+    },
     "Reset Daemon" : {
       "localizations" : {
         "zh-Hans" : {
@@ -1970,6 +1977,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "重置守護進程"
+          }
+        }
+      }
+    },
+    "Reset User Defaults" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "重置用户默认值"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "重置使用者預設值"
           }
         }
       }
@@ -2253,6 +2276,7 @@
       }
     },
     "Success!" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -2376,6 +2400,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "狀態圖標被其他應用覆蓋或隱藏"
+          }
+        }
+      }
+    },
+    "This will remove all app settings and quit ClashX. Continue?" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "这将清除所有应用设置并退出 ClashX。是否继续？"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "這將清除所有應用程式設定並退出 ClashX。是否繼續？"
           }
         }
       }
@@ -2617,6 +2657,7 @@
       }
     },
     "Update GEOIP Database" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -2697,6 +2738,7 @@
       }
     },
     "Updating GEO Databases..." : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {

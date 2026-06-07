@@ -1983,7 +1983,7 @@
     },
     "NLt-OM-k6i.title" : {
       "comment" : "Class = \"NSTextFieldCell\"; title = \"Update Channel\"; ObjectID = \"NLt-OM-k6i\";",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2103,7 +2103,7 @@
     },
     "OMy-zu-iho.title" : {
       "comment" : "Class = \"NSTextFieldCell\"; title = \"Geo-IP Datebase\"; ObjectID = \"OMy-zu-iho\";",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2235,7 +2235,7 @@
     },
     "pHl-C4-fNt.title" : {
       "comment" : "Class = \"NSButtonCell\"; title = \"Update\"; ObjectID = \"pHl-C4-fNt\";",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
