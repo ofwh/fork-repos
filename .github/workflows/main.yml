@@ -10,6 +10,8 @@ jobs:
     runs-on: macos-26
     env:
       MIHOMO_TAG: v1.19.27
+      GH_TOKEN: ${{ github.token }}
+      
     steps:
     - uses: maxim-lobanov/setup-xcode@v1
       with:
