@@ -55,7 +55,7 @@ chmod +x com.metacubex.ClashX.ProxyConfigHelper.meta
 
 echo "Update meta core md5 to code"
 sed -i '' "s/WOSHIZIDONGSHENGCHENGDEA/$(md5 -q com.metacubex.ClashX.ProxyConfigHelper.meta)/g" ../ClashX/General/ClashProcess.swift
-grep -n "metaCoreMd5" ../ClashX/General/ClashProcess.swift
+grep -n "static let metaCoreMd5" ../ClashX/General/ClashProcess.swift
 
 echo "Gzip Universal core"
 gzip com.metacubex.ClashX.ProxyConfigHelper.meta
