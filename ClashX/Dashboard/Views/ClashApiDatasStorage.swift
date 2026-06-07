@@ -28,7 +28,7 @@ class ClashApiDatasStorage: NSObject, ObservableObject {
 			while !Task.isCancelled {
 				try? await Task.sleep(seconds: 1)
 				guard let self else { return }
-				await flushPendingUpdates()
+                flushPendingUpdates()
 			}
 		}
 	}
@@ -50,16 +50,16 @@ extension ClashApiDatasStorage: ApiRequestStreamDelegate {
     }
 
 	func didUpdateTraffic(up: Int, down: Int) async {
-		await enqueueTrafficUpdate(up: up, down: down)
+        enqueueTrafficUpdate(up: up, down: down)
 	}
 	
 	func didGetLog(log: String, level: String) async {
-		await enqueueLog(level: level, log: log)
+        enqueueLog(level: level, log: log)
 	}
 	
 	func didUpdateMemory(memory: Int64) async {
         let memoryString = Self.memoryFormatter.string(fromByteCount: memory)
-		await enqueueMemory(memoryString)
+        enqueueMemory(memoryString)
 	}
 
 	func enqueueTrafficUpdate(up: Int, down: Int) {

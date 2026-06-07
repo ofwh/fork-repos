@@ -197,6 +197,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         }
     }
 
+    @MainActor
     func setupStatusMenuItemData() {
         ConfigManager.shared
             .showNetSpeedIndicatorObservable
@@ -210,7 +211,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             }.disposed(by: disposeBag)
 
         statusItemView.updateViewStatus(enableProxy: ConfigManager.shared.proxyState.isSystemProxyEnabled)
-
     }
 	
     func setupData() {
@@ -229,28 +229,29 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             .observe(on: MainScheduler.instance)
             .subscribe { [weak self] state in
                 guard let self = self else { return }
+                Task { @MainActor in
+                    if !state.isSystemProxyEnabled {
+                        self.proxySettingMenuItem.state = .off
+                    } else if state.isProxyPaused || state.isSystemProxySetByOther {
+                        self.proxySettingMenuItem.state = .mixed
+                    } else {
+                        self.proxySettingMenuItem.state = .on
+                    }
 
-                if !state.isSystemProxyEnabled {
-                    self.proxySettingMenuItem.state = .off
-                } else if state.isProxyPaused || state.isSystemProxySetByOther {
-                    self.proxySettingMenuItem.state = .mixed
-                } else {
-                    self.proxySettingMenuItem.state = .on
-                }
+                    if !state.isTunModeEnabled {
+                        self.tunModeMenuItem.state = .off
+                    } else if state.isProxyPaused {
+                        self.tunModeMenuItem.state = .mixed
+                    } else {
+                        self.tunModeMenuItem.state = state.isTunModeActive ? .on : .off
+                    }
 
-                if !state.isTunModeEnabled {
-                    self.tunModeMenuItem.state = .off
-                } else if state.isProxyPaused {
-                    self.tunModeMenuItem.state = .mixed
-                } else {
-                    self.tunModeMenuItem.state = state.isTunModeActive ? .on : .off
-                }
-
-                if state.isProxyPaused {
-                    self.statusItemView.updateViewStatus(enableProxy: false)
-                } else {
-                    let isIconActive = (self.proxySettingMenuItem.state == .on) || state.isTunModeActive
-                    self.statusItemView.updateViewStatus(enableProxy: isIconActive)
+                    if state.isProxyPaused {
+                        self.statusItemView.updateViewStatus(enableProxy: false)
+                    } else {
+                        let isIconActive = (self.proxySettingMenuItem.state == .on) || state.isTunModeActive
+                        self.statusItemView.updateViewStatus(enableProxy: isIconActive)
+                    }
                 }
             }
             .disposed(by: disposeBag)

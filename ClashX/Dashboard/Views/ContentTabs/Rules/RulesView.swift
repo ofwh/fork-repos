@@ -44,7 +44,7 @@ struct RulesView: View {
 		let providerRuleCounts = await providerResponse.allProviders.values.reduce(into: [ClashProviderName: Int]()) {
 			$0[$1.name] = $1.ruleCount
 		}
-		var items = await rulesResponse
+        let items = await rulesResponse
 
 		items.indices.forEach { index in
 			guard let payload = items[index].payload,

@@ -11,6 +11,8 @@ import Foundation
 import RxCocoa
 import RxSwift
 
+
+@MainActor
 class StatusItemView: NSView, StatusItemViewProtocol {
     @IBOutlet var imageView: NSImageView!
 
@@ -21,7 +23,6 @@ class StatusItemView: NSView, StatusItemViewProtocol {
     var up: Int = 0
     var down: Int = 0
 
-    @MainActor
     static func create(statusItem: NSStatusItem?) async -> StatusItemView {
         var topLevelObjects: NSArray?
         if Bundle.main.loadNibNamed("StatusItemView", owner: self, topLevelObjects: &topLevelObjects) {
@@ -54,7 +55,6 @@ class StatusItemView: NSView, StatusItemViewProtocol {
         frame = CGRect(x: 0, y: 0, width: width, height: 22)
     }
 
-    @MainActor
     func updateViewStatus(enableProxy: Bool) {
         if enableProxy {
             imageView.contentTintColor = NSColor.labelColor
