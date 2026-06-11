@@ -25,7 +25,7 @@ actor ClashStatusTool {
             return
         }
         
-        if let time = lastPortWasZero?.timeIntervalSinceNow, time < -1 {
+        if let time = lastPortWasZero?.timeIntervalSinceNow, time < -2 {
             let alert = NSAlert()
             alert.messageText = NSLocalizedString("ClashX Start Error!", comment: "")
             alert.informativeText = NSLocalizedString("Ports Open Fail, Please try to restart ClashX", comment: "")
