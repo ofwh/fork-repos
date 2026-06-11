@@ -256,11 +256,21 @@ final class PrivilegedHelperManager {
             Logger.log("check helper status fail")
             return .noFound
         }
-
-        guard FileManager.default.fileExists(atPath: "/Library/PrivilegedHelperTools/\(PrivilegedHelperManager.machServiceName)") else {
+        
+        let helperInstalledURL = helperInstalledURL()
+        
+        if FileManager.default.fileExists(atPath: helperInstalledURL.path) {
+            if let info = CFBundleCopyInfoDictionaryForURL(helperInstalledURL as CFURL) as? [String: Any],
+               let version = info["CFBundleShortVersionString"] as? String,
+               version == helperVersion {
+                Logger.log("helper version CFBundleShortVersionString \(version)", level: .debug)
+            } else {
+                return .needUpdate
+            }
+        } else {
             return .noFound
         }
-
+        
         let timeout: TimeInterval = 15
         let time = Date()
         return await withTaskGroup(of: HelperStatus.self, returning: HelperStatus.self) { group in
@@ -311,6 +321,10 @@ final class PrivilegedHelperManager {
 
     private func helperBundleURL() -> URL {
         Bundle.main.bundleURL.appendingPathComponent("Contents/Library/LaunchServices/" + PrivilegedHelperManager.machServiceName)
+    }
+    
+    private func helperInstalledURL() -> URL {
+        URL(fileURLWithPath: "/Library/PrivilegedHelperTools/\(PrivilegedHelperManager.machServiceName)")
     }
 
     private func launchDaemonPlistURL() -> URL {
