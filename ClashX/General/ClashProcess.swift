@@ -484,4 +484,37 @@ actor ClashProcess {
 			return "\(error)"
 		}
 	}
+
+// MARK: age decrypt
+
+	static func ageDecrypt(key: String, inputPath: String, outputPath: String) -> String? {
+		do {
+			let proc = Process()
+			proc.executableURL = Paths.defaultCorePath()
+			proc.arguments = [
+				"age",
+                "decrypt",
+				key,
+				inputPath,
+				outputPath
+			]
+
+			let pipe = Pipe()
+			proc.standardOutput = pipe
+			proc.standardError = pipe
+
+			try proc.run()
+			proc.waitUntilExit()
+
+			guard proc.terminationStatus == 0 else {
+				let data = pipe.fileHandleForReading.readDataToEndOfFile()
+				let output = String(data: data, encoding: .utf8) ?? ""
+				return "Decrypt failed, status \(proc.terminationStatus): \(output)"
+			}
+
+			return nil
+		} catch {
+			return "\(error)"
+		}
+	}
 }

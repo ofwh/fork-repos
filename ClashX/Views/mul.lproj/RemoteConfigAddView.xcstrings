@@ -1,6 +1,54 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "77A-HC-KNI.placeholderString" : {
+      "comment" : "Class = \"NSTextFieldCell\"; placeholderString = \"https://...\"; ObjectID = \"77A-HC-KNI\";",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "https://..."
+          }
+        }
+      }
+    },
+    "EaJ-8T-d4j.title" : {
+      "comment" : "Class = \"NSTextFieldCell\"; title = \"Age Secret Key:\"; ObjectID = \"EaJ-8T-d4j\";",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Age Secret Key:"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Age 私钥："
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Age 私鑰："
+          }
+        }
+      }
+    },
+    "PKt-O2-KfE.placeholderString" : {
+      "comment" : "Class = \"NSTextFieldCell\"; placeholderString = \"AGE-SECRET-KEY-...\"; ObjectID = \"PKt-O2-KfE\";",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "AGE-SECRET-KEY-..."
+          }
+        }
+      }
+    },
     "QhQ-wR-TSQ.title" : {
       "comment" : "Class = \"NSTextFieldCell\"; title = \"Url:\"; ObjectID = \"QhQ-wR-TSQ\";",
       "extractionState" : "extracted_with_value",
@@ -45,6 +93,30 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "設定名稱："
+          }
+        }
+      }
+    },
+    "YqI-oK-hWs.title" : {
+      "comment" : "Class = \"NSTextFieldCell\"; title = \"(Optional)\"; ObjectID = \"YqI-oK-hWs\";",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "(Optional)"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "（可选）"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "（可選）"
           }
         }
       }

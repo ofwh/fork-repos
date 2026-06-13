@@ -163,10 +163,16 @@ class RemoteConfigManager {
 
     static func updateConfig(config: RemoteConfigModel) async -> String? {
         let (configString, suggestedFilename) = await getRemoteConfigData(config: config)
-        guard let newConfig = configString else {
+        guard let configStr = configString else {
             return NSLocalizedString("Download fail", comment: "")
         }
-
+        
+        let (newConfig, error) = decryptConfig(string: configStr, config: config)
+        
+        guard let newConfig, error == nil else {
+            return NSLocalizedString("Decrypt config fail", comment: "") + ", " + "\(error ?? "unknown")"
+        }
+        
         let verifyRes = verifyConfig(string: newConfig)
         if let error = verifyRes {
             return NSLocalizedString("Remote Config Format Error", comment: "") + ": " + error
@@ -228,8 +234,36 @@ class RemoteConfigManager {
         guard let confPath = createCacheConfig(string: string) else {
             return "Create verify config file failed"
         }
-		
+        
         return ClashProcess.verify(kConfigFolderPath, confFilePath: confPath)
+    }
+    
+    static func decryptConfig(string: String, config: RemoteConfigModel) -> (config: String?, error: String?) {
+        guard let key = config.ageSecretKey else {
+            return (string, nil)
+        }
+        
+        guard let confPath = createCacheConfig(string: string) else {
+            return (nil, "Create verify config file failed")
+        }
+        
+        let agePath = confPath + ".age"
+        do {
+            try FileManager.default.moveItem(atPath: confPath, toPath: agePath)
+        } catch {
+            return (nil, NSLocalizedString("Create age config file failed", comment: "") + ", \(error.localizedDescription)")
+        }
+        
+        if let error = ClashProcess.ageDecrypt(key: key, inputPath: agePath, outputPath: confPath) {
+            return (nil, error)
+        }
+        
+        if let data = FileManager.default.contents(atPath: confPath),
+           let newStr = String(data: data, encoding: .utf8) {
+            return (newStr, nil)
+        } else {
+            return (nil, NSLocalizedString("Load decrypted config failed", comment: ""))
+        }
     }
 
     static func showAdd() {

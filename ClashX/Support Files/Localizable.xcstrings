@@ -526,6 +526,28 @@
         }
       }
     },
+    "Create age config file failed" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Create age config file failed"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "创建 age 配置文件失败"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "建立 age 配置檔案失敗"
+          }
+        }
+      }
+    },
     "Current SSID is in the auto-suspend list." : {
       "localizations" : {
         "zh-Hans" : {
@@ -578,6 +600,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "時間"
+          }
+        }
+      }
+    },
+    "Decrypt config fail" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Decrypt config fail"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "解密配置失败"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "解密配置失敗"
           }
         }
       }
@@ -1321,6 +1365,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "負載均衡"
+          }
+        }
+      }
+    },
+    "Load decrypted config failed" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Load decrypted config failed"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "加载解密后的配置失败"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "載入解密後的配置失敗"
           }
         }
       }

@@ -84,7 +84,8 @@ extension RemoteConfigViewController {
     func showAdd(defaultUrl: String? = nil,
                  defaultName: String? = nil,
                  name: String? = nil,
-                 allowAlt: Bool = false) {
+                 allowAlt: Bool = false,
+                 ageSecretKey: String? = nil) {
         let alertView = NSAlert()
         alertView.addButton(withTitle: NSLocalizedString("OK", comment: ""))
         alertView.addButton(withTitle: NSLocalizedString("Cancel", comment: ""))
@@ -108,19 +109,22 @@ extension RemoteConfigViewController {
         let configName = remoteConfigInputView.getConfigName().0
         let isPlaceHolderName = remoteConfigInputView.getConfigName().1
         let configUrl = remoteConfigInputView.getUrlString()
-
+        let ageSecretKey = remoteConfigInputView.getAgeSecretKey()
+        
         if let existed = RemoteConfigManager.shared.configs.first(where: { $0.name == configName }) {
             guard allowAlt else {
                 NSAlert.alert(with: NSLocalizedString("The remote config name is duplicated", comment: ""))
                 return
             }
             existed.url = configUrl
+            existed.ageSecretKey = ageSecretKey
             latestAddedConfig = existed
             requestUpdate(config: existed)
         } else {
             let remoteConfig = RemoteConfigModel(url: configUrl,
                                                  name: configName,
-                                                 updateTime: nil)
+                                                 updateTime: nil,
+                                                 ageSecretKey: ageSecretKey)
             remoteConfig.isPlaceHolderName = !isPlaceHolderName
             RemoteConfigManager.shared.configs.append(remoteConfig)
             requestUpdate(config: remoteConfig)
@@ -172,9 +176,17 @@ extension RemoteConfigViewController: NSTableViewDelegate {
         let row = tableView.clickedRow
         guard let config = RemoteConfigManager.shared.configs[safe: row] else { return }
         if config.isPlaceHolderName {
-            showAdd(defaultUrl: config.url, defaultName: config.name, name: nil, allowAlt: true)
+            showAdd(defaultUrl: config.url,
+                    defaultName: config.name,
+                    name: nil,
+                    allowAlt: true,
+                    ageSecretKey: config.ageSecretKey)
         } else {
-            showAdd(defaultUrl: config.url, defaultName: nil, name: config.name, allowAlt: true)
+            showAdd(defaultUrl: config.url,
+                    defaultName: nil,
+                    name: config.name,
+                    allowAlt: true,
+                    ageSecretKey: config.ageSecretKey)
         }
     }
 }
@@ -215,9 +227,18 @@ extension RemoteConfigViewController: NSTableViewDataSource {
 class RemoteConfigAddView: NSView, NibLoadable {
     @IBOutlet private var urlTextField: NSTextField!
     @IBOutlet private var configNameTextField: NSTextField!
-
+    @IBOutlet var ageSecretTextField: NSTextField!
+    
     func getUrlString() -> String {
-        return urlTextField.stringValue
+        urlTextField.stringValue
+    }
+    
+    func getAgeSecretKey() -> String? {
+        let str = ageSecretTextField.stringValue
+        if str.isEmpty || !str.uppercased().starts(with: "AGE-SECRET-KEY") {
+            return nil
+        }
+        return str
     }
 
     /// Get the config name
@@ -233,7 +254,10 @@ class RemoteConfigAddView: NSView, NibLoadable {
         return urlTextField.stringValue.isUrlVaild() && !getConfigName().0.isEmpty
     }
 
-    func setUrl(string: String, name: String? = nil, defaultName: String?) {
+    func setUrl(string: String,
+                name: String? = nil,
+                defaultName: String?,
+                ageSecretKey: String? = nil) {
         urlTextField.stringValue = string
 
         if let name = name, !name.isEmpty {
@@ -242,6 +266,10 @@ class RemoteConfigAddView: NSView, NibLoadable {
 
         if let defaultName = defaultName, !defaultName.isEmpty {
             configNameTextField.placeholderString = defaultName
+        }
+        
+        if let key = ageSecretKey, !key.isEmpty {
+            ageSecretTextField.stringValue = key
         }
 
         if name == nil && defaultName == nil {

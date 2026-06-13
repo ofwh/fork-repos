@@ -14,15 +14,17 @@ class RemoteConfigModel: Codable {
     var updateTime: Date?
     var updating = false
     var isPlaceHolderName = false
+    var ageSecretKey: String?
 
-    init(url: String, name: String, updateTime: Date? = nil) {
+    init(url: String, name: String, updateTime: Date? = nil, ageSecretKey: String? = nil) {
         self.url = url
         self.name = name
         self.updateTime = updateTime
+        self.ageSecretKey = ageSecretKey
     }
 
     private enum CodingKeys: String, CodingKey {
-        case url, name, updateTime
+        case url, name, updateTime, ageSecretKey
     }
 
     func displayingTimeString() -> String {
