@@ -89,7 +89,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             // setup menu item first
             statusItem = NSStatusBar.system.statusItem(withLength: statusItemLengthWithSpeed)
             statusItemView = await StatusItemView.create(statusItem: statusItem)
-            statusItemView.updateSize(width: statusItemLengthWithSpeed)
+            statusItemView.updateSize(statusItem, width: statusItemLengthWithSpeed)
             statusMenu.delegate = self
             setupStatusMenuItemData()
             
@@ -206,7 +206,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                 self.showNetSpeedIndicatorMenuItem.state = (show ?? true) ? .on : .off
                 let statusItemLength: CGFloat = (show ?? true) ? statusItemLengthWithSpeed : 25
                 self.statusItem.length = statusItemLength
-                self.statusItemView.updateSize(width: statusItemLength)
+                self.statusItemView.updateSize(self.statusItem, width: statusItemLength)
                 self.statusItemView.showSpeedContainer(show: show ?? true)
             }.disposed(by: disposeBag)
 
