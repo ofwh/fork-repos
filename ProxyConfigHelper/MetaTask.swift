@@ -181,7 +181,6 @@ class MetaTask: NSObject {
                         if controllerReady {
                             let logs = await startSession.logsString()
                             await startSession.finish(encodeServerResult(with: logs))
-                            return
                         }
                     }
                 }
