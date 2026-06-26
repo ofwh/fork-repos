@@ -221,7 +221,7 @@ class MetaTask: NSObject {
             var offset: UInt64 = 0
 
             while !Task.isCancelled {
-                try? await Task.sleep(seconds: 1)
+                try? await Task.sleep(seconds: 0.2)
                 guard !Task.isCancelled else { return }
                 guard await !state.isFinished else { return }
 
