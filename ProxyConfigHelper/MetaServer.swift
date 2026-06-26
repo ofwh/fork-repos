@@ -7,12 +7,16 @@
 
 import Cocoa
 
+let kCoreLogName = "clashx_mihomo.log"
+let kCoreCrashLogName = "clashx_mihomo_error.log"
+
 struct MetaServer: Codable {
 	var externalController: String
 	let secret: String
 	var log: String = ""
 	
     var safePaths = ""
+    var sessionId = ""
     
 	func jsonString() -> String {
 		let encoder = JSONEncoder()

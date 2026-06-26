@@ -262,7 +262,8 @@ actor ClashProcess {
 		let confJSON = MetaServer(
 			externalController: config.externalController,
 			secret: config.secret ?? "",
-			safePaths: config.safePaths ?? ""
+			safePaths: config.safePaths ?? "",
+			sessionId: Logger.shared.sessionId
 		).jsonString()
 
 		let response: String?

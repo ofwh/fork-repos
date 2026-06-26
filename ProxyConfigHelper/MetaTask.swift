@@ -51,8 +51,14 @@ class MetaTask: NSObject {
     private static let plistDir = "/Library/LaunchDaemons"
     private static var plistPath: String { "\(plistDir)/\(plistFileName)" }
 
+    private var serverResult: MetaServer?
+
     private func stdoutLogPath(_ confPath: String) -> String {
-        "\(confPath)/logs/meta_stdout.log"
+        "\(confPath)/logs/\(serverResult?.sessionId ?? "")/\(kCoreLogName)"
+    }
+
+    private func stderrLogPath(_ confPath: String) -> String {
+        "\(confPath)/logs/\(serverResult?.sessionId ?? "")/\(kCoreCrashLogName)"
     }
 
     // MARK: - Public API
@@ -184,21 +190,20 @@ class MetaTask: NSObject {
                               continuation: AsyncStream<String>.Continuation) async throws {
 
         guard let confData = confJSON.data(using: .utf8),
-              let serverResult = try? JSONDecoder().decode(MetaServer.self, from: confData) else {
+              let result = try? JSONDecoder().decode(MetaServer.self, from: confData) else {
             throw StartError.invalidConfig
         }
+        serverResult = result
 
         func encodeServerResult(with logs: String) -> String {
-            var result = serverResult
+            var result = serverResult!
             result.log = logs
             return result.jsonString()
         }
 
         let logPath = stdoutLogPath(confPath)
-        try? FileManager.default.removeItem(atPath: logPath)
-        try? FileManager.default.createDirectory(atPath: "\(confPath)/logs", withIntermediateDirectories: true)
 
-        try writePlist(path: path, confPath: confPath, confFilePath: confFilePath, safePaths: serverResult.safePaths)
+        try writePlist(path: path, confPath: confPath, confFilePath: confFilePath)
 
         _ = try? await run(.name("launchctl"), arguments: ["unload", Self.plistPath], output: .discarded)
         do {
@@ -236,7 +241,7 @@ class MetaTask: NSObject {
                     }
 
                     if message.contains("RESTful API listening at:") {
-                        let controllerReady = await self.testExternalController(serverResult)
+                        let controllerReady = await self.testExternalController(self.serverResult!)
                         if controllerReady {
                             let logs = await state.logsString()
                             guard await state.markFinished() else { return }
@@ -255,7 +260,7 @@ class MetaTask: NSObject {
                 try? await Task.sleep(seconds: 0.5)
                 guard !Task.isCancelled else { return }
                 guard await !state.isFinished else { return }
-                guard await self.testExternalController(serverResult) else { continue }
+                guard await self.testExternalController(self.serverResult!) else { continue }
 
                 let logs = await state.logsString()
                 guard await state.markFinished() else { return }
@@ -278,7 +283,8 @@ class MetaTask: NSObject {
         _ = await timeoutTask.value
     }
 
-    private func writePlist(path: String, confPath: String, confFilePath: String, safePaths: String) throws {
+    private func writePlist(path: String, confPath: String, confFilePath: String) throws {
+        guard let serverResult else { return }
         var programArguments = [path, "-d", confPath]
         if !confFilePath.isEmpty {
             programArguments.append(contentsOf: ["-f", confFilePath])
@@ -288,9 +294,9 @@ class MetaTask: NSObject {
             "Label": Self.label,
             "ProgramArguments": programArguments,
             "WorkingDirectory": confPath,
-            "EnvironmentVariables": ["SAFE_PATHS": safePaths],
+            "EnvironmentVariables": ["SAFE_PATHS": serverResult.safePaths],
             "StandardOutPath": stdoutLogPath(confPath),
-            "StandardErrorPath": "\(confPath)/logs/meta_stderr.log",
+            "StandardErrorPath": stderrLogPath(confPath),
             "KeepAlive": false
         ]
 

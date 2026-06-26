@@ -80,6 +80,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        Logger.shared.setupLogSession()
         Logger.log("———————————————————————————————————————————————————————————")
         Logger.log("———————————————applicationDidFinishLaunching———————————————")
         Logger.log("———————————————————————————————————————————————————————————")
