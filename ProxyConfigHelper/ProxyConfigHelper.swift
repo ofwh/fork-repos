@@ -211,10 +211,14 @@ private extension ProxyConfigHelper {
         if await terminateExistingMeta() {
             try? await Task.sleep(seconds: 1)
         }
-		return await metaTask.start(message.path,
-		                     confPath: message.confPath,
-		                     confFilePath: message.confFilePath,
-		                     confJSON: message.confJSON)
+        var result: String?
+        for await value in metaTask.start(message.path,
+                                          confPath: message.confPath,
+                                          confFilePath: message.confFilePath,
+                                          confJSON: message.confJSON) {
+            result = value
+        }
+        return result
 	}
 
 	@MainActor

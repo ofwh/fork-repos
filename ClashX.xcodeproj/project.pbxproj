@@ -72,6 +72,8 @@
 		01CA6BC12B6A1B3100E386D6 /* MetaServer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 01CA6BBF2B6A1B3100E386D6 /* MetaServer.swift */; };
 		01CA6BC22B6A1B3100E386D6 /* MetaServer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 01CA6BBF2B6A1B3100E386D6 /* MetaServer.swift */; };
 		01D567E62AD158B600CDA0AE /* MetaPrefsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 01D567E22AD158B500CDA0AE /* MetaPrefsViewController.swift */; };
+		01E908FC2FEE786F00C95A3A /* Subprocess in Frameworks */ = {isa = PBXBuildFile; productRef = 01E908FB2FEE786F00C95A3A /* Subprocess */; };
+		01E908FE2FEE787900C95A3A /* Subprocess in Frameworks */ = {isa = PBXBuildFile; productRef = 01E908FD2FEE787900C95A3A /* Subprocess */; };
 		01EF33602B98D03B00D1DBD9 /* ProxyConfigHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 01EF335F2B98D03B00D1DBD9 /* ProxyConfigHelper.swift */; };
 		01EF33622B98D3A700D1DBD9 /* ProxyConfigRemoteProcessProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = 01EF33612B98D3A700D1DBD9 /* ProxyConfigRemoteProcessProtocol.swift */; };
 		01EF33642B98D71600D1DBD9 /* ProxyConfigRemoteProcessProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = 01EF33612B98D3A700D1DBD9 /* ProxyConfigRemoteProcessProtocol.swift */; };
@@ -409,6 +411,7 @@
 				01F3362C2AD10D0B0048AF77 /* CocoaLumberjack in Frameworks */,
 				01F3362D2AD10D0B0048AF77 /* Yams in Frameworks */,
 				013B220E2F88A219009B30CB /* AsyncHTTPClient in Frameworks */,
+				01E908FE2FEE787900C95A3A /* Subprocess in Frameworks */,
 				01F3362E2AD10D0B0048AF77 /* RxCocoa in Frameworks */,
 				01F3362F2AD10D0B0048AF77 /* FlexibleDiff in Frameworks */,
 				01F336302AD10D0B0048AF77 /* libresolv.tbd in Frameworks */,
@@ -419,6 +422,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				01E908FC2FEE786F00C95A3A /* Subprocess in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -911,6 +915,7 @@
 				01BCDB202C9EEE260028FA94 /* Sparkle */,
 				013B21FA2F7E95E0009B30CB /* DGCharts */,
 				013B220D2F88A219009B30CB /* AsyncHTTPClient */,
+				01E908FD2FEE787900C95A3A /* Subprocess */,
 			);
 			productName = ClashX;
 			productReference = 01F336442AD10D0B0048AF77 /* ClashX Meta.app */;
@@ -973,6 +978,7 @@
 				01BCDB1F2C9EEE260028FA94 /* XCRemoteSwiftPackageReference "Sparkle" */,
 				013B21F92F7E95E0009B30CB /* XCRemoteSwiftPackageReference "Charts" */,
 				013B220C2F88A219009B30CB /* XCRemoteSwiftPackageReference "async-http-client" */,
+				01E908FA2FEE786F00C95A3A /* XCRemoteSwiftPackageReference "swift-subprocess" */,
 			);
 			productRefGroup = 49CF3B1E20CD7463001EBF94 /* Products */;
 			projectDirPath = "";
@@ -1244,7 +1250,7 @@
 					"$(inherited)",
 					"$(PROJECT_DIR)/ClashX",
 				);
-				MACOSX_DEPLOYMENT_TARGET = 12.4;
+				MACOSX_DEPLOYMENT_TARGET = 13.0;
 				MARKETING_VERSION = v1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.metacubex.ClashX.meta;
 				PRODUCT_NAME = "ClashX Meta";
@@ -1292,7 +1298,7 @@
 					"$(inherited)",
 					"$(PROJECT_DIR)/ClashX",
 				);
-				MACOSX_DEPLOYMENT_TARGET = 12.4;
+				MACOSX_DEPLOYMENT_TARGET = 13.0;
 				MARKETING_VERSION = v1.0;
 				OTHER_CODE_SIGN_FLAGS = "--timestamp";
 				PRODUCT_BUNDLE_IDENTIFIER = com.metacubex.ClashX.meta;
@@ -1454,7 +1460,7 @@
 					"@loader_path/../Frameworks",
 				);
 				LIBRARY_SEARCH_PATHS = "$(inherited)";
-				MACOSX_DEPLOYMENT_TARGET = 12.4;
+				MACOSX_DEPLOYMENT_TARGET = 13.0;
 				MARKETING_VERSION = 1.2;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
@@ -1499,7 +1505,7 @@
 					"@loader_path/../Frameworks",
 				);
 				LIBRARY_SEARCH_PATHS = "$(inherited)";
-				MACOSX_DEPLOYMENT_TARGET = 12.4;
+				MACOSX_DEPLOYMENT_TARGET = 13.0;
 				MARKETING_VERSION = 1.2;
 				MTL_FAST_MATH = YES;
 				OTHER_LDFLAGS = (
@@ -1634,6 +1640,14 @@
 				minimumVersion = 2.6.4;
 			};
 		};
+		01E908FA2FEE786F00C95A3A /* XCRemoteSwiftPackageReference "swift-subprocess" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/swiftlang/swift-subprocess";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 0.5.0;
+			};
+		};
 		01F335B72AD10D0B0048AF77 /* XCRemoteSwiftPackageReference "KeyboardShortcuts" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/sindresorhus/KeyboardShortcuts.git";
@@ -1720,6 +1734,16 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 01BCDB1F2C9EEE260028FA94 /* XCRemoteSwiftPackageReference "Sparkle" */;
 			productName = Sparkle;
+		};
+		01E908FB2FEE786F00C95A3A /* Subprocess */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 01E908FA2FEE786F00C95A3A /* XCRemoteSwiftPackageReference "swift-subprocess" */;
+			productName = Subprocess;
+		};
+		01E908FD2FEE787900C95A3A /* Subprocess */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 01E908FA2FEE786F00C95A3A /* XCRemoteSwiftPackageReference "swift-subprocess" */;
+			productName = Subprocess;
 		};
 		01F335B62AD10D0B0048AF77 /* KeyboardShortcuts */ = {
 			isa = XCSwiftPackageProductDependency;
