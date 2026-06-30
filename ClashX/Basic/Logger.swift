@@ -124,8 +124,10 @@ class Logger {
     
     func startCleanup() {
         cleanupLogTask = Task {
-            try? await Task.sleep(seconds: 5 * 60)
-            try? FileHandle(forWritingTo: URL(fileURLWithPath: coreLogPath)).truncate(atOffset: 0)
+            while !Task.isCancelled {
+                try? await Task.sleep(seconds: 5 * 60)
+                try? FileHandle(forWritingTo: URL(fileURLWithPath: coreLogPath)).truncate(atOffset: 0)
+            }
         }
     }
 }
