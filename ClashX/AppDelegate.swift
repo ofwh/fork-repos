@@ -144,26 +144,18 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     
-    
-    
     @MainActor
     func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
-        Task {
-            await TerminalConfirmAction.run(app: sender)
+        Task { @MainActor in
+            let ok = await ExitManager.shared.handleShouldTerminate()
+            NSApp.reply(toApplicationShouldTerminate: ok)
         }
         return .terminateLater
     }
 
     func applicationWillTerminate(_ aNotification: Notification) {
-        UserDefaults.standard.set(0, forKey: "launch_fail_times")
-        Logger.log("ClashX will terminate")
-        ApiRequest.shared.prepareForTermination()
-        if NetworkChangeNotifier.isCurrentSystemSetToClash(looser: true) ||
-            NetworkChangeNotifier.hasInterfaceProxySetToClash() {
-            Logger.log("Need Reset Proxy Setting again", level: .error)
             Task {
-                await SystemProxyManager.shared.disableProxy()
-            }
+            await ExitManager.shared.handleWillTerminate()
         }
     }
 
@@ -434,7 +426,7 @@ extension AppDelegate: ClashProcessDelegate {
 		alert.alertStyle = .warning
 		alert.addButton(withTitle: NSLocalizedString("Quit", comment: ""))
 		alert.runModal()
-        NSApplication.shared.terminate(nil)
+        await ExitManager.shared.requestQuit(force: true)
 	}
 
     func clashProcess(_ process: ClashProcess, didStartWith server: MetaServer) async {
@@ -560,7 +552,10 @@ extension AppDelegate {
     }
 
     @IBAction func actionQuit(_ sender: Any) {
-        NSApplication.shared.terminate(self)
+        let forceQuit = NSEvent.modifierFlags.contains(.option)
+        Task {
+            await ExitManager.shared.requestQuit(force: forceQuit)
+        }
     }
 
     @IBAction func actionMoreSetting(_ sender: Any) {

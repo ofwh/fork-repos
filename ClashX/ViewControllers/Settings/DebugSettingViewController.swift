@@ -57,7 +57,7 @@ class DebugSettingViewController: NSViewController {
         guard alert.runModal() == .alertFirstButtonReturn else { return }
         UserDefaults.standard.removePersistentDomain(forName: domain)
         UserDefaults.standard.synchronize()
-        NSApplication.shared.terminate(self)
+        ExitManager.shared.requestQuit(force: true)
     }
 
     @IBAction func actionSetUseApiMode(_ sender: Any) {

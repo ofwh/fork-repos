@@ -98,6 +98,8 @@ class ClashResourceManager {
         alert.alertStyle = .warning
         alert.addButton(withTitle: NSLocalizedString("Quit", comment: ""))
         alert.runModal()
-        NSApplication.shared.terminate(nil)
+        Task {
+            await ExitManager.shared.requestQuit(force: true)
+        }
     }
 }

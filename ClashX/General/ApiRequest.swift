@@ -126,7 +126,9 @@ class ApiRequest {
         alert.addButton(withTitle: NSLocalizedString("OK", comment: ""))
         let response = alert.runModal()
         if response == .alertFirstButtonReturn {
-            NSApplication.shared.terminate(nil)
+            Task {
+                await ExitManager.shared.requestQuit(force: true)
+            }
         }
     }
 

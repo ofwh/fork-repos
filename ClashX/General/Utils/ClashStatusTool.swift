@@ -35,7 +35,7 @@ actor ClashStatusTool {
             if ret == .alertSecondButtonReturn {
                 NSWorkspace.shared.openFilePath(Paths.localConfigPath(for: "config"))
             }
-            NSApp.terminate(nil)
+            ExitManager.shared.requestQuit(force: true)
         } else if lastPortWasZero == nil {
             Logger.log("resync Config", level: .error)
             
