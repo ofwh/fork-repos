@@ -10,36 +10,37 @@ import AppKit
 import Foundation
 import SwiftyJSON
 
+@MainActor
 class ConfigFileManager {
     static let shared = ConfigFileManager()
-    private var witness: Witness?
+    private var watchTask: Task<Void, Never>?
     private var pause = false
 
     func pauseForNextChange() {
         pause = true
     }
 
-    @MainActor
     func watchFile(path: String) {
-        witness = Witness(paths: [path], flags: .FileEvents, latency: 0.3) {
-            [weak self] events in
-            guard let self = self else { return }
-            guard !self.pause else {
-                self.pause = false
-                return
-            }
-            for event in events {
-                if event.flags.contains(.ItemModified) || event.flags.contains(.ItemRenamed) {
-					UserNotificationCenter.shared.postConfigFileChangeDetectionNotice()
-					NotificationCenter.default.post(Notification(name: .configFileChange))
-                    break
+        stopWatchConfigFile()
+        
+        watchTask = Task {
+            for await event in FileWatcher.events(for: path) {
+                guard !Task.isCancelled else { break }
+                guard !self.pause else {
+                    self.pause = false
+                    continue
+                }
+                if event.flags.contains(.itemModified) || event.flags.contains(.itemRenamed) {
+                    UserNotificationCenter.shared.postConfigFileChangeDetectionNotice()
+                    NotificationCenter.default.post(Notification(name: .configFileChange))
                 }
             }
         }
     }
 
     func stopWatchConfigFile() {
-        witness = nil
+        watchTask?.cancel()
+        watchTask = nil
         pause = false
     }
 
@@ -60,7 +61,6 @@ class ConfigFileManager {
         }
     }
 
-    @MainActor
     func openConfigFolder() async {
         if ICloudManager.shared.useICloudRelay.value {
             guard let url = await ICloudManager.shared.getUrl() else { return }

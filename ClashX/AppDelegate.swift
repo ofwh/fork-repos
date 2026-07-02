@@ -71,7 +71,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
         signal(SIGPIPE, SIG_IGN)
         // crash recorder
-        failLaunchProtect()
+        Task { await failLaunchProtect() }
         NSAppleEventManager.shared()
             .setEventHandler(self,
                              andSelector: #selector(handleURL(event:reply:)),
@@ -697,7 +697,7 @@ extension AppDelegate {
          */
     }
 
-    func failLaunchProtect() {
+    func failLaunchProtect() async {
         #if DEBUG
             return
         #else
@@ -709,7 +709,7 @@ extension AppDelegate {
             x.set(launch_fail_times, forKey: "launch_fail_times")
             if launch_fail_times > 3 {
                 // 发生连续崩溃
-                ConfigFileManager.backupAndRemoveConfigFile()
+                await MainActor.run { ConfigFileManager.backupAndRemoveConfigFile() }
 					let ruleFiles = ClashResourceManager.RuleFiles.self
 
 					try? FileManager.default.removeItem(atPath: kConfigFolderPath + ruleFiles.mmdb.rawValue)

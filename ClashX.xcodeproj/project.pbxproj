@@ -78,6 +78,7 @@
 		01EF33602B98D03B00D1DBD9 /* ProxyConfigHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 01EF335F2B98D03B00D1DBD9 /* ProxyConfigHelper.swift */; };
 		01EF33622B98D3A700D1DBD9 /* ProxyConfigRemoteProcessProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = 01EF33612B98D3A700D1DBD9 /* ProxyConfigRemoteProcessProtocol.swift */; };
 		01EF33642B98D71600D1DBD9 /* ProxyConfigRemoteProcessProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = 01EF33612B98D3A700D1DBD9 /* ProxyConfigRemoteProcessProtocol.swift */; };
+		01EF58AC2FF55DEC00432213 /* FileWatcher.swift in Sources */ = {isa = PBXBuildFile; fileRef = 01EF58AB2FF55DEC00432213 /* FileWatcher.swift */; };
 		01F335CD2AD10D0B0048AF77 /* UnsafePointer+bridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 49ABB748236B0F9E00535CD7 /* UnsafePointer+bridge.swift */; };
 		01F335CE2AD10D0B0048AF77 /* RemoteConfigViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 499A485322ED707300F6C675 /* RemoteConfigViewController.swift */; };
 		01F335CF2AD10D0B0048AF77 /* StatusItemTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = 49D6A45129AEEC15006487EF /* StatusItemTool.swift */; };
@@ -106,7 +107,6 @@
 		01F335E42AD10D0B0048AF77 /* SpeedUtils.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4991D22F2A564DDC00978143 /* SpeedUtils.swift */; };
 		01F335E52AD10D0B0048AF77 /* Logger.swift in Sources */ = {isa = PBXBuildFile; fileRef = 496BDEDF21196F1E00C5207F /* Logger.swift */; };
 		01F335E62AD10D0B0048AF77 /* NSView+Layout.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4905A2C92A20841B00AEDA2E /* NSView+Layout.swift */; };
-		01F335E72AD10D0B0048AF77 /* FileEvent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 49722FEA211F338B00650A41 /* FileEvent.swift */; };
 		01F335E82AD10D0B0048AF77 /* AlphaMetaDownloader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 016BEAAF29D80102001586C5 /* AlphaMetaDownloader.swift */; };
 		01F335E92AD10D0B0048AF77 /* NetworkChangeNotifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = 49D176A62355FE680093DD7B /* NetworkChangeNotifier.swift */; };
 		01F335EA2AD10D0B0048AF77 /* GlobalShortCutViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4905A2C42A2058B000AEDA2E /* GlobalShortCutViewController.swift */; };
@@ -128,8 +128,6 @@
 		01F335FA2AD10D0B0048AF77 /* RemoteConfigManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 495BFB8721919B9800C8779D /* RemoteConfigManager.swift */; };
 		01F335FB2AD10D0B0048AF77 /* Cgo+Convert.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4982F51E2344A216008804B0 /* Cgo+Convert.swift */; };
 		01F335FC2AD10D0B0048AF77 /* ProxySettingCommand.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8ACD21BA27A04C7800BC4632 /* ProxySettingCommand.swift */; };
-		01F335FD2AD10D0B0048AF77 /* Witness.swift in Sources */ = {isa = PBXBuildFile; fileRef = 49722FEC211F338B00650A41 /* Witness.swift */; };
-		01F335FE2AD10D0B0048AF77 /* EventStream.swift in Sources */ = {isa = PBXBuildFile; fileRef = 49722FEB211F338B00650A41 /* EventStream.swift */; };
 		01F335FF2AD10D0B0048AF77 /* Array+Safe.swift in Sources */ = {isa = PBXBuildFile; fileRef = 499A486422EEA3FC00F6C675 /* Array+Safe.swift */; };
 		01F336002AD10D0B0048AF77 /* SavedProxyModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = F92D0B23236BC12000575E15 /* SavedProxyModel.swift */; };
 		01F336012AD10D0B0048AF77 /* NSTextField+Vibrancy.swift in Sources */ = {isa = PBXBuildFile; fileRef = F92D0B29236C759100575E15 /* NSTextField+Vibrancy.swift */; };
@@ -293,6 +291,7 @@
 		01E908FF2FEF838700C95A3A /* ExitManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExitManager.swift; sourceTree = "<group>"; };
 		01EF335F2B98D03B00D1DBD9 /* ProxyConfigHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProxyConfigHelper.swift; sourceTree = "<group>"; };
 		01EF33612B98D3A700D1DBD9 /* ProxyConfigRemoteProcessProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProxyConfigRemoteProcessProtocol.swift; sourceTree = "<group>"; };
+		01EF58AB2FF55DEC00432213 /* FileWatcher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileWatcher.swift; sourceTree = "<group>"; };
 		01F335D92BD10D0B0048AF77 /* ProxyHealthCheckManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProxyHealthCheckManager.swift; sourceTree = "<group>"; };
 		01F335DA2CD10D0B0048AF77 /* ConfigReloadManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConfigReloadManager.swift; sourceTree = "<group>"; };
 		01F335F82F7F9E8A00A1B2C3 /* ApiRequestTransport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ApiRequestTransport.swift; sourceTree = "<group>"; };
@@ -321,10 +320,6 @@
 		495BFB8721919B9800C8779D /* RemoteConfigManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemoteConfigManager.swift; sourceTree = "<group>"; };
 		496322212AA5D89E00854231 /* UpdateExternalResourceAction.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpdateExternalResourceAction.swift; sourceTree = "<group>"; };
 		496BDEDF21196F1E00C5207F /* Logger.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Logger.swift; sourceTree = "<group>"; };
-		49722FEA211F338B00650A41 /* FileEvent.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = FileEvent.swift; sourceTree = "<group>"; };
-		49722FEB211F338B00650A41 /* EventStream.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = EventStream.swift; sourceTree = "<group>"; };
-		49722FEC211F338B00650A41 /* Witness.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Witness.swift; sourceTree = "<group>"; };
-		49722FED211F338B00650A41 /* Witness.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Witness.h; sourceTree = "<group>"; };
 		4982F51E2344A216008804B0 /* Cgo+Convert.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Cgo+Convert.swift"; sourceTree = "<group>"; };
 		49862F9F218418C600A1D5EC /* ClashRule.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClashRule.swift; sourceTree = "<group>"; };
 		49870ADC2AA76602002B106B /* UpdateConfigAction.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpdateConfigAction.swift; sourceTree = "<group>"; };
@@ -610,6 +605,7 @@
 				49B445152457CDF000B27E3E /* ClashStatusTool.swift */,
 				49D223382A1DA5F10002FFCB /* SSIDSuspendTool.swift */,
 				49FEC6682AD9369C00BAD9F5 /* Command.swift */,
+				01EF58AB2FF55DEC00432213 /* FileWatcher.swift */,
 			);
 			path = Utils;
 			sourceTree = "<group>";
@@ -699,22 +695,10 @@
 			children = (
 				4929F683258CE07500A435F6 /* UserDefaultWrapper.swift */,
 				F976275D23634F18000EDEFE /* LoginServiceKit */,
-				49722FE9211F338B00650A41 /* Witness */,
 				49D8276627E9B01700159D93 /* LoginKitWrapper.h */,
 				49D8276727E9B01700159D93 /* LoginKitWrapper.m */,
 			);
 			path = Vendor;
-			sourceTree = "<group>";
-		};
-		49722FE9211F338B00650A41 /* Witness */ = {
-			isa = PBXGroup;
-			children = (
-				49722FEA211F338B00650A41 /* FileEvent.swift */,
-				49722FEB211F338B00650A41 /* EventStream.swift */,
-				49722FEC211F338B00650A41 /* Witness.swift */,
-				49722FED211F338B00650A41 /* Witness.h */,
-			);
-			path = Witness;
 			sourceTree = "<group>";
 		};
 		49761DA521C9490400AE13EF /* Resources */ = {
@@ -1050,7 +1034,6 @@
 				01F335E52AD10D0B0048AF77 /* Logger.swift in Sources */,
 				01D567E62AD158B600CDA0AE /* MetaPrefsViewController.swift in Sources */,
 				01F335E62AD10D0B0048AF77 /* NSView+Layout.swift in Sources */,
-				01F335E72AD10D0B0048AF77 /* FileEvent.swift in Sources */,
 				01F335E82AD10D0B0048AF77 /* AlphaMetaDownloader.swift in Sources */,
 				01F335E92AD10D0B0048AF77 /* NetworkChangeNotifier.swift in Sources */,
 				01F335EA2AD10D0B0048AF77 /* GlobalShortCutViewController.swift in Sources */,
@@ -1058,6 +1041,7 @@
 				01F335EB2AD10D0B0048AF77 /* Notification.swift in Sources */,
 				01F335EC2AD10D0B0048AF77 /* ClashMetaConfig.swift in Sources */,
 				01F335ED2AD10D0B0048AF77 /* ProxyModeChangeCommand.swift in Sources */,
+				01EF58AC2FF55DEC00432213 /* FileWatcher.swift in Sources */,
 				01F335EE2AD10D0B0048AF77 /* GeneralSettingViewController.swift in Sources */,
 				01F335EF2AD10D0B0048AF77 /* RemoteConfigUpdateIntervalSettingView.swift in Sources */,
 				01F335F02AD10D0B0048AF77 /* AppDelegate+..swift in Sources */,
@@ -1076,8 +1060,6 @@
 				01F335FA2AD10D0B0048AF77 /* RemoteConfigManager.swift in Sources */,
 				01F335FB2AD10D0B0048AF77 /* Cgo+Convert.swift in Sources */,
 				01F335FC2AD10D0B0048AF77 /* ProxySettingCommand.swift in Sources */,
-				01F335FD2AD10D0B0048AF77 /* Witness.swift in Sources */,
-				01F335FE2AD10D0B0048AF77 /* EventStream.swift in Sources */,
 				01F335FF2AD10D0B0048AF77 /* Array+Safe.swift in Sources */,
 				01F336002AD10D0B0048AF77 /* SavedProxyModel.swift in Sources */,
 				01F336012AD10D0B0048AF77 /* NSTextField+Vibrancy.swift in Sources */,

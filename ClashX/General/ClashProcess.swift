@@ -228,7 +228,7 @@ actor ClashProcess {
 
 		Logger.log("Try to copy default config")
 		ICloudManager.shared.setup()
-		ConfigFileManager.copySampleConfigIfNeed()
+		await ConfigFileManager.copySampleConfigIfNeed()
 	}
 
 	private func generateInitConfig() async throws -> ClashMetaConfig.Config {
