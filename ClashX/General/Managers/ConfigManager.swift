@@ -36,7 +36,7 @@ class ConfigManager {
         case failedToStart
 
         var isOperational: Bool {
-            self == .running || self == .reloadingConfig || self == .disconnected
+            self == .running || self == .reloadingConfig
         }
     }
 

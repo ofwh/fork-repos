@@ -572,8 +572,13 @@ extension AppDelegate: ApiRequestStreamDelegate {
 	
 	func streamStatusChanged() async {
         await MainActor.run {
-            if ConfigManager.shared.kernelState == .disconnected {
-                ConfigManager.shared.kernelState = .running
+            let isRunning = ConfigManager.shared.kernelState.isOperational
+            if !isRunning {
+                statusItemView.updateViewStatus(enableProxy: false)
+            } else {
+                let state = ConfigManager.shared.proxyState
+                let isIconActive = state.isSystemProxyEnabled || state.isTunModeActive
+                statusItemView.updateViewStatus(enableProxy: isIconActive)
             }
         }
 	}

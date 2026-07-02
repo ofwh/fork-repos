@@ -438,6 +438,16 @@
         }
       }
     },
+    "Connection lost. Retrying automatically." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "连接丢失，正在自动重试。"
+          }
+        }
+      }
+    },
     "Connection Type" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -522,6 +532,26 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "複製終端代理命令(外部IP)"
+          }
+        }
+      }
+    },
+    "Core Disconnected" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "核心已断开连接"
+          }
+        }
+      }
+    },
+    "Core Process Crashed" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "核心进程已崩溃"
           }
         }
       }
@@ -2438,6 +2468,16 @@
         }
       }
     },
+    "The core process has exited unexpectedly." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "核心进程意外退出。"
+          }
+        }
+      }
+    },
     "The remote config name is duplicated" : {
       "localizations" : {
         "zh-Hans" : {
@@ -2860,6 +2900,7 @@
       }
     },
     "Use reload config to try reconnect." : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {

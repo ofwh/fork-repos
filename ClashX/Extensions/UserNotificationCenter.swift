@@ -93,9 +93,24 @@ class UserNotificationCenter: NSObject {
 			 identifier: "postConfigFileChangeDetectionNotice")
 	}
 	
-	func postStreamApiConnectFail(api: String) {
-		post(title: "\(api) api connect error!",
-			 info: NSLocalizedString("Use reload config to try reconnect.", comment: ""))
+	func postCoreDisconnectedNotice() {
+		post(title: NSLocalizedString("Core Disconnected", comment: ""),
+			 info: NSLocalizedString("Connection lost. Retrying automatically.", comment: ""))
+	}
+
+	@MainActor
+	func postCoreCrashNotice() async {
+		let alert = NSAlert()
+		alert.messageText = NSLocalizedString("Core Process Crashed", comment: "")
+		alert.informativeText = NSLocalizedString("The core process has exited unexpectedly.", comment: "")
+		alert.alertStyle = .warning
+		alert.addButton(withTitle: NSLocalizedString("Quit", comment: ""))
+		alert.addButton(withTitle: NSLocalizedString("Open Log", comment: ""))
+		let response = alert.runModal()
+		if response == .alertSecondButtonReturn {
+			NSWorkspace.shared.openFilePath(Logger.shared.logFolder())
+		}
+		ExitManager.shared.requestQuit(force: true)
 	}
 	
 	func postMetaErrorNotice(msg: String) {

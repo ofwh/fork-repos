@@ -6,6 +6,7 @@
 //
 
 import Cocoa
+import Subprocess
 
 @MainActor
 protocol ClashProcessDelegate: AnyObject {
@@ -32,6 +33,17 @@ actor ClashProcess {
 	}
 
 	static let metaCoreMd5 = "WOSHIZIDONGSHENGCHENGDEA"
+	private static let metaProcessLabel = "com.metacubex.ClashX.ProxyConfigHelper.meta"
+
+	static func isMetaProcessRunning() async -> Bool {
+		let output: String = (try? await run(
+			.name("pgrep"),
+			arguments: ["-x", metaProcessLabel],
+			output: .string(limit: 65536)
+		).standardOutput) ?? ""
+
+		return !output.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+	}
 	
 	
 	private var coreState: CoreState = .stopped
