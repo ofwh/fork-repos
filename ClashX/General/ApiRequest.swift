@@ -208,35 +208,27 @@ class ApiRequest {
     }
 
     static func updateOutBoundMode(mode: ClashProxyMode) async -> Bool {
-        do {
-            _ = try await req(
-                "/configs",
-                method: .PATCH,
-                parameters: ["mode": mode.rawValue],
-                encoding: .json
-            )
-            .validate()
-            .response
-            return true
-        } catch {
-            return false
-        }
+        let response = await req(
+            "/configs",
+            method: .PATCH,
+            parameters: ["mode": mode.rawValue],
+            encoding: .json
+        )
+        .validate()
+        .response
+        return response.error == nil
     }
 
     static func updateLogLevel(level: ClashLogLevel) async -> Bool {
-        do {
-            _ = try await req(
-                "/configs",
-                method: .PATCH,
-                parameters: ["log-level": level.rawValue],
-                encoding: .json
-            )
-            .validate()
-            .response
-            return true
-        } catch {
-            return false
-        }
+        let response = await req(
+            "/configs",
+            method: .PATCH,
+            parameters: ["log-level": level.rawValue],
+            encoding: .json
+        )
+        .validate()
+        .response
+        return response.error == nil
     }
 
     static func requestProxyGroupList() async -> ClashProxyResp {

@@ -426,7 +426,7 @@ extension AppDelegate: ClashProcessDelegate {
 		alert.alertStyle = .warning
 		alert.addButton(withTitle: NSLocalizedString("Quit", comment: ""))
 		alert.runModal()
-        await ExitManager.shared.requestQuit(force: true)
+        ExitManager.shared.requestQuit(force: true)
 	}
 
     func clashProcess(_ process: ClashProcess, didStartWith server: MetaServer) async {
@@ -554,7 +554,7 @@ extension AppDelegate {
     @IBAction func actionQuit(_ sender: Any) {
         let forceQuit = NSEvent.modifierFlags.contains(.option)
         Task {
-            await ExitManager.shared.requestQuit(force: forceQuit)
+            ExitManager.shared.requestQuit(force: forceQuit)
         }
     }
 

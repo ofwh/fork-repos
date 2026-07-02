@@ -41,7 +41,7 @@ final class ExitManager {
         forceQuitPending = false
 
         if !shouldForce {
-            guard await confirmAction() else {
+            guard confirmAction() else {
                 isTerminating = false
                 return false
             }
