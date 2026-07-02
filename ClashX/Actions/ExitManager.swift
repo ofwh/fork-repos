@@ -47,6 +47,8 @@ final class ExitManager {
             }
         }
 
+        ApiRequest.shared.prepareForTermination()
+
         ConfigManager.shared.proxyState.isTunModeEnabled =
             ConfigManager.shared.proxyState.isTunModeActive
 
