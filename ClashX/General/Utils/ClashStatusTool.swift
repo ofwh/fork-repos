@@ -9,23 +9,21 @@
 import Cocoa
 
 actor ClashStatusTool {
-    @MainActor private var lastPortWasZero: Date?
+    @MainActor private var retryCount: Int = 0
 
     @MainActor
     func checkPortConfig(cfg: ClashConfig?) async {
         guard let cfg,
               ConfigManager.shared.kernelState.isOperational else {
-            lastPortWasZero = nil
+            retryCount = 0
             return
         }
-        Logger.log("mixedPort: \(cfg.mixedPort) ", level: .info)
-        
         guard cfg.usedHttpPort == 0 else {
-            lastPortWasZero = nil
+            retryCount = 0
             return
         }
-        
-        if let time = lastPortWasZero?.timeIntervalSinceNow, time < -2 {
+
+        if retryCount >= 4 {
             let alert = NSAlert()
             alert.messageText = NSLocalizedString("ClashX Start Error!", comment: "")
             alert.informativeText = NSLocalizedString("Ports Open Fail, Please try to restart ClashX", comment: "")
@@ -35,11 +33,10 @@ actor ClashStatusTool {
             if ret == .alertSecondButtonReturn {
                 NSWorkspace.shared.openFilePath(Paths.localConfigPath(for: "config"))
             }
+            retryCount = 0
             ExitManager.shared.requestQuit(force: true)
-        } else if lastPortWasZero == nil {
-            Logger.log("resync Config", level: .error)
-            
-            lastPortWasZero = Date()
+        } else {
+            retryCount += 1
             try? await Task.sleep(seconds: 1)
             await ConfigReloadManager.shared.syncConfig()
         }
