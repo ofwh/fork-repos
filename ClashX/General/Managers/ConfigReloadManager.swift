@@ -11,34 +11,13 @@ import RxSwift
 final class ConfigReloadManager {
     static let shared = ConfigReloadManager()
 
-    private var runAfterConfigReload = false
     private var remoteControlResetTask: Task<Void, Never>?
 
     private init() {}
 
-    func prepareInitialAllowLanSync() {
-        runAfterConfigReload = true
-    }
-
     func syncConfig() async {
         guard let config = await ApiRequest.requestConfig() else { return }
         ConfigManager.shared.currentConfig = config
-    }
-
-    func syncConfigWithTun(_ isInit: Bool = false) async {
-        await syncConfig()
-
-        guard let config = ConfigManager.shared.currentConfig else { return }
-
-        let enable = config.tun.enable
-
-        if isInit, !enable {
-            Logger.log("tun didn't set")
-            return
-        }
-
-        try? await PrivilegedHelperManager.shared.request(ProxyConfigHelperMessages.UpdateTun(state: enable, dns: ConfigManager.metaTunDNS))
-        Logger.log("tun state updated, new: \(enable)")
     }
 
     func resetStreamApi() {
@@ -52,16 +31,10 @@ final class ConfigReloadManager {
     }
 
     func updateAllowLanSetting() async -> Bool {
-        let allow = !ConfigManager.allowConnectFromLan
+        let allow = ConfigOverride.shared.allowLan
         await ApiRequest.updateAllowLan(allow: allow)
         await syncConfig()
-        ConfigManager.allowConnectFromLan = allow
         return allow
-    }
-
-    func setTunMode(enabled: Bool) async {
-        await ApiRequest.updateTun(enable: enabled)
-        await syncConfigWithTun()
     }
 
     func setSniffing(enable: Bool) async {
@@ -69,9 +42,9 @@ final class ConfigReloadManager {
     }
 
     func updateLoggingLevel(menuItems: [NSMenuItem]) async {
-        _ = await ApiRequest.updateLogLevel(level: ConfigManager.selectLoggingApiLevel)
+        _ = await ApiRequest.updateLogLevel(level: ConfigOverride.shared.logLevel)
         menuItems.forEach {
-            $0.state = $0.title.lowercased() == ConfigManager.selectLoggingApiLevel.rawValue ? .on : .off
+            $0.state = $0.title.lowercased() == ConfigOverride.shared.logLevel.rawValue ? .on : .off
         }
         NotificationCenter.default.post(name: .reloadDashboard, object: nil)
     }
@@ -96,15 +69,21 @@ final class ConfigReloadManager {
 
         ClashProxy.cleanCache()
 
-        let err = await ApiRequest.requestConfigUpdate(configName: config)
+        guard let composedPath = await ConfigOverride.shared.composeConfig(configName: config) else {
+            return "compose config failed"
+        }
+
+        let err = await ApiRequest.requestConfigUpdate(configPath: composedPath)
         if let err {
             UpdateConfigAction.showError(text: err, configName: config)
             return err
         }
 
-        await syncConfigWithTun()
-        resetStreamApi()
-        await syncInitialAllowLanIfNeeded()
+        if let newConfigName = configName {
+            ConfigManager.selectConfigName = newConfigName
+        }
+
+        await handleClashConfigUpdated()
 
         if showNotification {
             UserNotificationCenter.shared.post(
@@ -113,43 +92,39 @@ final class ConfigReloadManager {
             )
         }
 
-        if let newConfigName = configName {
-            ConfigManager.selectConfigName = newConfigName
-        }
-
-        await selectProxyGroupWithMemory()
-        await selectOutBoundModeWithMenory()
-        await MenuItemFactory.recreateProxyMenuItems()
-        NotificationCenter.default.post(name: .reloadDashboard, object: nil)
         return nil
     }
 
-    func handleClashConfigUpdated() async {
-        ConfigManager.shared.kernelState = .reloadingConfig
-        if ConfigManager.shared.restoreSystemProxy {
-            await SystemProxyManager.shared.enableProxy()
-        }
-        if let config = await ApiRequest.requestConfig() {
-            ConfigManager.shared.isTunModeInConfig = config.tun.enable
-        }
-        if ConfigManager.shared.proxyState.isTunModeEnabled {
-            await SystemProxyManager.shared.toggleTunMode(enabled: true, persistent: false)
-        } else {
-            await syncConfigWithTun(true)
+    func handleClashConfigUpdated(isInitialApply: Bool = false) async {
+        if isInitialApply {
+            ConfigManager.shared.kernelState = .reloadingConfig
         }
 
-        await SSIDSuspendTool.shared.setup()
+        let currentConfig = await ApiRequest.requestConfig()
+        if let currentConfig {
+            ConfigManager.shared.currentConfig = currentConfig
+        }
+
+        await ProxyManager.shared.reconcileState()
+
+        if isInitialApply {
+            await SSIDSuspendTool.shared.setup()
+        } else {
+            await SSIDSuspendTool.shared.update()
+        }
 
         resetStreamApi()
-        await syncInitialAllowLanIfNeeded()
         await selectProxyGroupWithMemory()
         await MenuItemFactory.recreateProxyMenuItems()
         NotificationCenter.default.post(name: .reloadDashboard, object: nil)
-        ConfigManager.shared.kernelState = .running
+
+        if isInitialApply {
+            ConfigManager.shared.kernelState = .running
+        }
     }
 
     func selectOutBoundModeWithMenory() async {
-        _ = await ApiRequest.updateOutBoundMode(mode: ConfigManager.selectOutBoundMode)
+        _ = await ApiRequest.updateOutBoundMode(mode: ConfigOverride.shared.mode)
         await ConnectionManager.closeAllConnection()
         await syncConfig()
     }
@@ -171,17 +146,6 @@ final class ConfigReloadManager {
         }
 
         action(list)
-    }
-
-    private func selectAllowLanWithMenory() async {
-        await ApiRequest.updateAllowLan(allow: ConfigManager.allowConnectFromLan)
-        await syncConfig()
-    }
-
-    private func syncInitialAllowLanIfNeeded() async {
-        guard runAfterConfigReload else { return }
-        runAfterConfigReload = false
-        await selectAllowLanWithMenory()
     }
 
     private func selectProxyGroupWithMemory() async {

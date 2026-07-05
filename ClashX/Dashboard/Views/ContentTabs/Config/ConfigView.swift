@@ -168,7 +168,7 @@ struct ConfigView: View {
 		}
 	}
 	
-	var tunView: some View {
+		var tunView: some View {
 		LazyVGrid(columns: [
 			GridItem(.flexible()),
 			GridItem(.flexible())
@@ -178,6 +178,19 @@ struct ConfigView: View {
 			ConfigItemView(name: "Enable TUN Device") {
 				Toggle("", isOn: $enableTUNDevice)
 					.toggleStyle(toggleStyle)
+					.onChange(of: enableTUNDevice) { newValue in
+						guard hasLoadedConfig, !isApplyingConfig else { return }
+						guard newValue != ProxyManager.shared.runtimeState.tunActive else { return }
+						Task {
+							await ProxyManager.shared.setTunEnabled(newValue)
+						}
+					}
+					.onReceive(ProxyManager.shared.$runtimeTunActive) { newRuntimeTunActive in
+						guard hasLoadedConfig, !isApplyingConfig else { return }
+						if enableTUNDevice != newRuntimeTunActive {
+							enableTUNDevice = newRuntimeTunActive
+						}
+					}
 			}
 			
 			

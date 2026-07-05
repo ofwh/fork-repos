@@ -40,16 +40,7 @@ class ConfigManager {
         }
     }
 
-    struct ProxyState: Equatable {
-        var isSystemProxyEnabled = UserDefaults.standard.bool(forKey: "proxyPortAutoSet")
-        var isTunModeEnabled = UserDefaults.standard.bool(forKey: "restoreTunProxy")
-        var isSystemProxySetByOther = false
-        var isProxyPaused = false
-        var isTunModeActive = false
-    }
-
     let kernelStateRelay = BehaviorRelay<KernelState>(value: .stopped)
-    let proxyStateRelay = BehaviorRelay<ProxyState>(value: ProxyState())
 
     var currentConfig: ClashConfig? {
         get {
@@ -58,15 +49,10 @@ class ConfigManager {
 
         set {
             currentConfigRelay.accept(newValue)
-            var state = proxyStateRelay.value
-            state.isTunModeActive = newValue?.tun.enable ?? false
-            proxyStateRelay.accept(state)
         }
     }
 
     var currentConfigRelay = BehaviorRelay<ClashConfig?>(value: nil)
-
-    var isTunModeInConfig = false
 
     @MainActor
     var kernelState: KernelState {
@@ -80,11 +66,6 @@ class ConfigManager {
             Logger.log("kernelState change: \(oldValue) -> \(newValue)", level: .info)
             NotificationCenter.default.post(.init(name: .init("ClashKernelStateChanged")))
         }
-    }
-
-    var proxyState: ProxyState {
-        get { proxyStateRelay.value }
-        set { proxyStateRelay.accept(newValue) }
     }
 
     // MARK: - Config Selection
@@ -114,16 +95,7 @@ class ConfigManager {
 
     // MARK: - Preferences
 
-    var restoreSystemProxy: Bool {
-        get {
-            return UserDefaults.standard.bool(forKey: "restoreSystemProxy")
-        }
-        set {
-            UserDefaults.standard.set(newValue, forKey: "restoreSystemProxy")
-        }
-    }
-	
-	static let defaultTunDNS = "8.8.8.8"
+    static let defaultTunDNS = "8.8.8.8"
 	
 	static var metaTunDNS: String = UserDefaults.standard.object(forKey: "metaTunDNS") as? String ?? defaultTunDNS {
 		didSet {
@@ -164,33 +136,6 @@ class ConfigManager {
     static var selectedProxyRecords = SavedProxyModel.loadsFromUserDefault() {
         didSet {
             SavedProxyModel.save(selectedProxyRecords)
-        }
-    }
-
-    static var selectOutBoundMode: ClashProxyMode {
-        get {
-            return ClashProxyMode(rawValue: UserDefaults.standard.string(forKey: "selectOutBoundMode") ?? "") ?? .rule
-        }
-        set {
-            UserDefaults.standard.set(newValue.rawValue, forKey: "selectOutBoundMode")
-        }
-    }
-
-    static var allowConnectFromLan: Bool {
-        get {
-            return UserDefaults.standard.bool(forKey: "allowConnectFromLan")
-        }
-        set {
-            UserDefaults.standard.set(newValue, forKey: "allowConnectFromLan")
-        }
-    }
-
-    static var selectLoggingApiLevel: ClashLogLevel {
-        get {
-            return ClashLogLevel(rawValue: UserDefaults.standard.string(forKey: "selectLoggingApiLevel") ?? "") ?? .info
-        }
-        set {
-            UserDefaults.standard.set(newValue.rawValue, forKey: "selectLoggingApiLevel")
         }
     }
 

@@ -22,8 +22,8 @@ struct SidebarView: View {
 		.environmentObject(clashApiDatasStorage.logStorage)
 		.environmentObject(clashApiDatasStorage.connsStorage)
 		.onAppear {
-			if ConfigManager.selectLoggingApiLevel == .unknow {
-				ConfigManager.selectLoggingApiLevel = .info
+			if ConfigOverride.shared.logLevel == .unknow {
+				ConfigOverride.shared.logLevel = .info
 			}
 			
 			clashApiDatasStorage.resetStreamApi()

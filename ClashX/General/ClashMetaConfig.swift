@@ -39,7 +39,7 @@ class ClashMetaConfig: NSObject {
         var geodataMode: Bool?
 		var geoxUrl: [String: String]?
 
-        var logLevel = ConfigManager.selectLoggingApiLevel.rawValue
+        var logLevel = ConfigOverride.shared.logLevel.rawValue
 		
 		var rules = ["DOMAIN-KEYWORD,\(initRulePayload),REJECT"]
         

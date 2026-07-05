@@ -40,7 +40,7 @@ class Logger {
         #if DEBUG
             DDLog.add(DDOSLogger.sharedInstance)
         #endif
-        dynamicLogLevel = ConfigManager.selectLoggingApiLevel.toDDLogLevel()
+        dynamicLogLevel = ConfigOverride.shared.logLevel.toDDLogLevel()
     }
 
     func configure(logDirectory: String, sessionId: String) {

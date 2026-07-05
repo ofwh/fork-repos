@@ -79,6 +79,7 @@
 		01EF33622B98D3A700D1DBD9 /* ProxyConfigRemoteProcessProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = 01EF33612B98D3A700D1DBD9 /* ProxyConfigRemoteProcessProtocol.swift */; };
 		01EF33642B98D71600D1DBD9 /* ProxyConfigRemoteProcessProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = 01EF33612B98D3A700D1DBD9 /* ProxyConfigRemoteProcessProtocol.swift */; };
 		01EF58AC2FF55DEC00432213 /* FileWatcher.swift in Sources */ = {isa = PBXBuildFile; fileRef = 01EF58AB2FF55DEC00432213 /* FileWatcher.swift */; };
+		01EF58B62FF77D1B00432213 /* ConfigOverride.swift in Sources */ = {isa = PBXBuildFile; fileRef = 01EF58B52FF77D1B00432213 /* ConfigOverride.swift */; };
 		01F335CD2AD10D0B0048AF77 /* UnsafePointer+bridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 49ABB748236B0F9E00535CD7 /* UnsafePointer+bridge.swift */; };
 		01F335CE2AD10D0B0048AF77 /* RemoteConfigViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 499A485322ED707300F6C675 /* RemoteConfigViewController.swift */; };
 		01F335CF2AD10D0B0048AF77 /* StatusItemTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = 49D6A45129AEEC15006487EF /* StatusItemTool.swift */; };
@@ -94,7 +95,7 @@
 		01F335D92AD10D0B0048AF77 /* ConnectionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = F977FAAD23669D6400C17F1F /* ConnectionManager.swift */; };
 		01F335DA2AD10D0B0048AF77 /* StatusItemView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 495340B220DE68C300B0D3FF /* StatusItemView.swift */; };
 		01F335DA2BD10D0B0048AF77 /* ProxyHealthCheckManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 01F335D92BD10D0B0048AF77 /* ProxyHealthCheckManager.swift */; };
-		01F335DB2AD10D0B0048AF77 /* SystemProxyManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = F935B2FB23085515009E4D33 /* SystemProxyManager.swift */; };
+		01F335DB2AD10D0B0048AF77 /* ProxyManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = F935B2FB23085515009E4D33 /* ProxyManager.swift */; };
 		01F335DB2BD10D0B0048AF77 /* ConfigReloadManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 01F335DA2CD10D0B0048AF77 /* ConfigReloadManager.swift */; };
 		01F335DC2AD10D0B0048AF77 /* LaunchAtLogin.swift in Sources */ = {isa = PBXBuildFile; fileRef = 495A44D220D267D000888A0A /* LaunchAtLogin.swift */; };
 		01F335DD2AD10D0B0048AF77 /* Combine+Ext.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4991D2312A565E6A00978143 /* Combine+Ext.swift */; };
@@ -292,6 +293,7 @@
 		01EF335F2B98D03B00D1DBD9 /* ProxyConfigHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProxyConfigHelper.swift; sourceTree = "<group>"; };
 		01EF33612B98D3A700D1DBD9 /* ProxyConfigRemoteProcessProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProxyConfigRemoteProcessProtocol.swift; sourceTree = "<group>"; };
 		01EF58AB2FF55DEC00432213 /* FileWatcher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileWatcher.swift; sourceTree = "<group>"; };
+		01EF58B52FF77D1B00432213 /* ConfigOverride.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConfigOverride.swift; sourceTree = "<group>"; };
 		01F335D92BD10D0B0048AF77 /* ProxyHealthCheckManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProxyHealthCheckManager.swift; sourceTree = "<group>"; };
 		01F335DA2CD10D0B0048AF77 /* ConfigReloadManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConfigReloadManager.swift; sourceTree = "<group>"; };
 		01F335F82F7F9E8A00A1B2C3 /* ApiRequestTransport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ApiRequestTransport.swift; sourceTree = "<group>"; };
@@ -378,7 +380,7 @@
 		F935B2F12307C802009E4D33 /* Helper-Launchd.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "Helper-Launchd.plist"; sourceTree = "<group>"; };
 		F935B2F823083EE6009E4D33 /* ProxySettingTool.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ProxySettingTool.h; sourceTree = "<group>"; };
 		F935B2F923083EE6009E4D33 /* ProxySettingTool.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = ProxySettingTool.m; sourceTree = "<group>"; };
-		F935B2FB23085515009E4D33 /* SystemProxyManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SystemProxyManager.swift; sourceTree = "<group>"; };
+		F935B2FB23085515009E4D33 /* ProxyManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProxyManager.swift; sourceTree = "<group>"; };
 		F939724B23A4B33500FE5A3F /* ClashProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClashProvider.swift; sourceTree = "<group>"; };
 		F939724D23A4DB0600FE5A3F /* DateFormatter+.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DateFormatter+.swift"; sourceTree = "<group>"; };
 		F976275B23634DF8000EDEFE /* LoginServiceKit.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginServiceKit.swift; sourceTree = "<group>"; };
@@ -620,7 +622,7 @@
 				495BFB8721919B9800C8779D /* RemoteConfigManager.swift */,
 				01F335D92BD10D0B0048AF77 /* ProxyHealthCheckManager.swift */,
 				4952C3BE2115C7CA004A4FA8 /* MenuItemFactory.swift */,
-				F935B2FB23085515009E4D33 /* SystemProxyManager.swift */,
+				F935B2FB23085515009E4D33 /* ProxyManager.swift */,
 				F977FAAD23669D6400C17F1F /* ConnectionManager.swift */,
 				F9E754CF239CC21F00CEE7CC /* WebPortalManager.swift */,
 				49B4575C244F4A2A00463C39 /* PrivilegedHelperManager.swift */,
@@ -628,6 +630,7 @@
 				49BB31E6246853EA008A4CB0 /* ICloudManager.swift */,
 				499ADAFC2498CC5900C488FE /* RemoteControlManager.swift */,
 				4929F67E258CE04700A435F6 /* Settings.swift */,
+				01EF58B52FF77D1B00432213 /* ConfigOverride.swift */,
 			);
 			path = Managers;
 			sourceTree = "<group>";
@@ -1019,7 +1022,7 @@
 				01F335DB2BD10D0B0048AF77 /* ConfigReloadManager.swift in Sources */,
 				01F335DA2BD10D0B0048AF77 /* ProxyHealthCheckManager.swift in Sources */,
 				01F335DA2AD10D0B0048AF77 /* StatusItemView.swift in Sources */,
-				01F335DB2AD10D0B0048AF77 /* SystemProxyManager.swift in Sources */,
+				01F335DB2AD10D0B0048AF77 /* ProxyManager.swift in Sources */,
 				01F335DC2AD10D0B0048AF77 /* LaunchAtLogin.swift in Sources */,
 				01F335DD2AD10D0B0048AF77 /* Combine+Ext.swift in Sources */,
 				A15E90012E5C9A1100C0FFEE /* Task+Sleep.swift in Sources */,
@@ -1057,6 +1060,7 @@
 				01F335F82AD10D0B0048AF77 /* WebPortalManager.swift in Sources */,
 				01F335F92AD10D0B0048AF77 /* DualTitleMenuItem.swift in Sources */,
 				01E909002FEF838700C95A3A /* ExitManager.swift in Sources */,
+				01EF58B62FF77D1B00432213 /* ConfigOverride.swift in Sources */,
 				01F335FA2AD10D0B0048AF77 /* RemoteConfigManager.swift in Sources */,
 				01F335FB2AD10D0B0048AF77 /* Cgo+Convert.swift in Sources */,
 				01F335FC2AD10D0B0048AF77 /* ProxySettingCommand.swift in Sources */,
