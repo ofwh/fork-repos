@@ -56,9 +56,15 @@ enum Paths {
 			.appendingPathComponent("com.MetaCubeX.ClashX.meta") else {
 			return NSTemporaryDirectory().appending("com.MetaCubeX.ClashX.meta")
 		}
-		
+
 		try? FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)
-		
+
 		return url.path
+	}
+
+	static func cacheConfigs() -> String {
+		let path = tempPath() + "/cacheConfigs"
+		try? FileManager.default.createDirectory(atPath: path, withIntermediateDirectories: true)
+		return path
 	}
 }
