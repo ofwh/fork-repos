@@ -572,7 +572,7 @@ extension AppDelegate: ApiRequestStreamDelegate {
             if !isRunning {
                 statusItemView.updateViewStatus(enableProxy: false)
             } else {
-                statusItemView.updateViewStatus(enableProxy: ProxyManager.shared.isIconActive || ProxyManager.shared.state.suspend.isSuspended)
+                statusItemView.updateViewStatus(enableProxy: ProxyManager.shared.isIconActive)
             }
         }
 	}
