@@ -590,7 +590,7 @@ extension AppDelegate: ApiRequestStreamDelegate {
     }
 
     func didGetLog(log: String, level: String) async {
-//        Logger.log(log, level: ClashLogLevel(rawValue: level) ?? .unknow)
+        Logger.log(log, level: ClashLogLevel(rawValue: level) ?? .unknow)
     }
 }
 
