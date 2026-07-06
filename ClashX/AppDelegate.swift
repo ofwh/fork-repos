@@ -478,8 +478,11 @@ extension AppDelegate {
     }
 
     @IBAction func actionAllowFromLan(_ sender: NSMenuItem) {
+        let allow = sender.state != .on
+        ConfigOverride.shared.allowLan = allow
         Task {
-            let allow = await ConfigReloadManager.shared.updateAllowLanSetting()
+            await ApiRequest.updateAllowLan(allow: allow)
+            await ConfigReloadManager.shared.syncConfig()
             sender.state = allow ? .on : .off
         }
     }
@@ -668,9 +671,10 @@ extension AppDelegate {
 
     @IBAction func updateSniffing(_ sender: NSMenuItem) {
         let enable = sender.state != .on
+        ConfigOverride.shared.snifferEnable = enable
         Task {
-			await ConfigReloadManager.shared.setSniffing(enable: enable)
-			sender.state = enable ? .on : .off
+            await ApiRequest.updateSniffing(enable: enable)
+            sender.state = enable ? .on : .off
         }
     }
 }

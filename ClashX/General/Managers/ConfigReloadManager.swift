@@ -30,16 +30,7 @@ final class ConfigReloadManager {
         resetStreamApi()
     }
 
-    func updateAllowLanSetting() async -> Bool {
-        let allow = ConfigOverride.shared.allowLan
-        await ApiRequest.updateAllowLan(allow: allow)
-        await syncConfig()
-        return allow
-    }
 
-    func setSniffing(enable: Bool) async {
-        await ApiRequest.updateSniffing(enable: enable)
-    }
 
     func updateLoggingLevel(menuItems: [NSMenuItem]) async {
         _ = await ApiRequest.updateLogLevel(level: ConfigOverride.shared.logLevel)
@@ -124,7 +115,7 @@ final class ConfigReloadManager {
     }
 
     func selectOutBoundModeWithMenory() async {
-        _ = await ApiRequest.updateOutBoundMode(mode: ConfigOverride.shared.mode)
+        _ = await ApiRequest.updateOutBoundMode(mode: ConfigOverride.shared.mode ?? .rule)
         await ConnectionManager.closeAllConnection()
         await syncConfig()
     }

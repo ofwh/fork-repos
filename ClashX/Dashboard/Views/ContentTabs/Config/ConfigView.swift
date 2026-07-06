@@ -232,6 +232,7 @@ struct ConfigView: View {
 					.toggleStyle(toggleStyle)
 					.onChange(of: allowLAN) { newValue in
 						guard hasLoadedConfig, !isApplyingConfig else { return }
+						ConfigOverride.shared.allowLan = newValue
 						Task {
 							await ApiRequest.updateAllowLan(allow: newValue)
 							await refreshConfig()
@@ -244,6 +245,7 @@ struct ConfigView: View {
 					.toggleStyle(toggleStyle)
 					.onChange(of: sniffer) { newValue in
 						guard hasLoadedConfig, !isApplyingConfig else { return }
+						ConfigOverride.shared.snifferEnable = newValue
 						Task {
 							await ApiRequest.updateSniffing(enable: newValue)
 							await refreshConfig()
