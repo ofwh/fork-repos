@@ -112,7 +112,7 @@ class SSIDSuspendTool: NSObject {
 
         // Permission may already be in a final state (.authorized/.denied) in which
         // case locationManagerDidChangeAuthorization never fires. Re-reconcile here
-        // so enableTun's isLocationPermissionResolved guard can now pass.
+        // as a startup safety net so proxy state matches the resolved permission.
         if isLocationPermissionResolved {
             await ProxyManager.shared.reconcileState()
         }
@@ -148,6 +148,10 @@ class SSIDSuspendTool: NSObject {
     }
 
     func shouldSuspend() async -> Bool {
+        // Only check SSID when location permission is granted.
+        // Without permission we can't read SSID; assume not blacklisted
+        // so TUN / system-proxy setup is never blocked.
+        guard locationManager.authorizationStatus == .authorized else { return false }
         if isOverrideActive { return false }
         return await isCurrentSSIDInBlacklist()
     }

@@ -359,10 +359,6 @@ final class ProxyManager: NSObject {
 
     @discardableResult
     private func enableTun() async -> Bool {
-        if !SSIDSuspendTool.shared.isLocationPermissionResolved {
-            Logger.log("defer enableTun: location permission pending", level: .info)
-            return false
-        }
         if await SSIDSuspendTool.shared.shouldSuspend() {
             Logger.log("not enableTun due to ssid in disabled list", level: .info)
             return false
