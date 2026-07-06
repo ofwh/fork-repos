@@ -11,21 +11,29 @@ final class ConfigOverride {
 
     private init() {}
 
-    // MARK: - Settings (UserDefaults)
+    // MARK: - Always Override
 
-    var allowLan: Bool {
-        get { UserDefaults.standard.bool(forKey: "allowConnectFromLan") }
-        set { UserDefaults.standard.set(newValue, forKey: "allowConnectFromLan") }
+    var logLevel: ClashLogLevel {
+        get { ClashLogLevel(rawValue: UserDefaults.standard.string(forKey: "selectLoggingApiLevel") ?? "") ?? .info }
+        set { UserDefaults.standard.set(newValue.rawValue, forKey: "selectLoggingApiLevel") }
+    }
+
+    // MARK: - Optional Override
+
+    var allowLan: Bool? {
+        get { UserDefaults.standard.object(forKey: "allowConnectFromLan") as? Bool }
+        set {
+            if let v = newValue {
+                UserDefaults.standard.set(v, forKey: "allowConnectFromLan")
+            } else {
+                UserDefaults.standard.removeObject(forKey: "allowConnectFromLan")
+            }
+        }
     }
 
     var mode: ClashProxyMode {
         get { ClashProxyMode(rawValue: UserDefaults.standard.string(forKey: "selectOutBoundMode") ?? "") ?? .rule }
         set { UserDefaults.standard.set(newValue.rawValue, forKey: "selectOutBoundMode") }
-    }
-
-    var logLevel: ClashLogLevel {
-        get { ClashLogLevel(rawValue: UserDefaults.standard.string(forKey: "selectLoggingApiLevel") ?? "") ?? .info }
-        set { UserDefaults.standard.set(newValue.rawValue, forKey: "selectLoggingApiLevel") }
     }
 
     var snifferEnable: Bool {
@@ -56,7 +64,9 @@ final class ConfigOverride {
 
     @MainActor
     func applyOverrides(_ yaml: inout Node) {
-        yaml["allow-lan"] = .init("\(allowLan)")
+        if let allowLan = allowLan {
+            yaml["allow-lan"] = .init("\(allowLan)")
+        }
         yaml["mode"] = .init(mode.rawValue)
         yaml["log-level"] = .init(logLevel.rawValue)
 
