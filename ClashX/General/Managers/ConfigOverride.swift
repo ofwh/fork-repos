@@ -36,14 +36,23 @@ final class ConfigOverride {
         set { UserDefaults.standard.set(newValue.rawValue, forKey: "selectOutBoundMode") }
     }
 
-    var snifferEnable: Bool {
-        get { UserDefaults.standard.object(forKey: "overrideSnifferEnable") as? Bool ?? true }
-        set { UserDefaults.standard.set(newValue, forKey: "overrideSnifferEnable") }
+    // MARK: - Forced Default Override
+
+    var snifferEnable: Bool? {
+        get { UserDefaults.standard.object(forKey: "overrideSnifferEnable") as? Bool }
+        set {
+            if let v = newValue {
+                UserDefaults.standard.set(v, forKey: "overrideSnifferEnable")
+            } else {
+                UserDefaults.standard.removeObject(forKey: "overrideSnifferEnable")
+            }
+        }
     }
 
     @MainActor
-    var tunEnable: Bool {
-        ProxyManager.shared.state.intent.tunEnabled
+    var tunEnable: Bool? {
+        let intent = ProxyManager.shared.state.intent
+        return intent.tunOverridden ? intent.tunEnabled : nil
     }
 
     func composeConfig(configName: String) async -> String? {
@@ -76,19 +85,41 @@ final class ConfigOverride {
 
     private func applySnifferOverride(_ yaml: inout Node) {
         if yaml["sniffer"] != nil {
-            yaml["sniffer"]!["enable"] = .init("\(snifferEnable)")
+            if let snifferEnable = snifferEnable {
+                yaml["sniffer"]!["enable"] = .init("\(snifferEnable)")
+            }
         } else {
-            yaml["sniffer"] = ["enable": .init("\(snifferEnable)")]
+            yaml["sniffer"] = [
+                "enable": .init("\(snifferEnable ?? false)"),
+                "sniff": [
+                    "HTTP": [
+                        "ports": ["80", "8080-8880"],
+                        "override-destination": "true",
+                    ],
+                    "TLS": [
+                        "ports": ["443", "8443"],
+                    ],
+                    "QUIC": [
+                        "ports": ["443", "8443"],
+                    ],
+                ],
+                "skip-domain": [
+                    "Mijia Cloud",
+                    "+.push.apple.com",
+                ],
+            ]
         }
     }
 
     @MainActor
     private func applyTunOverride(_ yaml: inout Node) {
         if yaml["tun"] != nil {
-            yaml["tun"]!["enable"] = .init("\(tunEnable)")
+            if let tunEnable = tunEnable {
+                yaml["tun"]!["enable"] = .init("\(tunEnable)")
+            }
         } else {
             yaml["tun"] = [
-                "enable": .init("\(tunEnable)"),
+                "enable": .init("\(tunEnable ?? false)"),
                 "auto-route": "true",
                 "auto-detect-interface": "true",
                 "dns-hijack": [

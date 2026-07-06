@@ -26,6 +26,7 @@ final class ProxyManager: NSObject {
     struct UserIntent: Equatable {
         var systemProxyEnabled: Bool
         var tunEnabled: Bool
+        var tunOverridden: Bool
     }
 
     struct RuntimeState: Equatable {
@@ -85,12 +86,14 @@ final class ProxyManager: NSObject {
     private enum Keys {
         static let systemProxyEnabled = "proxyPortAutoSet"
         static let tunEnabled = "restoreTunProxy"
+        static let tunOverridden = "tunOverridden"
     }
 
     private static func readUserIntent() -> UserIntent {
         UserIntent(
             systemProxyEnabled: UserDefaults.standard.bool(forKey: Keys.systemProxyEnabled),
-            tunEnabled: UserDefaults.standard.bool(forKey: Keys.tunEnabled)
+            tunEnabled: UserDefaults.standard.bool(forKey: Keys.tunEnabled),
+            tunOverridden: UserDefaults.standard.bool(forKey: Keys.tunOverridden)
         )
     }
 
@@ -99,6 +102,7 @@ final class ProxyManager: NSObject {
         userIntent = newIntent
         UserDefaults.standard.set(userIntent.systemProxyEnabled, forKey: Keys.systemProxyEnabled)
         UserDefaults.standard.set(userIntent.tunEnabled, forKey: Keys.tunEnabled)
+        UserDefaults.standard.set(userIntent.tunOverridden, forKey: Keys.tunOverridden)
         notifyStateChanged()
     }
 
@@ -203,6 +207,7 @@ final class ProxyManager: NSObject {
         }
         var newIntent = userIntent
         newIntent.tunEnabled = enabled
+        newIntent.tunOverridden = true
         setIntent(newIntent)
     }
 
@@ -343,10 +348,12 @@ final class ProxyManager: NSObject {
     private func reconcileTun() async {
         guard !suspendState.isSuspended else { return }
 
-        if userIntent.tunEnabled {
-            _ = await enableTun()
-        } else {
-            _ = await disableTun()
+        if userIntent.tunOverridden {
+            if userIntent.tunEnabled {
+                _ = await enableTun()
+            } else {
+                _ = await disableTun()
+            }
         }
     }
 

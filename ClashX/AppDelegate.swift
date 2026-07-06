@@ -219,7 +219,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         if state.suspend.isSuspended {
             return state.runtime.tunActive ? .on : .mixed
         }
-        return state.intent.tunEnabled ? .on : .off
+        if state.intent.tunOverridden {
+            return state.intent.tunEnabled ? .on : .off
+        }
+        return state.runtime.tunActive ? .on : .off
     }
 	
     func setupData() {
