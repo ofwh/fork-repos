@@ -256,7 +256,7 @@ actor ClashProcess {
 			throw StartMetaError.startMetaFailed("resourcePath")
 		}
 
-		var paths = [resourcePath + "/dashboard"]
+		var paths = [resourcePath + "/dashboard", Paths.cacheConfigs()]
 		guard ICloudManager.shared.useICloudRelay.value else {
 			return paths
 		}
@@ -308,7 +308,11 @@ actor ClashProcess {
 		let configName = ConfigManager.selectConfigName
 		Logger.log("Push init config file: \(configName)")
 
-		if let error = await ApiRequest.requestConfigUpdate(configName: configName) {
+		guard let composedPath = await ConfigOverride.shared.composeConfig(configName: configName) else {
+			throw StartMetaError.pushConfigFailed("compose config failed")
+		}
+
+		if let error = await ApiRequest.requestConfigUpdate(configPath: composedPath) {
 			throw StartMetaError.pushConfigFailed(error)
 		}
 

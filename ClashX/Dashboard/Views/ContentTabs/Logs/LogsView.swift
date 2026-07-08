@@ -13,7 +13,7 @@ struct LogsView: View {
 	@State var searchString: String = ""
     @State var logFilter = DashboardViewContoller.LogFilter.all
     
-	@State var logLevel = ConfigManager.selectLoggingApiLevel
+	@State var logLevel = ConfigOverride.shared.logLevel
 	
     var body: some View {
 		Group {
@@ -47,7 +47,7 @@ struct LogsView: View {
 	
 	func logLevelChanged(_ level: ClashLogLevel) {
 		logStorage.logs.removeAll()
-		ConfigManager.selectLoggingApiLevel = level
+		ConfigOverride.shared.logLevel = level
 		ApiRequest.shared.resetStreamApi(for: .logging)
 	}
     

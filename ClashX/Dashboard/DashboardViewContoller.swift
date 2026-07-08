@@ -233,7 +233,7 @@ extension DashboardViewContoller: NSSearchFieldDelegate {
 			let group = NSToolbarItemGroup(itemIdentifier: .logLevelItem, titles: titles, selectionMode: .selectOne, labels: titles, target: nil, action: #selector(setLogLevel(_:)))
 			group.selectionMode = .selectOne
 			group.controlRepresentation = .collapsed
-			group.selectedIndex = levels.firstIndex(of: ConfigManager.selectLoggingApiLevel) ?? 0
+			group.selectedIndex = levels.firstIndex(of: ConfigOverride.shared.logLevel) ?? 0
 			
             group.label = "Log Level"
             

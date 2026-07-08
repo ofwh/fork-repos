@@ -11,19 +11,10 @@ import AppKit
 
 @objc class TunModeSettingCommand: NSScriptCommand {
     override func performDefaultImplementation() -> Any? {
-        guard let delegate = NSApplication.shared.delegate as? AppDelegate else {
-            scriptErrorNumber = -2
-            scriptErrorString = "can't get application, try again later"
-            return nil
+        Task { @MainActor in
+            let current = ProxyManager.shared.state.intent.tunEnabled
+            await ProxyManager.shared.setTunEnabled(!current)
         }
-        let menuItem: NSMenuItem
-        menuItem = delegate.tunModeMenuItem
-        if menuItem.state == .on {
-            menuItem.state = .on
-        } else {
-            menuItem.state = .off
-        }
-        delegate.actionSetTunMode(menuItem)
         return nil
     }
 }

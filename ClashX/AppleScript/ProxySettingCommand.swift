@@ -11,12 +11,10 @@ import Foundation
 
 @objc class ProxySettingCommand: NSScriptCommand {
     override func performDefaultImplementation() -> Any? {
-        guard let delegate = NSApplication.shared.delegate as? AppDelegate else {
-            scriptErrorNumber = -2
-            scriptErrorString = "can't get application, try again later"
-            return nil
+        Task { @MainActor in
+            let current = ProxyManager.shared.state.intent.systemProxyEnabled
+            await ProxyManager.shared.setSystemProxyEnabled(!current)
         }
-        delegate.actionSetSystemProxy(self)
         return nil
     }
 }

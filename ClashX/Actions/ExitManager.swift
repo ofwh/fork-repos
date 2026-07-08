@@ -18,7 +18,7 @@ final class ExitManager {
     private let normalTimeout: TimeInterval = 5
     private let forceTimeout: TimeInterval = 2
 
-    private var isTerminating = false
+    private(set) var isTerminating = false
     private var forceQuitPending = false
 
     // MARK: - External API
@@ -49,28 +49,30 @@ final class ExitManager {
 
         ApiRequest.shared.prepareForTermination()
 
-        ConfigManager.shared.proxyState.isTunModeEnabled =
-            ConfigManager.shared.proxyState.isTunModeActive
+        // Compute cleanup decision BEFORE launching stopTask.
+        // Reading runtimeState.systemProxyActive here is safe: stopMetaAndDisableTun
+        // only stops the Meta process and disables TUN, it does NOT touch the system
+        // proxy. NetworkChangeNotifier probes are live reads; stopTask doesn't affect
+        // their result either.
+        let decision = proxyCleanupDecision()
 
         async let stopTask = stopMetaAndDisableTun(timeout: shouldForce ? forceTimeout : normalTimeout)
 
         removeTempFiles()
 
-        guard let forceDisable = forceDisableForProxyCleanup() else {
+        guard decision.shouldClean else {
             _ = await stopTask
-            ConfigManager.shared.restoreSystemProxy = false
             Logger.log("ClashX quit without clean waiting")
             return true
         }
 
         Logger.log("ClashX quit need clean proxy setting")
-        ConfigManager.shared.restoreSystemProxy = true
         prepareForTerminationWait()
 
         _ = await stopTask
         Logger.log("ClashX quit wait for clean up")
 
-        let finished = await performProxyCleanup(forceDisable: forceDisable, timeout: shouldForce ? forceTimeout : normalTimeout)
+        let finished = await performProxyCleanup(forceDisable: decision.force, timeout: shouldForce ? forceTimeout : normalTimeout)
         if finished {
             Logger.log("ClashX quit after clean up finish")
         } else {
@@ -119,9 +121,7 @@ final class ExitManager {
             Task {
                 try? await PrivilegedHelperManager.shared.request(
                     ProxyConfigHelperMessages.StopMeta())
-                try? await PrivilegedHelperManager.shared.request(
-                    ProxyConfigHelperMessages.UpdateTun(
-                        state: false, dns: ConfigManager.metaTunDNS))
+                await ProxyManager.shared.disableTunForTermination()
                 if !cancelled.load(ordering: .relaxed) {
                     cancelled.store(true, ordering: .relaxed)
                     continuation.resume()
@@ -131,19 +131,26 @@ final class ExitManager {
     }
 
     private func removeTempFiles() {
-        try? FileManager.default.removeItem(atPath: Paths.tempPath() + "/cacheConfigs")
+        try? FileManager.default.removeItem(atPath: Paths.cacheConfigs())
         try? FileManager.default.removeItem(atPath: Paths.localConfigPath(for: kSafeConfigName))
     }
 
-    private func forceDisableForProxyCleanup() -> Bool? {
-        let shouldCleanSystemProxy =
-            (ConfigManager.shared.proxyState.isSystemProxyEnabled &&
-             !ConfigManager.shared.proxyState.isSystemProxySetByOther) ||
+    /// Determines whether system-proxy cleanup is needed on exit and whether to force-disable.
+    ///
+    /// - `shouldClean`: true if the system proxy is currently active OR if any network
+    ///   interface has ClashX-bound proxy (proactively cleanup stale state).
+    /// - `force`: true when the proxy was last modified by another app (takeover case).
+    ///   When `force == true`, cleanup uses DisableProxy (clear all proxy) rather than
+    ///   RestoreProxy (which would replay a saved proxy snapshot that wasn't ours to restore).
+    private func proxyCleanupDecision() -> (shouldClean: Bool, force: Bool) {
+        let state = ProxyManager.shared.runtimeState
+        let shouldClean =
+            state.systemProxyActive ||
             NetworkChangeNotifier.isCurrentSystemSetToClash(looser: true) ||
             NetworkChangeNotifier.hasInterfaceProxySetToClash()
 
-        guard shouldCleanSystemProxy else { return nil }
-        return ConfigManager.shared.proxyState.isSystemProxySetByOther
+        let force = state.systemProxySetByOther
+        return (shouldClean, force)
     }
 
     private func prepareForTerminationWait() {
@@ -156,7 +163,7 @@ final class ExitManager {
     private func performProxyCleanup(forceDisable: Bool, timeout: TimeInterval) async -> Bool {
         await withTaskGroup(of: Bool.self, returning: Bool.self) { group in
             group.addTask {
-                await SystemProxyManager.shared.disableProxy(forceDisable: forceDisable)
+                await ProxyManager.shared.disableAllProxiesForTermination(force: forceDisable)
                 return true
             }
             group.addTask {

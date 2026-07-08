@@ -128,7 +128,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         // claer not existed selected model
         await ConfigReloadManager.shared.removeUnExistProxyGroups()
         setupData()
-        ConfigReloadManager.shared.prepareInitialAllowLanSync()
 
         await ConfigReloadManager.shared.updateLoggingLevel(menuItems: logLevelMenuItem.submenu?.items ?? [])
 
@@ -203,7 +202,27 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                 self.statusItemView.showSpeedContainer(show: show ?? true)
             }.disposed(by: disposeBag)
 
-        statusItemView.updateViewStatus(enableProxy: ConfigManager.shared.proxyState.isSystemProxyEnabled)
+        statusItemView.updateViewStatus(enableProxy: ProxyManager.shared.isIconActive)
+    }
+
+    private func menuState(forSystemProxy state: ProxyManager.StateSnapshot) -> NSControl.StateValue {
+        if state.suspend.isSuspended {
+            return state.runtime.systemProxyActive ? .on : .mixed
+        }
+        if state.runtime.systemProxySetByOther {
+            return .mixed
+        }
+        return state.intent.systemProxyEnabled ? .on : .off
+    }
+
+    private func menuState(forTun state: ProxyManager.StateSnapshot) -> NSControl.StateValue {
+        if state.suspend.isSuspended {
+            return state.runtime.tunActive ? .on : .mixed
+        }
+        if state.intent.tunOverridden {
+            return state.intent.tunEnabled ? .on : .off
+        }
+        return state.runtime.tunActive ? .on : .off
     }
 	
     func setupData() {
@@ -215,36 +234,17 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                 }
             }.disposed(by: disposeBag)
 
-        ConfigManager.shared
-            .proxyStateRelay
+        ProxyManager.shared
+            .stateDidChange
             .asObservable()
             .distinctUntilChanged()
             .observe(on: MainScheduler.instance)
             .subscribe { [weak self] state in
                 guard let self = self else { return }
                 Task { @MainActor in
-                    if !state.isSystemProxyEnabled {
-                        self.proxySettingMenuItem.state = .off
-                    } else if state.isProxyPaused || state.isSystemProxySetByOther {
-                        self.proxySettingMenuItem.state = .mixed
-                    } else {
-                        self.proxySettingMenuItem.state = .on
-                    }
-
-                    if !state.isTunModeEnabled {
-                        self.tunModeMenuItem.state = .off
-                    } else if state.isProxyPaused {
-                        self.tunModeMenuItem.state = .mixed
-                    } else {
-                        self.tunModeMenuItem.state = state.isTunModeActive ? .on : .off
-                    }
-
-                    if state.isProxyPaused {
-                        self.statusItemView.updateViewStatus(enableProxy: false)
-                    } else {
-                        let isIconActive = (self.proxySettingMenuItem.state == .on) || state.isTunModeActive
-                        self.statusItemView.updateViewStatus(enableProxy: isIconActive)
-                    }
+                    self.proxySettingMenuItem.state = self.menuState(forSystemProxy: state)
+                    self.tunModeMenuItem.state = self.menuState(forTun: state)
+                    self.statusItemView.updateViewStatus(enableProxy: ProxyManager.shared.isIconActive)
                 }
             }
             .disposed(by: disposeBag)
@@ -271,7 +271,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                 self.proxyModeMenuItem.title = "\(NSLocalizedString("Proxy Mode", comment: "")) (\(config.mode.name))"
 
                 Task {
-                    await SystemProxyManager.shared.updateProxyPortsIfNeeded(oldConfig: old, newConfig: config)
+                    await ProxyManager.shared.updateProxyPortsIfNeeded(oldConfig: old, newConfig: config)
                 }
 
                 self.httpPortMenuItem.title = "Http Port: \(config.usedHttpPort)"
@@ -338,18 +338,20 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             .delay(.milliseconds(200), scheduler: MainScheduler.instance)
             .bind { _ in
                 guard NetworkChangeNotifier.getPrimaryInterface() != nil else { return }
-                let proxySetted = NetworkChangeNotifier.isCurrentSystemSetToClash()
-                if ConfigManager.shared.proxyState.isProxyPaused {
-                    let (http, https, socks) = NetworkChangeNotifier.currentSystemProxySetting()
-                    if http == 0 && https == 0 && socks == 0 {
-                        Logger.log("Proxy paused!")
-                        return
+                Task { @MainActor in
+                    await ProxyManager.shared.handleSystemProxySettingChanged()
+                    let state = ProxyManager.shared.state
+                    if state.suspend.isSuspended {
+                        let (http, https, socks) = NetworkChangeNotifier.currentSystemProxySetting()
+                        if http == 0 && https == 0 && socks == 0 {
+                            Logger.log("Proxy paused!")
+                            return
+                        }
                     }
-                }
-                ConfigManager.shared.proxyState.isSystemProxySetByOther = !proxySetted
-                if !proxySetted && ConfigManager.shared.proxyState.isSystemProxyEnabled {
-                    let proxiesSetting = NetworkChangeNotifier.getRawProxySetting()
-                    Logger.log("Proxy changed by other process!, current:\(proxiesSetting), is Interface Set: \(NetworkChangeNotifier.hasInterfaceProxySetToClash())", level: .warning)
+                    if state.runtime.systemProxySetByOther {
+                        let proxiesSetting = NetworkChangeNotifier.getRawProxySetting()
+                        Logger.log("Proxy changed by other process!, current:\(proxiesSetting), is Interface Set: \(NetworkChangeNotifier.hasInterfaceProxySetToClash())", level: .warning)
+                    }
                 }
             }.disposed(by: disposeBag)
 
@@ -360,15 +362,13 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
         ProxyHealthCheckManager.shared.setupHealthCheckOnIPAddressChange(disposeBag: disposeBag)
 
-        ConfigManager.shared
-            .proxyStateRelay
+        ProxyManager.shared
+            .stateDidChange
             .asObservable()
-            .map(\.isSystemProxySetByOther)
-            .distinctUntilChanged()
-            .filter { _ in ConfigManager.shared.proxyState.isSystemProxyEnabled }
+            .map { $0.runtime.systemProxySetByOther }
             .distinctUntilChanged()
             .filter { $0 }
-            .filter { _ in !ConfigManager.shared.proxyState.isProxyPaused }
+            .filter { _ in !ProxyManager.shared.state.suspend.isSuspended }
             .bind { _ in
                 let rawProxy = NetworkChangeNotifier.getRawProxySetting()
                 Logger.log("proxy changed to no clashX setting: \(rawProxy)", level: .warning)
@@ -405,7 +405,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
     @objc func resetProxySettingOnWakeupFromSleep() {
         Task {
-            await SystemProxyManager.shared.resetProxySettingOnWakeupFromSleep()
+            await ProxyManager.shared.reconcileState()
         }
     }
 }
@@ -439,7 +439,7 @@ extension AppDelegate: ClashProcessDelegate {
 	}
 	
     func clashProcessDidUpdateConfig(_ process: ClashProcess) async {
-        await ConfigReloadManager.shared.handleClashConfigUpdated()
+        await ConfigReloadManager.shared.handleClashConfigUpdated(isInitialApply: true)
 	}
 	
     func clashProcess(_ process: ClashProcess, didFailToStartWith error: Error) async {
@@ -478,8 +478,11 @@ extension AppDelegate {
     }
 
     @IBAction func actionAllowFromLan(_ sender: NSMenuItem) {
+        let allow = sender.state != .on
+        ConfigOverride.shared.allowLan = allow
         Task {
-            let allow = await ConfigReloadManager.shared.updateAllowLanSetting()
+            await ApiRequest.updateAllowLan(allow: allow)
+            await ConfigReloadManager.shared.syncConfig()
             sender.state = allow ? .on : .off
         }
     }
@@ -511,7 +514,7 @@ extension AppDelegate {
         config?.mode = mode
 		_ = await ApiRequest.updateOutBoundMode(mode: mode)
 		ConfigManager.shared.currentConfig = config
-		ConfigManager.selectOutBoundMode = mode
+		ConfigOverride.shared.mode = mode
 		await MenuItemFactory.recreateProxyMenuItems()
     }
 
@@ -522,8 +525,7 @@ extension AppDelegate {
     @IBAction func actionSetSystemProxy(_ sender: Any?) {
         let enable = proxySettingMenuItem.state != .on
         Task {
-            guard await SSIDSuspendTool.shared.checkAndHandleOverride(isTun: false, requestedEnable: enable) else { return }
-            await SystemProxyManager.shared.toggleSystemProxyEnabled()
+            await ProxyManager.shared.setSystemProxyEnabled(enable)
         }
     }
 
@@ -576,9 +578,7 @@ extension AppDelegate: ApiRequestStreamDelegate {
             if !isRunning {
                 statusItemView.updateViewStatus(enableProxy: false)
             } else {
-                let state = ConfigManager.shared.proxyState
-                let isIconActive = state.isSystemProxyEnabled || state.isTunModeActive
-                statusItemView.updateViewStatus(enableProxy: isIconActive)
+                statusItemView.updateViewStatus(enableProxy: ProxyManager.shared.isIconActive)
             }
         }
 	}
@@ -619,7 +619,7 @@ extension AppDelegate {
 
     @IBAction func actionSetLogLevel(_ sender: NSMenuItem) {
         let level = ClashLogLevel(rawValue: sender.title.lowercased()) ?? .unknow
-        ConfigManager.selectLoggingApiLevel = level
+        ConfigOverride.shared.logLevel = level
         Task { @MainActor in
             await ConfigReloadManager.shared.updateLoggingLevel(menuItems: logLevelMenuItem.submenu?.items ?? [])
             ConfigReloadManager.shared.resetStreamApi()
@@ -651,11 +651,7 @@ extension AppDelegate {
         let enable = tunModeMenuItem.state != .on
         tunModeMenuItem.isEnabled = false
         Task {
-            guard await SSIDSuspendTool.shared.checkAndHandleOverride(isTun: true, requestedEnable: enable) else {
-                tunModeMenuItem.isEnabled = true
-                return
-            }
-            await SystemProxyManager.shared.toggleTunMode(enabled: enable)
+            await ProxyManager.shared.setTunEnabled(enable)
             tunModeMenuItem.isEnabled = true
         }
     }
@@ -675,9 +671,10 @@ extension AppDelegate {
 
     @IBAction func updateSniffing(_ sender: NSMenuItem) {
         let enable = sender.state != .on
+        ConfigOverride.shared.snifferEnable = enable
         Task {
-			await ConfigReloadManager.shared.setSniffing(enable: enable)
-			sender.state = enable ? .on : .off
+            await ApiRequest.updateSniffing(enable: enable)
+            sender.state = enable ? .on : .off
         }
     }
 }

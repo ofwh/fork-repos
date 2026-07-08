@@ -23,6 +23,13 @@ class SSIDSuspendTool: NSObject {
     var showNoticeOnNotPermission = false
     private(set) var isOverrideActive = false
 
+    /// True iff the location authorization state is final (granted, denied, or restricted).
+    /// `.notDetermined` returns false — used to defer enabling TUN until it's resolved,
+    /// avoiding a brief DNS-hijack window during SSID-suspend startup.
+    var isLocationPermissionResolved: Bool {
+        locationManager.authorizationStatus != .notDetermined
+    }
+
     func setOverride(_ active: Bool) async {
         isOverrideActive = active
         await update()
@@ -38,8 +45,10 @@ class SSIDSuspendTool: NSObject {
             }
         }
 
-        let isAlreadyIntendedEnabled = isTun ? ConfigManager.shared.proxyState.isTunModeEnabled : ConfigManager.shared.proxyState.isSystemProxyEnabled
-        if requestedEnable && isAlreadyIntendedEnabled {
+        let isAlreadyEnabled = isTun
+            ? ProxyManager.shared.runtimeState.tunActive
+            : ProxyManager.shared.runtimeState.systemProxyActive
+        if requestedEnable && isAlreadyEnabled {
             return false
         }
 
@@ -88,18 +97,25 @@ class SSIDSuspendTool: NSObject {
                     }
                 }.disposed(by: disposeBag)
         }
-        ConfigManager.shared
-            .proxyStateRelay
+        ProxyManager.shared
+            .stateDidChange
             .asObservable()
-            .map(\.isProxyPaused)
+            .map { $0.suspend.isSuspended }
             .distinctUntilChanged()
             .bind { pause in
                 Task {
-                    await self.updateProxys(pause: pause)
+                    await self.handleProxySuspend(pause: pause)
                 }
             }.disposed(by: disposeBag)
 
         await update()
+
+        // Permission may already be in a final state (.authorized/.denied) in which
+        // case locationManagerDidChangeAuthorization never fires. Re-reconcile here
+        // as a startup safety net so proxy state matches the resolved permission.
+        if isLocationPermissionResolved {
+            await ProxyManager.shared.reconcileState()
+        }
     }
 
     func requestPermissionIfNeed() async {
@@ -123,27 +139,19 @@ class SSIDSuspendTool: NSObject {
     }
 
     func update() async {
-        Logger.log("Update isProxyPausedRelay")
-        ConfigManager.shared.proxyState.isProxyPaused = await shouldSuspend()
+        Logger.log("Update suspend state")
+        await ProxyManager.shared.setSuspended(await shouldSuspend())
     }
-    
-    func updateProxys(pause: Bool) async {
-        if pause {
-            // Suspend both
-            await SystemProxyManager.shared.disableProxy()
-            await SystemProxyManager.shared.toggleTunMode(enabled: false, persistent: false)
-        } else {
-            // Restore based on intent
-            if ConfigManager.shared.proxyState.isSystemProxyEnabled {
-                await SystemProxyManager.shared.enableProxy()
-            }
-            if ConfigManager.shared.proxyState.isTunModeEnabled {
-                await SystemProxyManager.shared.toggleTunMode(enabled: true, persistent: false)
-            }
-        }
+
+    func handleProxySuspend(pause: Bool) async {
+        await ProxyManager.shared.setSuspended(pause)
     }
 
     func shouldSuspend() async -> Bool {
+        // Only check SSID when location permission is granted.
+        // Without permission we can't read SSID; assume not blacklisted
+        // so TUN / system-proxy setup is never blocked.
+        guard locationManager.authorizationStatus == .authorized else { return false }
         if isOverrideActive { return false }
         return await isCurrentSSIDInBlacklist()
     }
@@ -187,16 +195,17 @@ class SSIDSuspendTool: NSObject {
 extension SSIDSuspendTool: @preconcurrency CLLocationManagerDelegate {
     func locationManager(_ manager: CLLocationManager, didChangeAuthorization status: CLAuthorizationStatus) {
         Logger.log("Location status: \(status.rawValue)")
-        if status == .authorized {
-            Task {
-                await self.update()
+        guard status != .notDetermined else { return }
+        Task {
+            await self.update()
+            // Permission now resolved; re-apply TUN intent that may have been deferred
+            // during startup (when isLocationPermissionResolved was still false).
+            await ProxyManager.shared.reconcileState()
+            if status != .authorized && self.showNoticeOnNotPermission {
+                self.openLocationSettings()
             }
-        } else if status != .notDetermined && status != .authorized {
-            if showNoticeOnNotPermission {
-                openLocationSettings()
-            }
+            self.showNoticeOnNotPermission = false
         }
-        showNoticeOnNotPermission = false
     }
 
     func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {}

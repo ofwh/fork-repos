@@ -48,31 +48,41 @@ class MetaDNS: NSObject {
 	@objc func setCustomDNS(_ dns: String) {
 		customDNS = dns
 	}
-	
-    @objc func hijackDNS() {
-		let dns = getAllDns()
-		let hijacked = dns.allSatisfy {
-			$0.value.count == 1 && $0.value[0] == customDNS
+
+	/// Resolve the true original DNS per service based on current system DNS and saved DNS.
+	/// If system DNS matches customDNS (hijacked) and savedDNS is valid → trust savedDNS.
+	/// Otherwise trust the system value (savedDNS is corrupted / missing / all match).
+	private func resolveOriginalDNS(_ currentDNS: [String: [String]]) -> [String: [String]] {
+		var resolved = [String: [String]]()
+		for (serviceID, sysDNS) in currentDNS {
+			let saved = savedDNS[serviceID]
+			if sysDNS == [customDNS], let saved, saved != [customDNS] {
+				resolved[serviceID] = saved
+			} else {
+				resolved[serviceID] = sysDNS
+			}
 		}
-		 
-		guard !hijacked else { return }
-		
-		savedDNS = dns
+		return resolved
+	}
+
+    @objc func hijackDNS() {
+		let currentDNS = getAllDns()
+		savedDNS = resolveOriginalDNS(currentDNS)
 		if let data = try? JSONEncoder().encode(savedDNS) {
 			UserDefaults.standard.set(data, forKey: MetaDNS.savedDNSKey)
 		}
-
-        let dnsDic = dns.reduce(into: [:]) {
-            $0[$1.key] = [customDNS]
-        }
-        
-        updateDNSConfigure(dnsDic)
+		let alreadyHijacked = currentDNS.allSatisfy { $0.value == [customDNS] }
+		guard !alreadyHijacked else { return }
+		let dnsDic = currentDNS.reduce(into: [:]) { $0[$1.key] = [customDNS] }
+		updateDNSConfigure(dnsDic)
     }
     
     @objc func revertDNS() {
 		guard savedDNS.count > 0 else { return }
-        updateDNSConfigure(savedDNS)
-        savedDNS.removeAll()
+		let currentDNS = getAllDns()
+		let resolved = resolveOriginalDNS(currentDNS)
+		updateDNSConfigure(resolved)
+		savedDNS.removeAll()
 		UserDefaults.standard.removeObject(forKey: MetaDNS.savedDNSKey)
     }
     

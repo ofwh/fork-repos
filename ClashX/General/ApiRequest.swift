@@ -570,7 +570,7 @@ extension ApiRequest {
 		case .traffic: 
             "/traffic"
 		case .logging:
-            "/logs?level=\(ConfigManager.selectLoggingApiLevel.rawValue)"
+            "/logs?level=\(ConfigOverride.shared.logLevel.rawValue)"
 		case .memory:
             "/memory"
 		}
