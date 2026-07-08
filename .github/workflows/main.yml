@@ -9,7 +9,7 @@ jobs:
   build:
     runs-on: macos-26
     env:
-      MIHOMO_TAG: v1.19.27
+      MIHOMO_TAG: v1.19.28
       GH_TOKEN: ${{ github.token }}
       
     steps:
